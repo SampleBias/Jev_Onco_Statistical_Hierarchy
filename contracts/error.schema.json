@@ -1,0 +1,52 @@
+{
+  "$defs": {
+    "ErrorCode": {
+      "enum": [
+        "invalid_arguments",
+        "invalid_json",
+        "invalid_case",
+        "input_too_large",
+        "unsupported_media_type",
+        "not_found",
+        "method_not_allowed",
+        "file_not_found",
+        "output_exists",
+        "io_error",
+        "missing_api_key",
+        "data_policy",
+        "provider_transport",
+        "provider_http",
+        "provider_response",
+        "terminal_required",
+        "internal_error"
+      ],
+      "type": "string"
+    },
+    "ErrorDetail": {
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/ErrorCode"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "error": {
+      "$ref": "#/$defs/ErrorDetail"
+    }
+  },
+  "required": [
+    "error"
+  ],
+  "title": "ErrorEnvelope",
+  "type": "object"
+}

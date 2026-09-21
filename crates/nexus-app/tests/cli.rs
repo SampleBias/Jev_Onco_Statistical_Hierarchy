@@ -126,4 +126,95 @@ fn malformed_input_errors_do_not_echo_case_content() {
     assert!(!output.status.success());
     assert!(output.stdout.is_empty());
     assert!(!String::from_utf8_lossy(&output.stderr).contains("do-not-echo"));
+    let error: Value = serde_json::from_slice(&output.stderr).unwrap();
+    assert_eq!(error["error"]["code"], "invalid_json");
+}
+
+#[test]
+fn structured_errors_cover_arguments_io_validation_and_credentials() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = dir.path().join("case.json");
+    let mut case = serde_json::to_value(nexus_app::workflows::example_case()).unwrap();
+    case["schema_version"] = 2.into();
+    std::fs::write(&file, case.to_string()).unwrap();
+    let path = file.to_str().unwrap();
+    for (args, code, exit) in [
+        (vec!["bad-private-argument"], "invalid_arguments", 2),
+        (
+            vec!["validate", "/missing-do-not-echo.json"],
+            "file_not_found",
+            1,
+        ),
+        (vec!["validate", path], "invalid_case", 1),
+        (vec!["serve", "--output", path], "invalid_arguments", 1),
+    ] {
+        let output = cli().args(args).output().unwrap();
+        assert_eq!(output.status.code(), Some(exit));
+        assert!(output.stdout.is_empty());
+        let error: Value = serde_json::from_slice(&output.stderr).unwrap();
+        assert_eq!(error["error"]["code"], code);
+        assert!(!String::from_utf8_lossy(&output.stderr).contains("private-argument"));
+        assert!(!String::from_utf8_lossy(&output.stderr).contains("do-not-echo"));
+    }
+    std::fs::write(
+        &file,
+        serde_json::to_vec(&nexus_app::workflows::example_case()).unwrap(),
+    )
+    .unwrap();
+    let output = cli().args(["classify", path]).output().unwrap();
+    let error: Value = serde_json::from_slice(&output.stderr).unwrap();
+    assert_eq!(error["error"]["code"], "missing_api_key");
+}
+
+#[test]
+fn stdin_rejects_trailing_json_and_checks_raw_byte_limit() {
+    let original = serde_json::to_string(&nexus_app::workflows::example_case()).unwrap();
+    let exact = format!(
+        "{original}{}",
+        " ".repeat(nexus_core::MAX_CASE_BYTES - original.len())
+    );
+    for (input, expected) in [
+        (format!("{original} {{}}"), Some("invalid_json")),
+        (format!("{exact} "), Some("input_too_large")),
+        (exact, None),
+    ] {
+        let mut child = cli()
+            .args(["validate", "-"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap();
+        child
+            .stdin
+            .take()
+            .unwrap()
+            .write_all(input.as_bytes())
+            .unwrap();
+        let output = child.wait_with_output().unwrap();
+        if let Some(code) = expected {
+            assert_eq!(output.status.code(), Some(1));
+            let error: Value = serde_json::from_slice(&output.stderr).unwrap();
+            assert_eq!(error["error"]["code"], code);
+        } else {
+            assert!(output.status.success());
+        }
+    }
+}
+
+#[test]
+fn schema_command_exports_machine_readable_contracts() {
+    for kind in [
+        "case",
+        "jev-request",
+        "jev-response",
+        "result",
+        "error",
+        "openapi",
+    ] {
+        let output = cli().args(["schema", kind]).output().unwrap();
+        assert!(output.status.success());
+        let doc: Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert!(doc.get("$schema").is_some() || doc.get("openapi").is_some());
+    }
 }

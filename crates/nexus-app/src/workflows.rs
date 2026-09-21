@@ -1,3 +1,4 @@
+use nexus_core::errors::{ErrorCode, ErrorEnvelope};
 use nexus_core::{Case, ResultRecord, Source, interpret, mock_response};
 use std::{
     io::{Read, Write},
@@ -24,10 +25,10 @@ pub fn read_json<T: serde::de::DeserializeOwned>(path: &Path, max: usize) -> Res
             .read_to_end(&mut bytes)?;
     }
     if bytes.len() > max {
-        return Err("input exceeds byte limit".into());
+        return Err(ErrorEnvelope::new(ErrorCode::InputTooLarge).into());
     }
     // Parser errors can contain submitted values; do not echo them.
-    serde_json::from_slice(&bytes).map_err(|_| "input does not match the JSON schema".into())
+    serde_json::from_slice(&bytes).map_err(|_| ErrorEnvelope::new(ErrorCode::InvalidJson).into())
 }
 
 pub fn load_case(path: &Path) -> Result<Case, AppError> {
@@ -42,7 +43,7 @@ pub fn demo(case: &Case) -> Result<ResultRecord, AppError> {
 
 pub async fn classify(case: &Case) -> Result<ResultRecord, AppError> {
     let key = std::env::var("TYPESAFE_API_KEY")
-        .map_err(|_| "TYPESAFE_API_KEY is not set; use 'nexus demo' for an offline run")?;
+        .map_err(|_| ErrorEnvelope::new(ErrorCode::MissingApiKey))?;
     Ok(nexus_jev::classify(case, &key).await?)
 }
 
@@ -59,13 +60,7 @@ pub fn save_new(path: &Path, content: &str) -> Result<(), AppError> {
         use std::os::unix::fs::OpenOptionsExt;
         options.mode(0o600);
     }
-    let mut file = options.open(path).map_err(|e| {
-        if e.kind() == std::io::ErrorKind::AlreadyExists {
-            "output file already exists; choose a new path".to_owned()
-        } else {
-            format!("cannot create output file: {e}")
-        }
-    })?;
+    let mut file = options.open(path)?;
     file.write_all(content.as_bytes())?;
     file.write_all(b"\n")?;
     Ok(())
@@ -121,6 +116,7 @@ pub fn result_text(result: &ResultRecord) -> String {
             result.usage.input_tokens, result.usage.output_tokens
         ),
         format!("Request SHA-256: {}", result.request_sha256),
+        format!("Case revision SHA-256: {}", result.case_revision_sha256),
     ]);
     lines.join("\n")
 }

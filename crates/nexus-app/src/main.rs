@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand, ValueEnum};
 use nexus_app::workflows::{self, AppError};
+use nexus_core::errors::{ErrorCode, ErrorEnvelope};
 use nexus_core::{JevResponse, Source, interpret, prepare};
 use std::{io::Write, path::PathBuf, process::ExitCode};
 
@@ -27,6 +28,16 @@ enum Format {
     Text,
 }
 
+#[derive(Clone, Copy, ValueEnum)]
+enum SchemaKind {
+    Case,
+    JevRequest,
+    JevResponse,
+    Result,
+    Error,
+    Openapi,
+}
+
 #[derive(Subcommand)]
 enum Command {
     /// Open the terminal workbench; defaults to a bundled synthetic case.
@@ -40,6 +51,11 @@ enum Command {
     Doctor,
     /// List all outcomes in the development taxonomy.
     Taxonomy,
+    /// Print a generated JSON Schema or the offline OpenAPI document.
+    Schema {
+        #[arg(value_enum)]
+        kind: SchemaKind,
+    },
     /// Validate case JSON. Use '-' to read stdin.
     Validate { case: PathBuf },
     /// Preview the exact Jev request without sending it. Use '-' to read stdin.
@@ -62,13 +78,13 @@ async fn run(args: Args) -> Result<(), AppError> {
     let value = match args.command {
         Command::Tui { case } => {
             if args.output.is_some() {
-                return Err("use the TUI save action instead of --output".into());
+                return Err(ErrorEnvelope::new(ErrorCode::InvalidArguments).into());
             }
             return nexus_app::tui::run(case).await;
         }
         Command::Serve { port } => {
             if args.output.is_some() {
-                return Err("--output is not supported for serve".into());
+                return Err(ErrorEnvelope::new(ErrorCode::InvalidArguments).into());
             }
             let listener =
                 tokio::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, port)).await?;
@@ -81,6 +97,19 @@ async fn run(args: Args) -> Result<(), AppError> {
             return Ok(());
         }
         Command::Example => serde_json::to_value(workflows::example_case())?,
+        Command::Schema { kind } => {
+            let name = match kind {
+                SchemaKind::Case => "case.schema.json",
+                SchemaKind::JevRequest => "jev-request.schema.json",
+                SchemaKind::JevResponse => "jev-response.schema.json",
+                SchemaKind::Result => "result.schema.json",
+                SchemaKind::Error => "error.schema.json",
+                SchemaKind::Openapi => "openapi.json",
+            };
+            nexus_app::contracts::documents()
+                .remove(name)
+                .expect("schema names are fixed")
+        }
         Command::Doctor => {
             let value = workflows::doctor();
             human = Some(format!(
@@ -128,11 +157,12 @@ async fn run(args: Args) -> Result<(), AppError> {
         }
         Command::Replay { case, response } => {
             if case.as_os_str() == "-" && response.as_os_str() == "-" {
-                return Err("only one replay input can use stdin".into());
+                return Err(ErrorEnvelope::new(ErrorCode::InvalidArguments).into());
             }
             let case = workflows::load_case(&case)?;
             let response: JevResponse = workflows::read_json(&response, 65_536)?;
-            let result = interpret(&case, response, Source::Replay)?;
+            let result = interpret(&case, response, Source::Replay)
+                .map_err(|_| ErrorEnvelope::new(ErrorCode::ProviderResponse))?;
             human = Some(workflows::result_text(&result));
             serde_json::to_value(result)?
         }
@@ -156,7 +186,30 @@ async fn run(args: Args) -> Result<(), AppError> {
 
 #[tokio::main]
 async fn main() -> ExitCode {
-    match run(Args::parse()).await {
+    let args = match Args::try_parse() {
+        Ok(args) => args,
+        Err(error) => {
+            if matches!(
+                error.kind(),
+                clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion
+            ) {
+                let _ = error.print();
+                return ExitCode::SUCCESS;
+            }
+            let raw: Vec<_> = std::env::args_os().collect();
+            let text = raw.iter().any(|arg| arg == "--format=text")
+                || raw
+                    .windows(2)
+                    .any(|pair| pair[0] == "--format" && pair[1] == "text");
+            print_error(
+                ErrorEnvelope::new(ErrorCode::InvalidArguments),
+                if text { Format::Text } else { Format::Json },
+            );
+            return ExitCode::from(2);
+        }
+    };
+    let format = args.format;
+    match run(args).await {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
             if error
@@ -165,8 +218,18 @@ async fn main() -> ExitCode {
             {
                 return ExitCode::SUCCESS;
             }
-            eprintln!("error: {error}");
+            print_error(nexus_app::errors::envelope(&error), format);
             ExitCode::FAILURE
         }
+    }
+}
+
+fn print_error(error: ErrorEnvelope, format: Format) {
+    match format {
+        Format::Json => eprintln!(
+            "{}",
+            serde_json::to_string(&error).expect("static error envelope serializes")
+        ),
+        Format::Text => eprintln!("error: {error}"),
     }
 }

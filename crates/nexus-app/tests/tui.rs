@@ -82,3 +82,32 @@ fn narrow_terminals_and_exit_keys_work() {
     assert!(app.key(KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL)));
     assert!(App::new(Some("-".into())).is_err());
 }
+
+#[test]
+fn failed_open_keeps_previous_case_and_result_for_trailing_or_oversized_input() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("invalid.json");
+    for content in [
+        format!(
+            "{} {{}}",
+            serde_json::to_string(&nexus_app::workflows::example_case()).unwrap()
+        ),
+        "x".repeat(nexus_core::MAX_CASE_BYTES + 1),
+    ] {
+        std::fs::write(&path, content).unwrap();
+        let mut app = App::new(None).unwrap();
+        press(&mut app, KeyCode::Char('d'));
+        press(&mut app, KeyCode::Char('o'));
+        for ch in path.to_str().unwrap().chars() {
+            press(&mut app, KeyCode::Char(ch));
+        }
+        press(&mut app, KeyCode::Enter);
+        let error = screen(&mut app, 110, 40);
+        assert!(error.contains("JSON schema") || error.contains("byte limit"));
+        press(&mut app, KeyCode::Esc);
+        press(&mut app, KeyCode::Char('3'));
+        let result = screen(&mut app, 110, 40);
+        assert!(result.contains("SYNTHETIC-001"));
+        assert!(result.contains("MOCK / NO PREDICTION"));
+    }
+}

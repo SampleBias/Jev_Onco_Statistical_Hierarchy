@@ -1,0 +1,153 @@
+{
+  "$defs": {
+    "RankedOrigin": {
+      "properties": {
+        "calibrated_probability": {
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "origin": {
+          "type": "string"
+        },
+        "raw_probability": {
+          "format": "double",
+          "type": "number"
+        }
+      },
+      "required": [
+        "origin",
+        "raw_probability",
+        "calibrated_probability"
+      ],
+      "type": "object"
+    },
+    "Source": {
+      "enum": [
+        "jev",
+        "mock",
+        "replay"
+      ],
+      "type": "string"
+    },
+    "Usage": {
+      "properties": {
+        "input_tokens": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "output_tokens": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "input_tokens",
+        "output_tokens"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "calibration_status": {
+      "type": "string"
+    },
+    "case_id": {
+      "type": "string"
+    },
+    "case_revision_sha256": {
+      "type": "string"
+    },
+    "conflicting_evidence": {
+      "format": "double",
+      "type": "number"
+    },
+    "evidence_sufficient": {
+      "format": "double",
+      "type": "number"
+    },
+    "fingerprint_version": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "policy_version": {
+      "type": "string"
+    },
+    "probability_kind": {
+      "type": "string"
+    },
+    "prompt_version": {
+      "type": "string"
+    },
+    "provider_confidence": {
+      "format": "double",
+      "type": "number"
+    },
+    "rankings": {
+      "items": {
+        "$ref": "#/$defs/RankedOrigin"
+      },
+      "type": "array"
+    },
+    "reasons": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "request_sha256": {
+      "type": "string"
+    },
+    "research_only": {
+      "type": "boolean"
+    },
+    "result_schema_version": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "source": {
+      "$ref": "#/$defs/Source"
+    },
+    "status": {
+      "type": "string"
+    },
+    "taxonomy_version": {
+      "type": "string"
+    },
+    "usage": {
+      "$ref": "#/$defs/Usage"
+    }
+  },
+  "required": [
+    "result_schema_version",
+    "case_id",
+    "case_revision_sha256",
+    "fingerprint_version",
+    "source",
+    "status",
+    "reasons",
+    "research_only",
+    "probability_kind",
+    "calibration_status",
+    "model",
+    "prompt_version",
+    "taxonomy_version",
+    "policy_version",
+    "request_sha256",
+    "provider_confidence",
+    "evidence_sufficient",
+    "conflicting_evidence",
+    "rankings",
+    "usage"
+  ],
+  "title": "ResultRecord",
+  "type": "object"
+}

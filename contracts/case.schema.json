@@ -1,0 +1,124 @@
+{
+  "$defs": {
+    "DataClass": {
+      "enum": [
+        "synthetic",
+        "deidentified_research"
+      ],
+      "type": "string"
+    },
+    "EvidenceKind": {
+      "enum": [
+        "histology",
+        "ihc",
+        "molecular",
+        "clinical"
+      ],
+      "type": "string"
+    },
+    "Finding": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9_-]{1,64}$",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/EvidenceKind"
+        },
+        "name": {
+          "description": "Nonblank; limit is measured in UTF-8 bytes by the runtime validator.",
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string",
+          "x-maxUtf8Bytes": 128
+        },
+        "value": {
+          "description": "Nonblank; limit is measured in UTF-8 bytes by the runtime validator.",
+          "maxLength": 1024,
+          "minLength": 1,
+          "type": "string",
+          "x-maxUtf8Bytes": 1024
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "name",
+        "value"
+      ],
+      "type": "object"
+    },
+    "SexAtBirth": {
+      "enum": [
+        "female",
+        "male",
+        "intersex",
+        "unknown"
+      ],
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "age_years": {
+      "format": "uint8",
+      "maximum": 120,
+      "minimum": 0,
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9_-]{1,64}$",
+      "type": "string"
+    },
+    "data_class": {
+      "$ref": "#/$defs/DataClass"
+    },
+    "findings": {
+      "description": "IDs must be unique. Runtime also limits serialized case size to 16384 bytes.",
+      "items": {
+        "$ref": "#/$defs/Finding"
+      },
+      "maxItems": 64,
+      "type": "array"
+    },
+    "schema_version": {
+      "format": "uint32",
+      "maximum": 1,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "sex_at_birth": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SexAtBirth"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "specimen_site": {
+      "description": "Biopsy site, not necessarily the primary origin. Nonblank when supplied.",
+      "maxLength": 128,
+      "minLength": 1,
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-maxUtf8Bytes": 128
+    }
+  },
+  "required": [
+    "schema_version",
+    "case_id",
+    "data_class",
+    "findings"
+  ],
+  "title": "Case",
+  "type": "object"
+}

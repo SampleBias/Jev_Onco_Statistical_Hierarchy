@@ -2,7 +2,7 @@
 
 ## Implemented and verified
 
-Three-crate Rust workspace: domain/contracts, Jev transport, and CLI/TUI/offline HTTP application. Includes a synthetic case, a pinned Jev request builder, strict provider-answer validation, raw probability ranking, research review/abstention, and reproducibility metadata. Terminal workflows include open/reload, request preview, demo/live actions, complete result tables, JSON exports and contextual help.
+Application 0.2.0 includes the Phase 01 foundation: separate domain/prompt/taxonomy/policy modules, generated JSON Schemas/OpenAPI, consistent CLI/API errors, case/request fingerprints, pinned builds and a dependency inventory. The three-crate Rust workspace retains the Jev transport and CLI/TUI/offline HTTP workflows. Phase 00 intended-use, taxonomy, inventory, feasibility and decision drafts are delivered; clinical/data approvals remain pending.
 
 The current scope uses Jev as the sole classifier. Original classifier training/inference, model artifact recovery and explanation tooling are excluded from the delivery plan. None of those components was included in the Rust source or dependency manifests, so this scope update required documentation changes only.
 
@@ -11,16 +11,18 @@ The current scope uses Jev as the sole classifier. Original classifier training/
 | `cargo build --workspace --offline --locked` | Passed |
 | `cargo fmt --all -- --check` | Passed |
 | `cargo clippy --workspace --all-targets --offline --locked -- -D warnings` | Passed |
-| `cargo test --workspace --offline --locked` | Passed: 32 tests |
+| `cargo test --workspace --offline --locked` | Passed: 45 tests |
 | CLI `validate`, `prepare`, `demo` on synthetic case | Passed |
 | CLI `classify` without credentials | Expected local error; no request sent |
-| CLI integration tests | Pipes, standalone demo, JSON/text, file protection, credential masking, help/version and errors passed |
-| TUI tests | Navigation, reload invalidation, exports, narrow terminals and live-request guards passed |
-| Interactive PTY smoke test | Launch, tabs, mock results, help, resize, quit and terminal restoration passed |
+| CLI integration tests | Pipes, standalone demo, JSON/text, file protection, credential masking, help/version, structured errors, schemas, trailing JSON and exact byte budgets passed |
+| TUI tests | Navigation, reload invalidation, exports, narrow terminals, failed imports and live-request guards passed |
+| Interactive PTY smoke test | 0.2.0 case launch, mock run, navigation, resize, quit and exact terminal-setting restoration passed |
+| Generated schemas/OpenAPI | Drift check, reference resolution, schema validation and actual offline API response validation passed |
+| Dependency inventory | 273 workspace/registry packages recorded; offline drift check passed |
 | Markdown local-link check | No missing targets |
 | Phase plan files | Eight separate Markdown files |
 
-Environment: Linux, Rust/Cargo 1.98.1. Registry dependencies were already cached; the local build did not require a download. `Cargo.lock` records the resolved versions.
+Environment: Linux, Rust/Cargo 1.98.1. The pinned toolchain components and schema-generation/test dependencies were downloaded for this milestone; checks run offline after fetching. `Cargo.lock` records resolved versions. Supported OS and compatibility rules are in the [foundation handoff](engineering/foundation.md). The initial [GitHub clean CI run](https://github.com/SampleBias/Jev_Onco_Nexus/actions/runs/35661300018) passed; the 0.2.0 run is recorded after pushing this milestone.
 
 ## Not yet verified or implemented
 

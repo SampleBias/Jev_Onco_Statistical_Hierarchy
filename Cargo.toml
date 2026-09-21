@@ -3,9 +3,10 @@ members = ["crates/nexus-core", "crates/nexus-jev", "crates/nexus-app"]
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 publish = false
+rust-version = "1.98.1"
 
 [workspace.dependencies]
 serde = { version = "1", features = ["derive"] }
@@ -16,3 +17,4 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "time",
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 axum = "0.8"
 clap = { version = "4", features = ["derive"] }
+schemars = "=1.2.2"

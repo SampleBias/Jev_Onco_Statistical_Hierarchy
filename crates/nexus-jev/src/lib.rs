@@ -68,5 +68,5 @@ pub async fn classify(case: &Case, key: &str) -> Result<ResultRecord, Error> {
         bytes.extend_from_slice(&chunk);
     }
     let response: JevResponse = serde_json::from_slice(&bytes).map_err(|_| Error::Response)?;
-    Ok(interpret(case, response, Source::Jev)?)
+    interpret(case, response, Source::Jev).map_err(|_| Error::Response)
 }

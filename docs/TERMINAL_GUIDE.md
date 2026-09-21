@@ -46,6 +46,7 @@ Use a normal editor to change case JSON, then reload. Path dialogs accept litera
 | `nexus example` | Print a complete synthetic case template |
 | `nexus doctor` | Report local readiness and key presence without exposing credentials or contacting Jev |
 | `nexus taxonomy` | List all development taxonomy outcomes |
+| `nexus schema KIND` | Print `case`, `jev-request`, `jev-response`, `result`, `error` JSON Schema or `openapi` |
 | `nexus validate CASE` | Validate JSON and report case ID/finding count |
 | `nexus prepare CASE` | Print the exact request without sending it |
 | `nexus demo [CASE]` | Offline mock; defaults to bundled example |
@@ -55,6 +56,10 @@ Use a normal editor to change case JSON, then reload. Path dialogs accept litera
 | `nexus serve [--port 3000]` | Run offline loopback HTTP endpoints |
 
 `--help` works on each command; `--version` reports the package version. JSON is the default output for scripts. `--format text` displays a readable summary/table for validation, taxonomy, results and diagnostics. Templates and request previews remain JSON in either mode. Diagnostics go to stderr and do not contaminate stdout. Successful commands exit 0, application errors exit 1, and invalid CLI arguments exit 2.
+
+In 0.2.0, JSON-mode failures use a stable envelope on stderr, for example `{"error":{"code":"invalid_json","message":"input does not match the JSON schema"}}`. Scripts should inspect `error.code`; readable wording may change. Invalid arguments use `invalid_arguments` and never echo submitted values. Help/version remain readable text. See [contracts and compatibility](engineering/foundation.md).
+
+To inspect import requirements before writing an importer, run `./target/debug/nexus schema case`. To inspect the offline routes, run `./target/debug/nexus schema openapi`. Result exports now include both case revision and provider request fingerprints, and explicitly mark unverified replay scores.
 
 ## Files, pipes and exports
 

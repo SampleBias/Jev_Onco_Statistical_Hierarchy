@@ -1,40 +1,105 @@
 use axum::{
     Json, Router,
-    extract::DefaultBodyLimit,
+    extract::{DefaultBodyLimit, rejection::JsonRejection},
     http::StatusCode,
     routing::{get, post},
 };
+use nexus_core::errors::{ErrorCode, ErrorEnvelope};
 use nexus_core::{Case, MAX_CASE_BYTES, Source, interpret, mock_response, prepare};
-use serde_json::{Value, json};
+use schemars::JsonSchema;
+use serde::Serialize;
 
+pub mod contracts;
+pub mod errors;
 pub mod tui;
 pub mod workflows;
 
-type ApiError = (StatusCode, Json<Value>);
-fn invalid(message: &str) -> ApiError {
+#[derive(Serialize, JsonSchema)]
+pub struct HealthResponse {
+    pub status: &'static str,
+    pub mode: &'static str,
+    pub live_classification: bool,
+}
+
+#[derive(Serialize, JsonSchema)]
+pub struct PreparedResponse {
+    pub research_only: bool,
+    pub sends_to_provider: bool,
+    pub request: nexus_core::JevRequest,
+}
+
+type ApiError = (StatusCode, Json<ErrorEnvelope>);
+
+fn decode(case: Result<Json<Case>, JsonRejection>) -> Result<Case, ApiError> {
+    case.map(|Json(case)| case).map_err(|e| {
+        let (status, code) = match e.status() {
+            StatusCode::PAYLOAD_TOO_LARGE => {
+                (StatusCode::PAYLOAD_TOO_LARGE, ErrorCode::InputTooLarge)
+            }
+            StatusCode::UNSUPPORTED_MEDIA_TYPE => (
+                StatusCode::UNSUPPORTED_MEDIA_TYPE,
+                ErrorCode::UnsupportedMediaType,
+            ),
+            StatusCode::UNPROCESSABLE_ENTITY => {
+                (StatusCode::UNPROCESSABLE_ENTITY, ErrorCode::InvalidJson)
+            }
+            _ => (StatusCode::BAD_REQUEST, ErrorCode::InvalidJson),
+        };
+        (status, Json(ErrorEnvelope::new(code)))
+    })
+}
+
+fn invalid(error: nexus_core::ValidationError) -> ApiError {
     (
         StatusCode::UNPROCESSABLE_ENTITY,
-        Json(json!({"error": message})),
+        Json(ErrorEnvelope::invalid_case(error)),
     )
 }
 
 pub fn router() -> Router {
     Router::new()
-        .route("/health", get(|| async { Json(json!({"status": "ok", "mode": "offline_research", "live_classification": false})) }))
+        .route(
+            "/health",
+            get(|| async {
+                Json(HealthResponse {
+                    status: "ok",
+                    mode: "offline_research",
+                    live_classification: false,
+                })
+            }),
+        )
         .route("/v1/prepare", post(prepare_case))
         .route("/v1/demo", post(demo_case))
+        .fallback(|| async {
+            (
+                StatusCode::NOT_FOUND,
+                Json(ErrorEnvelope::new(ErrorCode::NotFound)),
+            )
+        })
+        .method_not_allowed_fallback(|| async {
+            (
+                StatusCode::METHOD_NOT_ALLOWED,
+                Json(ErrorEnvelope::new(ErrorCode::MethodNotAllowed)),
+            )
+        })
         .layer(DefaultBodyLimit::max(MAX_CASE_BYTES))
 }
 
-async fn prepare_case(Json(case): Json<Case>) -> Result<Json<Value>, ApiError> {
-    let request = prepare(&case).map_err(|e| invalid(&e.to_string()))?;
-    Ok(Json(
-        json!({"research_only": true, "sends_to_provider": false, "request": request}),
-    ))
+async fn prepare_case(
+    input: Result<Json<Case>, JsonRejection>,
+) -> Result<Json<PreparedResponse>, ApiError> {
+    let request = prepare(&decode(input)?).map_err(invalid)?;
+    Ok(Json(PreparedResponse {
+        research_only: true,
+        sends_to_provider: false,
+        request,
+    }))
 }
 
-async fn demo_case(Json(case): Json<Case>) -> Result<Json<nexus_core::ResultRecord>, ApiError> {
-    interpret(&case, mock_response(), Source::Mock)
+async fn demo_case(
+    input: Result<Json<Case>, JsonRejection>,
+) -> Result<Json<nexus_core::ResultRecord>, ApiError> {
+    interpret(&decode(input)?, mock_response(), Source::Mock)
         .map(Json)
-        .map_err(|e| invalid(&e.to_string()))
+        .map_err(invalid)
 }

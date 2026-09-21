@@ -1,5 +1,6 @@
 use crate::workflows::{self, AppError};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use nexus_core::errors::{ErrorCode, ErrorEnvelope};
 use nexus_core::{Case, DataClass, ResultRecord, prepare};
 use ratatui::{
     Frame,
@@ -101,7 +102,9 @@ impl App {
         let case = self.case.clone();
         self.result = None;
         self.pending = Some(tokio::spawn(async move {
-            workflows::classify(&case).await.map_err(|e| e.to_string())
+            workflows::classify(&case)
+                .await
+                .map_err(|e| crate::errors::envelope(&e).to_string())
         }));
         self.select_tab(2);
         self.message(
@@ -401,10 +404,7 @@ impl Drop for RestoreTerminal {
 
 pub async fn run(path: Option<PathBuf>) -> Result<(), AppError> {
     if !std::io::stdin().is_terminal() || !std::io::stdout().is_terminal() {
-        return Err(
-            "TUI requires an interactive terminal; use 'nexus demo --format text' in scripts"
-                .into(),
-        );
+        return Err(ErrorEnvelope::new(ErrorCode::TerminalRequired).into());
     }
     let mut app = App::new(path)?;
     let _restore = RestoreTerminal;

@@ -1,0 +1,95 @@
+{
+  "$defs": {
+    "Answer": {
+      "oneOf": [
+        {
+          "properties": {
+            "choice": {
+              "type": "string"
+            },
+            "confidence": {
+              "format": "double",
+              "type": "number"
+            },
+            "probabilities": {
+              "additionalProperties": {
+                "format": "double",
+                "type": "number"
+              },
+              "type": "object"
+            },
+            "type": {
+              "const": "choice",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "choice",
+            "probabilities",
+            "confidence"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "noul": {
+              "format": "double",
+              "type": "number"
+            },
+            "type": {
+              "const": "noul",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "noul"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "Usage": {
+      "properties": {
+        "input_tokens": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "output_tokens": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "input_tokens",
+        "output_tokens"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "answers": {
+      "additionalProperties": {
+        "$ref": "#/$defs/Answer"
+      },
+      "type": "object"
+    },
+    "model": {
+      "type": "string"
+    },
+    "usage": {
+      "$ref": "#/$defs/Usage"
+    }
+  },
+  "required": [
+    "model",
+    "answers",
+    "usage"
+  ],
+  "title": "JevResponse",
+  "type": "object"
+}

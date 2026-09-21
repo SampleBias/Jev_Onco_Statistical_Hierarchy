@@ -166,9 +166,69 @@ fn request_hash_tracks_evidence_but_not_local_case_identifier() {
     c.case_id = "ANOTHER-ID".into();
     let second = interpret(&c, strong_response(), Source::Jev).unwrap();
     assert_eq!(first.request_sha256, second.request_sha256);
+    assert_ne!(first.case_revision_sha256, second.case_revision_sha256);
     c.findings[0].value = "different evidence".into();
     let third = interpret(&c, strong_response(), Source::Jev).unwrap();
     assert_ne!(first.request_sha256, third.request_sha256);
+    assert_ne!(second.case_revision_sha256, third.case_revision_sha256);
+}
+
+#[test]
+fn case_revision_ignores_source_json_formatting_but_preserves_evidence_order() {
+    let original = case();
+    let pretty = serde_json::to_string_pretty(&original).unwrap();
+    let compact = serde_json::to_string(&serde_json::to_value(&original).unwrap()).unwrap();
+    let pretty: Case = serde_json::from_str(&pretty).unwrap();
+    let compact: Case = serde_json::from_str(&compact).unwrap();
+    assert_eq!(
+        provenance::case_revision(&pretty).unwrap(),
+        provenance::case_revision(&compact).unwrap()
+    );
+    let mut reordered = original.clone();
+    reordered.findings.reverse();
+    assert_ne!(
+        provenance::case_revision(&original).unwrap(),
+        provenance::case_revision(&reordered).unwrap()
+    );
+    reordered = original.clone();
+    reordered.data_class = DataClass::DeidentifiedResearch;
+    assert_ne!(
+        provenance::case_revision(&original).unwrap(),
+        provenance::case_revision(&reordered).unwrap()
+    );
+    assert_eq!(
+        provenance::request_sha256(&prepare(&original).unwrap()).unwrap(),
+        provenance::request_sha256(&prepare(&reordered).unwrap()).unwrap()
+    );
+}
+
+#[test]
+fn provider_request_fingerprint_preserves_initial_wire_contract() {
+    assert_eq!(
+        provenance::request_sha256(&prepare(&case()).unwrap()).unwrap(),
+        "86189ed162901f0bc8a8b5475f74a2d04161edcb7d40b9da5a874dd7d926264c"
+    );
+    let replay = interpret(&case(), mock_response(), Source::Replay).unwrap();
+    assert_eq!(replay.result_schema_version, 1);
+    assert_eq!(replay.fingerprint_version, "typed-json-sha256-v1");
+    assert_eq!(replay.probability_kind, "unverified_replay_distribution");
+}
+
+#[test]
+fn serialized_budget_and_utf8_byte_limits_are_enforced() {
+    let mut c = case();
+    c.findings[0].value = "é".repeat(513);
+    assert!(c.validate().is_err());
+    c = case();
+    let finding = c.findings[0].clone();
+    c.findings = (0..20)
+        .map(|i| Finding {
+            id: format!("F{i}"),
+            value: "x".repeat(1024),
+            ..finding.clone()
+        })
+        .collect();
+    assert!(c.validate().unwrap_err().0.contains("byte budget"));
 }
 
 #[test]

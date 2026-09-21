@@ -1,0 +1,67 @@
+{
+  "$defs": {
+    "Question": {
+      "oneOf": [
+        {
+          "properties": {
+            "criteria": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "instructions": {
+              "type": "string"
+            },
+            "type": {
+              "const": "choice",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "instructions",
+            "criteria"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "instructions": {
+              "type": "string"
+            },
+            "type": {
+              "const": "noul",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "instructions"
+          ],
+          "type": "object"
+        }
+      ]
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "model": {
+      "type": "string"
+    },
+    "questions": {
+      "additionalProperties": {
+        "$ref": "#/$defs/Question"
+      },
+      "type": "object"
+    },
+    "state": true
+  },
+  "required": [
+    "model",
+    "state",
+    "questions"
+  ],
+  "title": "JevRequest",
+  "type": "object"
+}

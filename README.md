@@ -4,7 +4,7 @@ A Rust research prototype for evaluating **Jev as a cancer-of-unknown-primary (C
 
 Jev is the sole classifier in the rebuild. The development scope covers data preparation, Jev integration, evaluation/calibration and evidence review; the original classifier, its model artifacts and its explanation tooling are excluded.
 
-**Current status:** working CLI and interactive TUI, offline HTTP API, synthetic fixture, Jev REST adapter, and developer roadmap. No cancer-specific accuracy or calibration has been established. The demo is a uniform mock distribution, not a prediction. Live inference currently accepts synthetic cases only.
+**Current status (0.2.0):** Phase 00 research/scope drafts and Phase 01 Rust foundation are implemented, with a working CLI/TUI, generated contracts, structured errors, provenance, offline HTTP API and synthetic Jev adapter. Clinical/data review and live provider verification remain pending. No cancer-specific accuracy or calibration has been established. The demo is a uniform mock distribution, not a prediction. Live inference currently accepts synthetic cases only.
 
 ## Read first
 
@@ -14,11 +14,14 @@ Jev is the sole classifier in the rebuild. The development scope covers data pre
 - [Jev capabilities and suitability assessment](docs/assessment/JEV.md)
 - [Architecture and data contracts](docs/ARCHITECTURE.md)
 - [Build status and verified limitations](docs/BUILD_STATUS.md)
+- [Intended use and open review decisions](docs/product/intended-use.md)
+- [Foundation handoff and compatibility rules](docs/engineering/foundation.md)
+- [Generated JSON Schemas and OpenAPI](contracts/README.md)
 - [Evidence and official sources](docs/SOURCES.md)
 
 ## Run
 
-Use a current stable Rust toolchain with Cargo, rustfmt, clippy, and a system C compiler. Development was checked with Rust 1.98.1. Cargo needs registry access on a fresh machine; after dependencies are cached, the following also work with `--offline`.
+Use the pinned Rust 1.98.1 toolchain with Cargo, rustfmt, clippy, and a system C compiler on Linux. Cargo needs registry access on a fresh machine; after dependencies are cached, the following also work with `--offline`.
 
 ```bash
 cargo build --workspace --locked
@@ -65,6 +68,7 @@ curl --fail-with-body http://127.0.0.1:3000/v1/demo \
 | `status` | `abstained` or `review_required`; never an autonomous diagnosis |
 | `calibration_status` | Currently `not_validated_for_cup` |
 | `source` | `jev`, `mock`, or `replay` |
+| `case_revision_sha256` / `request_sha256` | Versioned fingerprints of the full case and provider request; these do not authenticate replayed responses |
 
 The prototype taxonomy is illustrative: 12 broad origin groups plus `other_origin` and `insufficient_evidence`. It mixes broad sites and one lineage category and needs specialist review before cohort evaluation. It is not OncoNPC's validated label set.
 
@@ -80,6 +84,6 @@ Tests cover input limits, label leakage through undeclared fields, provider cont
 
 ## Next implementation milestone
 
-Complete [Phase 00](docs/phases/00-scope-and-feasibility.md), then extend the scaffold through [Phase 01](docs/phases/01-rust-foundation.md) and [Phase 02](docs/phases/02-data-import-and-evidence.md). The most consequential next step is a small, labeled, correctly masked case cohort to measure whether Jev can infer origin from the evidence available to this project.
+Next is [Phase 02](docs/phases/02-data-import-and-evidence.md): synthetic JSONL/CSV imports, evidence normalization, provenance and quality reports for CLI/TUI workflows. [Phase 00](docs/phases/00-scope-and-feasibility.md) clinical/data decisions remain open; [Phase 01](docs/phases/01-rust-foundation.md) supplies the engineering contracts. A small, labeled, correctly masked cohort is still needed to measure whether Jev can infer origin from this project's evidence.
 
 The upstream repository was inspected at commit `ee8069cdaaf997721cb071dffe1cb243651a5f56`. Its source was not copied into this implementation. Its GPL-2.0 license and the provenance of any future reused data-processing code or datasets must remain tracked; no distribution license has been selected for this new scaffold yet.

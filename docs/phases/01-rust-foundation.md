@@ -1,6 +1,6 @@
 # Phase 01 — Rust foundation and contracts
 
-Status: initial implementation delivered; hardening tasks remain. Lead: Rust backend engineer. Reviewers: technical lead and QA. Estimate: 4–7 person-days. Depends on: Phase 00 scope draft. Unlocks: ingestion, provider integration and mock UI development.
+Status: foundation implementation delivered in 0.2.0; acceptance evidence is tracked in the [build status](../BUILD_STATUS.md), with human technical/QA review pending. Lead: Rust backend engineer. Reviewers: technical lead and QA. Estimate: 4–7 person-days. Depends on: Phase 00 scope draft. Unlocks: synthetic ingestion, provider integration and mock UI development.
 
 ## Outcome
 
@@ -14,7 +14,7 @@ A reproducible workspace and a small stable contract between imports, Jev and th
 - Ratatui TUI: evidence/request/results/help views, open/reload, demo/live actions, scrolling, JSON exports and terminal restoration.
 - Synthetic example, offline API tests, model-contract tests, `Cargo.lock`, formatting/lint/test CI definition.
 
-## Remaining work packages
+## Work packages
 
 | ID | Owner | Task and concrete output |
 | --- | --- | --- |
@@ -26,6 +26,19 @@ A reproducible workspace and a small stable contract between imports, Jev and th
 | P01-06 | Platform | Select a reproducible toolchain/MSRV, supported OS targets and dependency-update policy; test a clean machine build |
 | P01-07 | QA | Pin CI action revisions and add dependency/license inventory consistent with the project's eventual distribution choice |
 | P01-08 | Technical lead | Publish module ownership and contract-change rules; require schema/version bumps for incompatible changes |
+
+## Implementation evidence
+
+- P01-01: generated [JSON Schemas and OpenAPI](../../contracts/README.md), `nexus schema`, schema validation and artifact drift tests.
+- P01-02: separate domain, provider, prompt, taxonomy, policy, provenance, error and schema modules; gate constants in `policy.rs`.
+- P01-03: typed error codes/envelopes for CLI and HTTP, sanitized parser/provider failures, JSON routing/method/body-limit failures.
+- P01-04: CLI/API byte-boundary and trailing-JSON tests; TUI failed-open tests preserve the prior case/result; existing navigation/export tests retained.
+- P01-05: result schema version, case revision and exact request fingerprints; [serialization contract and replay limits](../engineering/foundation.md).
+- P01-06: Rust 1.98.1 toolchain/MSRV and Linux support policy; clean CI builds the locked workspace. See the linked build evidence for the current run.
+- P01-07: pinned action commits, read-only CI token permission, generated [dependency/license declarations](../engineering/dependencies.json) and drift check.
+- P01-08: [module ownership, compatibility, dependency and version rules](../engineering/foundation.md).
+
+The recorded handoff is the runnable CLI/TUI demo in [the terminal guide](../TERMINAL_GUIDE.md) and automated validation evidence. No clinical signoff or live provider measurement is implied by this engineering milestone.
 
 ## Interfaces and behavior
 
