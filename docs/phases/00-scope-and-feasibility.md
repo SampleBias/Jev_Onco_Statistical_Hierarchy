@@ -1,6 +1,21 @@
 # Phase 00 — Scope and feasibility
 
-Status: source audit and initial Jev research delivered; product/clinical decisions remain open. Leads: technical lead and clinical/pathology lead. Estimate: 3–5 person-days. Dependencies: none. Unlocks: Phase 01 contracts and Phase 02 cohort acquisition.
+Status: engineering scope and feasibility drafts delivered; product/clinical review and live access remain open. Leads: technical lead and clinical/pathology lead. Estimate: 3–5 person-days. Dependencies: none. Unlocks: Phase 01 contracts and synthetic Phase 02 imports.
+
+## Delivered artifacts and pending review
+
+| Work package | Evidence | Status |
+| --- | --- | --- |
+| P00-01 | [Source audit](../assessment/OPEN_NEXUS.md) | Delivered |
+| P00-02 | [Intended use and field meanings](../product/intended-use.md) | Draft delivered; product/clinical approval pending |
+| P00-03 | [Versioned prototype dictionary](../product/taxonomy.md) | Draft delivered; clinical inclusions/exclusions and ontology mappings pending |
+| P00-04 | [Data inventory and required manifest](../data/inventory.md) | Local inventory delivered; real source/release/counts/access pending |
+| P00-05 | [Feasibility protocol](../evaluation/feasibility-protocol.md) | Draft delivered; cohort size and reviewed scientific gates pending |
+| P00-06 | Synthetic live contract smoke | Pending credentials/access; no live verification claimed |
+| P00-07 | Dataset/provider external-processing decision | Pending data steward; live adapter remains synthetic-only |
+| P00-08 | [Architecture and provenance decisions](../product/decisions.md) | User scope decisions recorded; owner/reviewer assignment pending |
+
+Engineering can proceed with synthetic fixtures. Phase 00 as a whole is **not signed off**; these artifacts make the remaining decisions reviewable.
 
 ## Outcome
 
