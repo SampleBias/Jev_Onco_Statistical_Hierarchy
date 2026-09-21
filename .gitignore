@@ -1,0 +1,11 @@
+/target/
+/.cargo-cache/
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+/.agents/
+/.codex/
+/data/
+/results/

@@ -1,0 +1,12 @@
+[package]
+name = "nexus-jev"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+nexus-core = { path = "../nexus-core" }
+reqwest.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
