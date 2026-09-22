@@ -1,0 +1,30 @@
+[package]
+name = "josh-app"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "josh"
+path = "src/main.rs"
+
+[dependencies]
+josh-core = { path = "../josh-core" }
+josh-jev = { path = "../josh-jev" }
+josh-ingest = { path = "../josh-ingest" }
+serde.workspace = true
+serde_json.workspace = true
+clap.workspace = true
+tokio.workspace = true
+axum.workspace = true
+schemars.workspace = true
+thiserror.workspace = true
+ratatui = { version = "0.30.2", default-features = false, features = ["crossterm_0_29", "unstable-rendered-line-info"] }
+crossterm = "0.29"
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+tempfile = "3"
+jsonschema = { version = "=0.56.0", default-features = false }

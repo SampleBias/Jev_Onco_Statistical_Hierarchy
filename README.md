@@ -1,15 +1,16 @@
-# Jev Onco Nexus
+# Jev Onco Statistical Hierarchy (JOSH)
 
 A Rust research prototype for evaluating **Jev as a cancer-of-unknown-primary (CUP) origin classifier**. Imported observations become structured case evidence; Jev ranks a versioned set of origins; Rust validates the answer and decides whether to abstain or send it for review.
 
 Jev is the sole classifier in the rebuild. The development scope covers data preparation, Jev integration, evaluation/calibration and evidence review; the original classifier, its model artifacts and its explanation tooling are excluded.
 
-**Current status (0.3.0):** working CLI/TUI, JSON/JSONL/CSV/TSV evidence imports, source provenance, quality reports, patient-group partitions, generated contracts, offline HTTP API and synthetic Jev adapter. Phase 02 structured imports are delivered; raw GENIE mapping, clinical/data review and live provider verification remain pending. No cancer-specific accuracy or calibration has been established. The demo is a uniform mock distribution, not a prediction. Live inference currently accepts synthetic cases only.
+**Current status (0.4.0):** adds themed Ratatui visualizations, schema 3 clinical context, a local source-linked subset of NICE CG104 review rules, and versioned review-note exports to the existing import/classifier workbench. Clinical signoff, raw GENIE mapping and live provider verification remain pending. No cancer-specific accuracy or calibration has been established. The demo is a uniform mock distribution, not a prediction. Live inference currently accepts synthetic cases only.
 
 ## Read first
 
 - [Developer roadmap and phase index](docs/PLAN.md)
 - [CLI and TUI user guide](docs/TERMINAL_GUIDE.md)
+- [Visualizations, NICE rule coverage and clinical review guide](docs/CLINICAL_REVIEW_GUIDE.md)
 - [Batch import formats and migration guide](docs/data/IMPORT_GUIDE.md)
 - [Open_Nexus source audit and existing ML inventory](docs/assessment/OPEN_NEXUS.md)
 - [Jev capabilities and suitability assessment](docs/assessment/JEV.md)
@@ -26,26 +27,37 @@ Use the pinned Rust 1.98.1 toolchain with Cargo, rustfmt, clippy, and a system C
 
 ```bash
 cargo build --workspace --locked
-cargo run --locked --bin nexus -- tui
-cargo run --locked --bin nexus -- doctor --format text
-cargo run --locked --bin nexus -- validate fixtures/synthetic-case.json
-cargo run --locked --bin nexus -- prepare fixtures/synthetic-case.json
-cargo run --locked --bin nexus -- demo fixtures/synthetic-case.json
+cargo run --locked --bin josh -- tui
+cargo run --locked --bin josh -- doctor --format text
+cargo run --locked --bin josh -- validate fixtures/synthetic-case.json
+cargo run --locked --bin josh -- prepare fixtures/synthetic-case.json
+cargo run --locked --bin josh -- demo fixtures/synthetic-case.json
 ```
 
 `prepare` prints the exact request without sending it. `demo` always abstains and returns `source: mock`. The example is invented and has no ground-truth origin. Do not interpret its distribution as medical evidence.
 
-The TUI opens a bundled example and provides Evidence, Request, Results and Help views. Press `o` to open case JSON, `d` for a demo, `c` for a live synthetic call, `s` to export JSON, and `q` to quit. `Tab` changes views; arrows or `j`/`k` scroll. Live calls require confirmation inside the TUI.
+The TUI opens a bundled synthetic clinical example. Press `6` for Visuals (left/right cycles score bars, IHC matrix, pathway, timeline and evidence counts), `7` for NICE Guidance, and `8` for clinical context/review history. Evidence, Request, Results, Help and Import remain on `1`–`5`. Press `d` for a labeled offline mock. Clinical stages are clinician-recorded, never inferred from model scores.
 
-The CLI supports `--format text`, `--output NEW_FILE`, stdin via `-`, `--help`, and `--version`. `nexus example` prints a case template; `nexus demo` works with no input file. Exports never overwrite an existing file. See the [terminal guide](docs/TERMINAL_GUIDE.md) for all commands and keys.
+On Guidance, `a` records a reasoned local review; **8 then s** saves the complete case to a new file. `o` opens case JSON, `c` requests a confirmed live synthetic call, and `q` quits (asking before discarding unsaved reviews). Full controls and clinical limitations are in the [clinical review guide](docs/CLINICAL_REVIEW_GUIDE.md).
+
+The CLI supports `--format text`, `--output NEW_FILE`, stdin via `-`, `--help`, and `--version`. `josh example` prints a case template; `josh demo` works with no input file. Exports never overwrite an existing file. See the [terminal guide](docs/TERMINAL_GUIDE.md) for all commands and keys.
+
+```bash
+./target/debug/josh example --clinical --output /tmp/josh-clinical.json
+./target/debug/josh guidance /tmp/josh-clinical.json --format text
+```
+
+Guidance runs offline without a key. It preserves unknowns, records contextual investigation
+and MDT prompts, and reflects NICE's withdrawn 2023 gene-expression restrictions.
+It is a documented subset, not a complete guideline or a clinically validated decision system.
 
 To try batch evidence import and browse its three synthetic cases:
 
 ```bash
 mkdir -p results
-./target/debug/nexus import fixtures/import/synthetic-findings.csv \
+./target/debug/josh import fixtures/import/synthetic-findings.csv \
   --input-format csv --source-id synthetic-v1 --out-dir results/import-001 --format text
-./target/debug/nexus tui --batch results/import-001
+./target/debug/josh tui --batch results/import-001
 ```
 
 Use `[`/`]` to browse cases and `5` for quality. Import runs locally, preserves labels in a separate file and reports rejected records. Choose a new output directory for each run; exit code 3 means some or all records were rejected. See the [import guide](docs/data/IMPORT_GUIDE.md) for all formats and limits.
@@ -53,7 +65,7 @@ Use `[`/`]` to browse cases and `5` for quality. Import runs locally, preserves 
 For a live request, provide a TypeSafe key through the process environment or your secret manager, then run:
 
 ```bash
-cargo run --locked --bin nexus -- classify fixtures/synthetic-case.json
+cargo run --locked --bin josh -- classify fixtures/synthetic-case.json
 ```
 
 This requires `TYPESAFE_API_KEY` and sends the synthetic findings to `https://api.typesafe.ai/v1/systemone`. The pinned model is `jev-1.13.0`. No live provider call has been verified in this workspace. A `.env` file is **not** automatically loaded. Do not put keys in JSON, source code, browser code, or command arguments.
@@ -61,14 +73,14 @@ This requires `TYPESAFE_API_KEY` and sends the synthetic findings to `https://ap
 ## Local API
 
 ```bash
-cargo run --locked --bin nexus -- serve --port 3000
+cargo run --locked --bin josh -- serve --port 3000
 curl http://127.0.0.1:3000/health
 curl --fail-with-body http://127.0.0.1:3000/v1/demo \
   -H 'Content-Type: application/json' \
   --data-binary @fixtures/synthetic-case.json
 ```
 
-`POST /v1/prepare` accepts the same case and returns a request preview. The server binds to loopback, has a 16 KiB request limit, and exposes no live classification route. It has no persistence or authentication yet; it is a local developer service.
+`POST /v1/prepare` accepts the same case and returns a request preview; `POST /v1/guidance` returns the local clinical review report. The server binds to loopback, has a 16 KiB request limit, and exposes no live classification route. It has no persistence or authentication yet; it is a local developer service.
 
 ## Result semantics
 

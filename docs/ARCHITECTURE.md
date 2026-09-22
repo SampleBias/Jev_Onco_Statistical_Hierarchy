@@ -6,6 +6,9 @@ Status: design plus an implemented first slice. Jev is the sole classifier. Rust
 flowchart LR
     A[Case JSON / JSONL / normalized CSV and TSV] --> B[Rust validation and evidence preparation]
     B --> C[Versioned taxonomy and Jev questions]
+    B --> K[Local structured clinical context]
+    K --> L[Versioned NICE subset and review records]
+    L --> G
     C --> D[Hosted Jev]
     D --> E[Strict answer validation]
     E --> F[Raw distribution and abstention]
@@ -20,13 +23,13 @@ flowchart LR
 
 | Module | Status | Responsibility |
 | --- | --- | --- |
-| `nexus-core` | Implemented | Typed case/evidence, taxonomy, questions, result contract and abstention |
-| `nexus-jev` | Initial adapter implemented | Official endpoint, server-side key, HTTPS, timeouts, bounded response parsing |
-| `nexus-app` | CLI/TUI/offline API implemented | File workflows, Ratatui terminal workbench and loopback Axum service |
-| `nexus-ingest` | Structured imports implemented | Bounded JSON/JSONL/CSV/TSV import, schema migration, provenance, reports, labels and group partitions; raw GENIE mapper pending |
-| `nexus-eval` | Phase 04 | Cohort runs, metrics, calibration and artifact compatibility |
-| `nexus-store` | Phase 05 | PostgreSQL persistence, immutable runs and audit events via SQLx |
-| `nexus-web` | Phase 05 | Leptos Rust UI with Axum integration |
+| `josh-core` | Implemented | Typed evidence/clinical context, local NICE review, taxonomy, questions, result contract and abstention |
+| `josh-jev` | Initial adapter implemented | Official endpoint, server-side key, HTTPS, timeouts, bounded response parsing |
+| `josh-app` | CLI/TUI/offline API implemented | File workflows, Ratatui terminal workbench and loopback Axum service |
+| `josh-ingest` | Structured imports implemented | Bounded JSON/JSONL/CSV/TSV import, schema migration, provenance, reports, labels and group partitions; raw GENIE mapper pending |
+| `josh-eval` | Phase 04 | Cohort runs, metrics, calibration and artifact compatibility |
+| `josh-store` | Phase 05 | PostgreSQL persistence, immutable runs and audit events via SQLx |
+| `josh-web` | Phase 05 | Leptos Rust UI with Axum integration |
 
 Framework references: [Axum](https://docs.rs/axum/0.8.8/axum/), [Reqwest](https://docs.rs/reqwest/0.12.28/reqwest/), [Leptos](https://book.leptos.dev/), [SQLx](https://docs.rs/sqlx/latest/sqlx/). These are stack choices for this project; future modules are not installed or implemented yet.
 
@@ -44,9 +47,17 @@ Neither case schema accepts a free-form report document, raw mutation table, exp
 
 Schema 2 is now implemented alongside schema 1. It adds local patient/sample/institution/cutoff metadata, per-finding source ID/checksum/record/field references, observation status, units, assay, timepoint and reference build, plus an exclusive lower age bound. Import automatically migrates schema 1; absent patient grouping remains unassigned. It does not add raw genomic coordinate/allele normalization or assay coverage inference. The prepared state uses an explicit allowlist, excluding all local metadata, source locators and evaluation labels. See [import contracts and behavior](data/IMPORT_GUIDE.md).
 
+Schema 3 adds explicitly assessed stage/lineage, three-valued clinical feature
+semantics, investigation status/source/relative day, prognostic measurements and
+versioned review records. It retains schema 2 evidence and its provider prompt.
+The entire clinical object is excluded from provider state. Rules consume only local
+clinical assertions, never model output; reviews annotate but do not suppress rules.
+See [clinical coverage and safety boundaries](CLINICAL_REVIEW_GUIDE.md).
+All three versions remain accepted; v1/v2 serialization omits the new clinical field.
+
 ## Model contract
 
-The adapter pins `jev-1.13.0`. A request has one `primary_site` Choice and two independent Noul questions: `evidence_sufficient` and `conflicting_evidence`. They share observations, cannot read each other's answers, and never receive evaluation labels. Question wording, taxonomy and gate constants are centralized in `nexus-core` for review.
+The adapter pins `jev-1.13.0`. A request has one `primary_site` Choice and two independent Noul questions: `evidence_sufficient` and `conflicting_evidence`. They share observations, cannot read each other's answers, and never receive evaluation labels. Question wording, taxonomy and gate constants are centralized in `josh-core` for review.
 
 The result parser requires the expected model, exact question keys, answer variants, every taxonomy key, finite probabilities in [0,1], total mass within 1e-6 of one, and a chosen option with maximal mass. Malformed distributions are rejected, never repaired or silently renormalized. Add a measured precision tolerance only if provider contract tests show it is necessary.
 
@@ -62,7 +73,7 @@ Results already record case/request fingerprints; import bundles record source c
 
 ## Service behavior and boundaries
 
-The current server exposes `/health`, `/v1/prepare`, and `/v1/demo`. Live use is an explicit CLI operation or a confirmed TUI action and only accepts synthetic data. It uses a 5-second connection timeout, 20-second request timeout, 64 KiB response cap, and no redirects. Errors omit provider bodies and credentials. There are no automatic retries yet; reliability and idempotency are Phase 03 work.
+The current server exposes `/health`, `/v1/prepare`, `/v1/demo`, and offline `/v1/guidance`. Live use is an explicit CLI operation or a confirmed TUI action and only accepts synthetic data. It uses a 5-second connection timeout, 20-second request timeout, 64 KiB response cap, and no redirects. Errors omit provider bodies and credentials. There are no automatic retries yet; reliability and idempotency are Phase 03 work.
 
 No API key is embedded in a browser bundle. Phase 05 adds auth, storage and queued inference. Phase 06 establishes external deployment readiness. Do not expose this local prototype as a patient-facing service. There is no automated diagnosis, treatment recommendation, or report-signing path in the proposed initial product.
 

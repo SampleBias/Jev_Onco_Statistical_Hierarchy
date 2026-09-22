@@ -978,6 +978,64 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
+name = "josh-app"
+version = "0.4.0"
+dependencies = [
+ "axum",
+ "clap",
+ "crossterm",
+ "http-body-util",
+ "josh-core",
+ "josh-ingest",
+ "josh-jev",
+ "jsonschema",
+ "ratatui",
+ "schemars",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "tower",
+]
+
+[[package]]
+name = "josh-core"
+version = "0.4.0"
+dependencies = [
+ "schemars",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
+]
+
+[[package]]
+name = "josh-ingest"
+version = "0.4.0"
+dependencies = [
+ "csv",
+ "josh-core",
+ "schemars",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
+name = "josh-jev"
+version = "0.4.0"
+dependencies = [
+ "josh-core",
+ "reqwest",
+ "serde_json",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "js-sys"
 version = "0.3.105"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1155,64 +1213,6 @@ dependencies = [
  "log",
  "wasi",
  "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "nexus-app"
-version = "0.3.0"
-dependencies = [
- "axum",
- "clap",
- "crossterm",
- "http-body-util",
- "jsonschema",
- "nexus-core",
- "nexus-ingest",
- "nexus-jev",
- "ratatui",
- "schemars",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror",
- "tokio",
- "tower",
-]
-
-[[package]]
-name = "nexus-core"
-version = "0.3.0"
-dependencies = [
- "schemars",
- "serde",
- "serde_json",
- "sha2",
- "thiserror",
-]
-
-[[package]]
-name = "nexus-ingest"
-version = "0.3.0"
-dependencies = [
- "csv",
- "nexus-core",
- "schemars",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
- "thiserror",
-]
-
-[[package]]
-name = "nexus-jev"
-version = "0.3.0"
-dependencies = [
- "nexus-core",
- "reqwest",
- "serde_json",
- "thiserror",
- "tokio",
 ]
 
 [[package]]

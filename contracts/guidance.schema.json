@@ -21,37 +21,6 @@
       ],
       "type": "object"
     },
-    "CaseMetadata": {
-      "additionalProperties": false,
-      "properties": {
-        "evidence_cutoff": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "institution_id": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "patient_id": {
-          "description": "Local group ID for cohort partitioning; never sent to Jev.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "sample_id": {
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      },
-      "type": "object"
-    },
     "ClinicalContext": {
       "additionalProperties": false,
       "properties": {
@@ -240,14 +209,18 @@
           "default": "unassessed"
         }
       },
-      "type": "object"
-    },
-    "DataClass": {
-      "enum": [
-        "synthetic",
-        "deidentified_research"
+      "required": [
+        "assessment",
+        "stage",
+        "lineage",
+        "features",
+        "investigations",
+        "ecog_performance_status",
+        "ldh",
+        "albumin",
+        "reviews"
       ],
-      "type": "string"
+      "type": "object"
     },
     "DiagnosticStage": {
       "enum": [
@@ -259,66 +232,56 @@
       ],
       "type": "string"
     },
-    "EvidenceKind": {
-      "enum": [
-        "histology",
-        "ihc",
-        "molecular",
-        "clinical"
-      ],
-      "type": "string"
-    },
-    "Finding": {
-      "additionalProperties": false,
+    "GuidanceItem": {
       "properties": {
-        "id": {
-          "pattern": "^[A-Za-z0-9_-]{1,64}$",
+        "evidence": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "message": {
           "type": "string"
         },
-        "kind": {
-          "$ref": "#/$defs/EvidenceKind"
+        "recommendation": {
+          "type": "string"
         },
-        "name": {
-          "description": "Nonblank; limit is measured in UTF-8 bytes by the runtime validator.",
-          "maxLength": 128,
-          "minLength": 1,
-          "type": "string",
-          "x-maxUtf8Bytes": 128
-        },
-        "observation": {
+        "review": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Observation"
+              "$ref": "#/$defs/ReviewDecision"
             },
             {
               "type": "null"
             }
           ]
         },
-        "source": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/SourceReference"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "Local provenance. Excluded from the provider state."
+        "review_is_current": {
+          "type": "boolean"
         },
-        "value": {
-          "description": "Nonblank; limit is measured in UTF-8 bytes by the runtime validator.",
-          "maxLength": 1024,
-          "minLength": 1,
-          "type": "string",
-          "x-maxUtf8Bytes": 1024
+        "rule_id": {
+          "type": "string"
+        },
+        "source_url": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/Status"
+        },
+        "strength": {
+          "type": "string"
         }
       },
       "required": [
-        "id",
-        "kind",
-        "name",
-        "value"
+        "rule_id",
+        "recommendation",
+        "source_url",
+        "strength",
+        "status",
+        "message",
+        "evidence",
+        "review",
+        "review_is_current"
       ],
       "type": "object"
     },
@@ -360,6 +323,9 @@
       "required": [
         "kind",
         "status",
+        "day",
+        "result",
+        "reason",
         "source"
       ],
       "type": "object"
@@ -444,57 +410,10 @@
       "required": [
         "value",
         "units",
+        "day",
         "source"
       ],
       "type": "object"
-    },
-    "Observation": {
-      "additionalProperties": false,
-      "properties": {
-        "assay": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "reference_build": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "status": {
-          "$ref": "#/$defs/ObservationStatus"
-        },
-        "timepoint": {
-          "description": "Relative study timepoint; do not put direct identifiers here.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "units": {
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      },
-      "required": [
-        "status"
-      ],
-      "type": "object"
-    },
-    "ObservationStatus": {
-      "enum": [
-        "observed",
-        "positive",
-        "negative",
-        "equivocal",
-        "not_tested",
-        "unknown"
-      ],
-      "type": "string"
     },
     "ReviewAction": {
       "enum": [
@@ -538,155 +457,30 @@
       ],
       "type": "object"
     },
-    "SexAtBirth": {
+    "Status": {
       "enum": [
-        "female",
-        "male",
-        "intersex",
-        "unknown"
+        "needs_review",
+        "insufficient_information",
+        "not_applicable",
+        "recorded",
+        "pending",
+        "exception_recorded",
+        "blocked",
+        "conflict",
+        "information"
       ],
       "type": "string"
-    },
-    "SourceReference": {
-      "additionalProperties": false,
-      "properties": {
-        "field": {
-          "type": "string"
-        },
-        "record": {
-          "description": "One-based input record; CSV/TSV header is record 1. Not a physical line number.",
-          "format": "uint64",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "source_id": {
-          "type": "string"
-        },
-        "source_sha256": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "source_id",
-        "source_sha256",
-        "record",
-        "field"
-      ],
-      "type": "object"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "additionalProperties": false,
-  "allOf": [
-    {
-      "else": {
-        "properties": {
-          "age_lower_bound_exclusive": {
-            "type": "null"
-          },
-          "findings": {
-            "items": {
-              "properties": {
-                "observation": {
-                  "type": "null"
-                },
-                "source": {
-                  "type": "null"
-                }
-              }
-            }
-          },
-          "metadata": {
-            "type": "null"
-          }
-        }
-      },
-      "if": {
-        "properties": {
-          "schema_version": {
-            "minimum": 2
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "findings": {
-            "items": {
-              "properties": {
-                "observation": {
-                  "type": "object"
-                },
-                "source": {
-                  "type": "object"
-                }
-              },
-              "required": [
-                "source",
-                "observation"
-              ]
-            }
-          },
-          "metadata": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "metadata"
-        ]
-      }
-    },
-    {
-      "else": {
-        "properties": {
-          "clinical": {
-            "type": "null"
-          }
-        }
-      },
-      "if": {
-        "properties": {
-          "schema_version": {
-            "const": 3
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "clinical": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "clinical"
-        ]
-      }
-    }
-  ],
   "properties": {
-    "age_lower_bound_exclusive": {
-      "description": "Schema 2: preserve censored ages such as >89 without treating them as exact.",
-      "format": "uint8",
-      "maximum": 119,
-      "minimum": 0,
-      "type": [
-        "integer",
-        "null"
-      ]
-    },
-    "age_years": {
-      "format": "uint8",
-      "maximum": 120,
-      "minimum": 0,
-      "type": [
-        "integer",
-        "null"
-      ]
-    },
     "case_id": {
-      "pattern": "^[A-Za-z0-9_-]{1,64}$",
       "type": "string"
     },
-    "clinical": {
+    "case_revision_sha256": {
+      "type": "string"
+    },
+    "clinical_context": {
       "anyOf": [
         {
           "$ref": "#/$defs/ClinicalContext"
@@ -694,64 +488,70 @@
         {
           "type": "null"
         }
-      ],
-      "description": "Schema 3: clinician-recorded local context, excluded from Jev state."
-    },
-    "data_class": {
-      "$ref": "#/$defs/DataClass"
-    },
-    "findings": {
-      "description": "IDs must be unique. Runtime also limits serialized case size to 16384 bytes.",
-      "items": {
-        "$ref": "#/$defs/Finding"
-      },
-      "maxItems": 64,
-      "type": "array"
-    },
-    "metadata": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/CaseMetadata"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "description": "Schema 2 local metadata; never included in the provider state."
-    },
-    "schema_version": {
-      "format": "uint32",
-      "maximum": 3,
-      "minimum": 1,
-      "type": "integer"
-    },
-    "sex_at_birth": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/SexAtBirth"
-        },
-        {
-          "type": "null"
-        }
       ]
     },
-    "specimen_site": {
-      "description": "Biopsy site, not necessarily the primary origin. Nonblank when supplied.",
-      "maxLength": 128,
-      "minLength": 1,
-      "type": [
-        "string",
-        "null"
-      ],
-      "x-maxUtf8Bytes": 128
+    "guideline_last_reviewed": {
+      "type": "string"
+    },
+    "guideline_updated": {
+      "type": "string"
+    },
+    "implementation_review_status": {
+      "type": "string"
+    },
+    "items": {
+      "items": {
+        "$ref": "#/$defs/GuidanceItem"
+      },
+      "type": "array"
+    },
+    "limitations": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "lineage": {
+      "$ref": "#/$defs/Lineage"
+    },
+    "report_schema_version": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "research_only": {
+      "type": "boolean"
+    },
+    "review_basis_sha256": {
+      "type": "string"
+    },
+    "ruleset_version": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "stage": {
+      "$ref": "#/$defs/DiagnosticStage"
     }
   },
   "required": [
-    "schema_version",
+    "report_schema_version",
     "case_id",
-    "data_class",
-    "findings"
+    "case_revision_sha256",
+    "review_basis_sha256",
+    "ruleset_version",
+    "guideline_updated",
+    "guideline_last_reviewed",
+    "implementation_review_status",
+    "research_only",
+    "scope",
+    "stage",
+    "lineage",
+    "items",
+    "clinical_context",
+    "limitations"
   ],
-  "title": "Case",
+  "title": "GuidanceReport",
   "type": "object"
 }

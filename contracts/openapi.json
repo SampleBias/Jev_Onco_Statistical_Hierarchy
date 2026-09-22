@@ -3,6 +3,27 @@
     "schemas": {
       "Case": {
         "$defs": {
+          "Assessment": {
+            "additionalProperties": false,
+            "properties": {
+              "recorded_on": {
+                "description": "ISO calendar date, YYYY-MM-DD; local only.",
+                "type": "string"
+              },
+              "reviewer_id": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "reviewer_id",
+              "recorded_on",
+              "source"
+            ],
+            "type": "object"
+          },
           "CaseMetadata": {
             "additionalProperties": false,
             "properties": {
@@ -34,10 +55,210 @@
             },
             "type": "object"
           },
+          "ClinicalContext": {
+            "additionalProperties": false,
+            "properties": {
+              "albumin": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Case/$defs/Measurement"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "assessment": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Case/$defs/Assessment"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "ecog_performance_status": {
+                "default": null,
+                "format": "uint8",
+                "maximum": 4,
+                "minimum": 0,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "features": {
+                "additionalProperties": false,
+                "default": {},
+                "description": "An absent key is unknown, not false.",
+                "properties": {
+                  "adenocarcinoma": {
+                    "type": "boolean"
+                  },
+                  "ascites": {
+                    "type": "boolean"
+                  },
+                  "axillary_adenocarcinoma": {
+                    "type": "boolean"
+                  },
+                  "brain_only_after_workup": {
+                    "type": "boolean"
+                  },
+                  "breast_mdt_assessment_complete": {
+                    "type": "boolean"
+                  },
+                  "breast_primary_absent_after_standard_workup": {
+                    "type": "boolean"
+                  },
+                  "breast_primary_suggested": {
+                    "type": "boolean"
+                  },
+                  "cervical_lymphadenopathy": {
+                    "type": "boolean"
+                  },
+                  "cytology_confirmed": {
+                    "type": "boolean"
+                  },
+                  "extra_cervical_presentation": {
+                    "type": "boolean"
+                  },
+                  "fit_for_treatment": {
+                    "type": "boolean"
+                  },
+                  "further_investigations_complete": {
+                    "type": "boolean"
+                  },
+                  "germ_cell_presentation": {
+                    "type": "boolean"
+                  },
+                  "gi_primary_suggested": {
+                    "type": "boolean"
+                  },
+                  "hepatocellular_presentation": {
+                    "type": "boolean"
+                  },
+                  "histology_confirmed": {
+                    "type": "boolean"
+                  },
+                  "inguinal_only_squamous": {
+                    "type": "boolean"
+                  },
+                  "initial_workup_complete": {
+                    "type": "boolean"
+                  },
+                  "investigation_changes_management": {
+                    "type": "boolean"
+                  },
+                  "key_worker_assigned": {
+                    "type": "boolean"
+                  },
+                  "liver_metastases": {
+                    "type": "boolean"
+                  },
+                  "lytic_bone_lesions": {
+                    "type": "boolean"
+                  },
+                  "metastatic_disease": {
+                    "type": "boolean"
+                  },
+                  "negative_ent_panendoscopy": {
+                    "type": "boolean"
+                  },
+                  "ovarian_presentation": {
+                    "type": "boolean"
+                  },
+                  "pet_ct_discussed_with_cup_team": {
+                    "type": "boolean"
+                  },
+                  "prostate_presentation": {
+                    "type": "boolean"
+                  },
+                  "radical_treatment_possible": {
+                    "type": "boolean"
+                  },
+                  "specialist_review_complete": {
+                    "type": "boolean"
+                  },
+                  "stop_rationale_explained": {
+                    "type": "boolean"
+                  },
+                  "support_needs_addressed": {
+                    "type": "boolean"
+                  },
+                  "tissue_sampling_feasible": {
+                    "type": "boolean"
+                  },
+                  "understands_benefits_and_risks": {
+                    "type": "boolean"
+                  },
+                  "understands_investigation_purpose": {
+                    "type": "boolean"
+                  },
+                  "upper_mid_neck_squamous": {
+                    "type": "boolean"
+                  },
+                  "willing_to_accept_treatment": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              },
+              "investigations": {
+                "default": [],
+                "description": "Latest episode record per kind; earlier events remain in prior case revisions.",
+                "items": {
+                  "$ref": "#/components/schemas/Case/$defs/Investigation"
+                },
+                "maxItems": 32,
+                "type": "array"
+              },
+              "ldh": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Case/$defs/Measurement"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "lineage": {
+                "$ref": "#/components/schemas/Case/$defs/Lineage",
+                "default": "unknown"
+              },
+              "reviews": {
+                "default": [],
+                "items": {
+                  "$ref": "#/components/schemas/Case/$defs/ReviewDecision"
+                },
+                "maxItems": 32,
+                "type": "array"
+              },
+              "stage": {
+                "$ref": "#/components/schemas/Case/$defs/DiagnosticStage",
+                "default": "unassessed"
+              }
+            },
+            "type": "object"
+          },
           "DataClass": {
             "enum": [
               "synthetic",
               "deidentified_research"
+            ],
+            "type": "string"
+          },
+          "DiagnosticStage": {
+            "enum": [
+              "unassessed",
+              "muo",
+              "provisional_cup",
+              "confirmed_cup",
+              "primary_identified"
             ],
             "type": "string"
           },
@@ -104,6 +325,132 @@
             ],
             "type": "object"
           },
+          "Investigation": {
+            "additionalProperties": false,
+            "properties": {
+              "day": {
+                "description": "Days from one case-specific reference point; null means unknown.",
+                "format": "int32",
+                "maximum": 36500,
+                "minimum": -36500,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "kind": {
+                "$ref": "#/components/schemas/Case/$defs/InvestigationKind"
+              },
+              "reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "result": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "source": {
+                "type": "string"
+              },
+              "status": {
+                "$ref": "#/components/schemas/Case/$defs/InvestigationStatus"
+              }
+            },
+            "required": [
+              "kind",
+              "status",
+              "source"
+            ],
+            "type": "object"
+          },
+          "InvestigationKind": {
+            "enum": [
+              "history_examination",
+              "baseline_laboratory_tests",
+              "chest_xray",
+              "ct_chest_abdomen_pelvis",
+              "biopsy_histology",
+              "myeloma_screen",
+              "gi_endoscopy",
+              "mammography",
+              "breast_mri",
+              "pet_ct",
+              "afp",
+              "hcg",
+              "psa",
+              "ca125",
+              "testicular_ultrasound",
+              "ihc_panel",
+              "additional_ihc",
+              "ascites_tissue_sampling",
+              "cup_team",
+              "breast_mdt",
+              "head_neck_mdt",
+              "specialist_surgical_mdt",
+              "neuro_oncology_mdt",
+              "genomic_review"
+            ],
+            "type": "string"
+          },
+          "InvestigationStatus": {
+            "enum": [
+              "planned",
+              "pending",
+              "completed",
+              "declined",
+              "not_indicated",
+              "contraindicated"
+            ],
+            "type": "string"
+          },
+          "Lineage": {
+            "enum": [
+              "unknown",
+              "carcinoma",
+              "neuroendocrine",
+              "melanoma",
+              "lymphoma",
+              "sarcoma",
+              "germ_cell",
+              "other"
+            ],
+            "type": "string"
+          },
+          "Measurement": {
+            "additionalProperties": false,
+            "properties": {
+              "day": {
+                "format": "int32",
+                "maximum": 36500,
+                "minimum": -36500,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "source": {
+                "type": "string"
+              },
+              "units": {
+                "type": "string"
+              },
+              "value": {
+                "format": "double",
+                "minimum": 0,
+                "type": "number"
+              }
+            },
+            "required": [
+              "value",
+              "units",
+              "source"
+            ],
+            "type": "object"
+          },
           "Observation": {
             "additionalProperties": false,
             "properties": {
@@ -151,6 +498,48 @@
               "unknown"
             ],
             "type": "string"
+          },
+          "ReviewAction": {
+            "enum": [
+              "acknowledged",
+              "deferred",
+              "not_applicable",
+              "departed"
+            ],
+            "type": "string"
+          },
+          "ReviewDecision": {
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "$ref": "#/components/schemas/Case/$defs/ReviewAction"
+              },
+              "assessment": {
+                "$ref": "#/components/schemas/Case/$defs/Assessment"
+              },
+              "basis_sha256": {
+                "description": "Case hash excluding review history, so changed evidence invalidates a review.",
+                "type": "string"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "rule_id": {
+                "type": "string"
+              },
+              "ruleset_version": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "rule_id",
+              "ruleset_version",
+              "action",
+              "reason",
+              "assessment",
+              "basis_sha256"
+            ],
+            "type": "object"
           },
           "SexAtBirth": {
             "enum": [
@@ -218,7 +607,7 @@
             "if": {
               "properties": {
                 "schema_version": {
-                  "const": 2
+                  "minimum": 2
                 }
               }
             },
@@ -248,6 +637,32 @@
                 "metadata"
               ]
             }
+          },
+          {
+            "else": {
+              "properties": {
+                "clinical": {
+                  "type": "null"
+                }
+              }
+            },
+            "if": {
+              "properties": {
+                "schema_version": {
+                  "const": 3
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "clinical": {
+                  "type": "object"
+                }
+              },
+              "required": [
+                "clinical"
+              ]
+            }
           }
         ],
         "properties": {
@@ -274,6 +689,17 @@
             "pattern": "^[A-Za-z0-9_-]{1,64}$",
             "type": "string"
           },
+          "clinical": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Case/$defs/ClinicalContext"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Schema 3: clinician-recorded local context, excluded from Jev state."
+          },
           "data_class": {
             "$ref": "#/components/schemas/Case/$defs/DataClass"
           },
@@ -298,7 +724,7 @@
           },
           "schema_version": {
             "format": "uint32",
-            "maximum": 2,
+            "maximum": 3,
             "minimum": 1,
             "type": "integer"
           },
@@ -387,6 +813,563 @@
           "error"
         ],
         "title": "ErrorEnvelope",
+        "type": "object"
+      },
+      "GuidanceReport": {
+        "$defs": {
+          "Assessment": {
+            "additionalProperties": false,
+            "properties": {
+              "recorded_on": {
+                "description": "ISO calendar date, YYYY-MM-DD; local only.",
+                "type": "string"
+              },
+              "reviewer_id": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "reviewer_id",
+              "recorded_on",
+              "source"
+            ],
+            "type": "object"
+          },
+          "ClinicalContext": {
+            "additionalProperties": false,
+            "properties": {
+              "albumin": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/GuidanceReport/$defs/Measurement"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "assessment": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/GuidanceReport/$defs/Assessment"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "ecog_performance_status": {
+                "default": null,
+                "format": "uint8",
+                "maximum": 4,
+                "minimum": 0,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "features": {
+                "additionalProperties": false,
+                "default": {},
+                "description": "An absent key is unknown, not false.",
+                "properties": {
+                  "adenocarcinoma": {
+                    "type": "boolean"
+                  },
+                  "ascites": {
+                    "type": "boolean"
+                  },
+                  "axillary_adenocarcinoma": {
+                    "type": "boolean"
+                  },
+                  "brain_only_after_workup": {
+                    "type": "boolean"
+                  },
+                  "breast_mdt_assessment_complete": {
+                    "type": "boolean"
+                  },
+                  "breast_primary_absent_after_standard_workup": {
+                    "type": "boolean"
+                  },
+                  "breast_primary_suggested": {
+                    "type": "boolean"
+                  },
+                  "cervical_lymphadenopathy": {
+                    "type": "boolean"
+                  },
+                  "cytology_confirmed": {
+                    "type": "boolean"
+                  },
+                  "extra_cervical_presentation": {
+                    "type": "boolean"
+                  },
+                  "fit_for_treatment": {
+                    "type": "boolean"
+                  },
+                  "further_investigations_complete": {
+                    "type": "boolean"
+                  },
+                  "germ_cell_presentation": {
+                    "type": "boolean"
+                  },
+                  "gi_primary_suggested": {
+                    "type": "boolean"
+                  },
+                  "hepatocellular_presentation": {
+                    "type": "boolean"
+                  },
+                  "histology_confirmed": {
+                    "type": "boolean"
+                  },
+                  "inguinal_only_squamous": {
+                    "type": "boolean"
+                  },
+                  "initial_workup_complete": {
+                    "type": "boolean"
+                  },
+                  "investigation_changes_management": {
+                    "type": "boolean"
+                  },
+                  "key_worker_assigned": {
+                    "type": "boolean"
+                  },
+                  "liver_metastases": {
+                    "type": "boolean"
+                  },
+                  "lytic_bone_lesions": {
+                    "type": "boolean"
+                  },
+                  "metastatic_disease": {
+                    "type": "boolean"
+                  },
+                  "negative_ent_panendoscopy": {
+                    "type": "boolean"
+                  },
+                  "ovarian_presentation": {
+                    "type": "boolean"
+                  },
+                  "pet_ct_discussed_with_cup_team": {
+                    "type": "boolean"
+                  },
+                  "prostate_presentation": {
+                    "type": "boolean"
+                  },
+                  "radical_treatment_possible": {
+                    "type": "boolean"
+                  },
+                  "specialist_review_complete": {
+                    "type": "boolean"
+                  },
+                  "stop_rationale_explained": {
+                    "type": "boolean"
+                  },
+                  "support_needs_addressed": {
+                    "type": "boolean"
+                  },
+                  "tissue_sampling_feasible": {
+                    "type": "boolean"
+                  },
+                  "understands_benefits_and_risks": {
+                    "type": "boolean"
+                  },
+                  "understands_investigation_purpose": {
+                    "type": "boolean"
+                  },
+                  "upper_mid_neck_squamous": {
+                    "type": "boolean"
+                  },
+                  "willing_to_accept_treatment": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              },
+              "investigations": {
+                "default": [],
+                "description": "Latest episode record per kind; earlier events remain in prior case revisions.",
+                "items": {
+                  "$ref": "#/components/schemas/GuidanceReport/$defs/Investigation"
+                },
+                "maxItems": 32,
+                "type": "array"
+              },
+              "ldh": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/GuidanceReport/$defs/Measurement"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "lineage": {
+                "$ref": "#/components/schemas/GuidanceReport/$defs/Lineage",
+                "default": "unknown"
+              },
+              "reviews": {
+                "default": [],
+                "items": {
+                  "$ref": "#/components/schemas/GuidanceReport/$defs/ReviewDecision"
+                },
+                "maxItems": 32,
+                "type": "array"
+              },
+              "stage": {
+                "$ref": "#/components/schemas/GuidanceReport/$defs/DiagnosticStage",
+                "default": "unassessed"
+              }
+            },
+            "required": [
+              "assessment",
+              "stage",
+              "lineage",
+              "features",
+              "investigations",
+              "ecog_performance_status",
+              "ldh",
+              "albumin",
+              "reviews"
+            ],
+            "type": "object"
+          },
+          "DiagnosticStage": {
+            "enum": [
+              "unassessed",
+              "muo",
+              "provisional_cup",
+              "confirmed_cup",
+              "primary_identified"
+            ],
+            "type": "string"
+          },
+          "GuidanceItem": {
+            "properties": {
+              "evidence": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "message": {
+                "type": "string"
+              },
+              "recommendation": {
+                "type": "string"
+              },
+              "review": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/GuidanceReport/$defs/ReviewDecision"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "review_is_current": {
+                "type": "boolean"
+              },
+              "rule_id": {
+                "type": "string"
+              },
+              "source_url": {
+                "type": "string"
+              },
+              "status": {
+                "$ref": "#/components/schemas/GuidanceReport/$defs/Status"
+              },
+              "strength": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "rule_id",
+              "recommendation",
+              "source_url",
+              "strength",
+              "status",
+              "message",
+              "evidence",
+              "review",
+              "review_is_current"
+            ],
+            "type": "object"
+          },
+          "Investigation": {
+            "additionalProperties": false,
+            "properties": {
+              "day": {
+                "description": "Days from one case-specific reference point; null means unknown.",
+                "format": "int32",
+                "maximum": 36500,
+                "minimum": -36500,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "kind": {
+                "$ref": "#/components/schemas/GuidanceReport/$defs/InvestigationKind"
+              },
+              "reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "result": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "source": {
+                "type": "string"
+              },
+              "status": {
+                "$ref": "#/components/schemas/GuidanceReport/$defs/InvestigationStatus"
+              }
+            },
+            "required": [
+              "kind",
+              "status",
+              "day",
+              "result",
+              "reason",
+              "source"
+            ],
+            "type": "object"
+          },
+          "InvestigationKind": {
+            "enum": [
+              "history_examination",
+              "baseline_laboratory_tests",
+              "chest_xray",
+              "ct_chest_abdomen_pelvis",
+              "biopsy_histology",
+              "myeloma_screen",
+              "gi_endoscopy",
+              "mammography",
+              "breast_mri",
+              "pet_ct",
+              "afp",
+              "hcg",
+              "psa",
+              "ca125",
+              "testicular_ultrasound",
+              "ihc_panel",
+              "additional_ihc",
+              "ascites_tissue_sampling",
+              "cup_team",
+              "breast_mdt",
+              "head_neck_mdt",
+              "specialist_surgical_mdt",
+              "neuro_oncology_mdt",
+              "genomic_review"
+            ],
+            "type": "string"
+          },
+          "InvestigationStatus": {
+            "enum": [
+              "planned",
+              "pending",
+              "completed",
+              "declined",
+              "not_indicated",
+              "contraindicated"
+            ],
+            "type": "string"
+          },
+          "Lineage": {
+            "enum": [
+              "unknown",
+              "carcinoma",
+              "neuroendocrine",
+              "melanoma",
+              "lymphoma",
+              "sarcoma",
+              "germ_cell",
+              "other"
+            ],
+            "type": "string"
+          },
+          "Measurement": {
+            "additionalProperties": false,
+            "properties": {
+              "day": {
+                "format": "int32",
+                "maximum": 36500,
+                "minimum": -36500,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "source": {
+                "type": "string"
+              },
+              "units": {
+                "type": "string"
+              },
+              "value": {
+                "format": "double",
+                "minimum": 0,
+                "type": "number"
+              }
+            },
+            "required": [
+              "value",
+              "units",
+              "day",
+              "source"
+            ],
+            "type": "object"
+          },
+          "ReviewAction": {
+            "enum": [
+              "acknowledged",
+              "deferred",
+              "not_applicable",
+              "departed"
+            ],
+            "type": "string"
+          },
+          "ReviewDecision": {
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "$ref": "#/components/schemas/GuidanceReport/$defs/ReviewAction"
+              },
+              "assessment": {
+                "$ref": "#/components/schemas/GuidanceReport/$defs/Assessment"
+              },
+              "basis_sha256": {
+                "description": "Case hash excluding review history, so changed evidence invalidates a review.",
+                "type": "string"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "rule_id": {
+                "type": "string"
+              },
+              "ruleset_version": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "rule_id",
+              "ruleset_version",
+              "action",
+              "reason",
+              "assessment",
+              "basis_sha256"
+            ],
+            "type": "object"
+          },
+          "Status": {
+            "enum": [
+              "needs_review",
+              "insufficient_information",
+              "not_applicable",
+              "recorded",
+              "pending",
+              "exception_recorded",
+              "blocked",
+              "conflict",
+              "information"
+            ],
+            "type": "string"
+          }
+        },
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "case_id": {
+            "type": "string"
+          },
+          "case_revision_sha256": {
+            "type": "string"
+          },
+          "clinical_context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GuidanceReport/$defs/ClinicalContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "guideline_last_reviewed": {
+            "type": "string"
+          },
+          "guideline_updated": {
+            "type": "string"
+          },
+          "implementation_review_status": {
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/GuidanceReport/$defs/GuidanceItem"
+            },
+            "type": "array"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "lineage": {
+            "$ref": "#/components/schemas/GuidanceReport/$defs/Lineage"
+          },
+          "report_schema_version": {
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "research_only": {
+            "type": "boolean"
+          },
+          "review_basis_sha256": {
+            "type": "string"
+          },
+          "ruleset_version": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/GuidanceReport/$defs/DiagnosticStage"
+          }
+        },
+        "required": [
+          "report_schema_version",
+          "case_id",
+          "case_revision_sha256",
+          "review_basis_sha256",
+          "ruleset_version",
+          "guideline_updated",
+          "guideline_last_reviewed",
+          "implementation_review_status",
+          "research_only",
+          "scope",
+          "stage",
+          "lineage",
+          "items",
+          "clinical_context",
+          "limitations"
+        ],
+        "title": "GuidanceReport",
         "type": "object"
       },
       "HealthResponse": {
@@ -659,8 +1642,8 @@
   },
   "info": {
     "description": "Research development. No live classification, authentication, persistence or clinical calibration.",
-    "title": "Jev Onco Nexus offline research API",
-    "version": "0.3.0"
+    "title": "Jev Onco Statistical Hierarchy (JOSH) offline research API",
+    "version": "0.4.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -700,6 +1683,83 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ResultRecord"
+                }
+              }
+            },
+            "description": "Offline research result; no provider request"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Malformed or trailing JSON"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Body exceeds 16384 bytes"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unsupported media type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid case or JSON structure"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Structured failure"
+          }
+        }
+      }
+    },
+    "/v1/guidance": {
+      "post": {
+        "operationId": "guidanceCase",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Case"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuidanceReport"
                 }
               }
             },

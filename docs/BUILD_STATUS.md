@@ -1,8 +1,14 @@
-# Build status — 2026-09-21
+# Build status — 2026-09-22
 
 ## Implemented and verified
 
-Application 0.3.0 adds the Phase 02 structured import milestone to the Phase 01 foundation. The four-crate workspace now includes `nexus-ingest`: local JSON/JSONL/CSV/TSV imports, schema 2 migration, source references, observation status, censored ages, separate labels, patient-group splits, integrity-checked bundles and per-record quality reports. CLI commands and a TUI bundle browser expose the workflow. Phase 00 clinical/data approvals remain pending.
+Application 0.4.0 adds five themed Ratatui visualization views, schema 3 local clinical
+context, a versioned/source-linked subset of NICE CG104 review rules, and reasoned
+review records with current/stale fingerprints and protected persistence. CLI
+`guidance`, `example --clinical`, guidance schema and offline `POST /v1/guidance`
+expose the same workflow. The existing four-crate structured-import/classifier
+foundation is retained. Phase 00 clinical/data approvals remain pending.
+See [exact rule coverage and limitations](CLINICAL_REVIEW_GUIDE.md).
 
 The current scope uses Jev as the sole classifier. Original classifier training/inference, model artifact recovery and explanation tooling are excluded from the delivery plan. None of those components was included in the Rust source or dependency manifests, so this scope update required documentation changes only.
 
@@ -11,7 +17,7 @@ The current scope uses Jev as the sole classifier. Original classifier training/
 | `cargo build --workspace --offline --locked` | Passed |
 | `cargo fmt --all -- --check` | Passed |
 | `cargo clippy --workspace --all-targets --offline --locked -- -D warnings` | Passed |
-| `cargo test --workspace --offline --locked` | Passed: 71 tests |
+| `cargo test --workspace --offline --locked` | Passed: 100 tests |
 | CLI `validate`, `prepare`, `demo` on synthetic case | Passed |
 | CLI `classify` without credentials | Expected local error; no request sent |
 | CLI integration tests | Pipes, standalone demo, JSON/text, file protection, credential masking, help/version, structured errors, schemas, trailing JSON and exact byte budgets passed |
@@ -21,10 +27,20 @@ The current scope uses Jev as the sole classifier. Original classifier training/
 | Dependency inventory | 276 workspace/registry packages recorded; offline drift check passed |
 | Batch imports | Source hashes, migration, row/byte caps, duplicate/conflict rejection, label separation, patient holdout and protected export tested |
 | TUI batch workflow | Case navigation, source/status/censored-age display, quality report export, changed-case detection and result invalidation tested |
+| NICE clinical rules | 18 core tests covering scope, unknown/false semantics, conditional investigations, stage checks, benefit/MDT gates, withdrawn recommendations and review integrity |
+| Clinical UI/API/imports | Rule detail scrolling, private provider state, schema 3 bundle round-trip, invalid clinical input, review persistence and unsaved/discard safeguards passed |
+| Visualizations | All outcomes, fixed score scale, zero values, related RGB colors, distinct IHC statuses, missing-date handling and small-terminal rendering tested |
+| 0.4.0 interactive PTY smoke | Synthetic launch, demo bars, IHC, pathway, timeline, guidance, review-dialog cancellation and terminal restoration passed; no provider request |
 | Markdown local-link check | No missing targets |
 | Phase plan files | Eight separate Markdown files |
 
-Environment: Linux, Rust/Cargo 1.98.1. CSV parser dependencies were fetched for this milestone; checks run offline after fetching. `Cargo.lock` records resolved versions. Supported OS and compatibility rules are in the [foundation handoff](engineering/foundation.md). The [Phase 01 clean GitHub run](https://github.com/SampleBias/Jev_Onco_Nexus/actions/runs/35667838559) passed. Current commit-level status is available in the [private repository's Rust checks](https://github.com/SampleBias/Jev_Onco_Nexus/actions/workflows/ci.yml).
+Environment: Linux, Rust/Cargo 1.98.1. Existing locked platform-specific crates missing
+from the cache were fetched for the full dependency inventory; no chart or clinical
+dependency was added. Checks then ran offline. `Cargo.lock` records resolved versions.
+Supported OS and compatibility rules are in the [foundation handoff](engineering/foundation.md).
+These 0.4.0 verification results are local; no remote CI result is claimed here.
+The earlier [Phase 01 GitHub run](https://github.com/SampleBias/Jev_Onco_Statistical_Hierarchy/actions/runs/35667838559)
+remains historical evidence, not verification of this release.
 
 ## Not yet verified or implemented
 
@@ -34,6 +50,12 @@ Environment: Linux, Rust/Cargo 1.98.1. CSV parser dependencies were fetched for 
 - No raw GENIE release mapper, genomic coordinate/allele/CNA/coverage normalization, browser UI, database, user authentication, queue, retries or production deployment exists yet.
 - Patient-group partitions are deterministic engineering artifacts. Real cohort linkage, ontology mapping, indirect leakage review, scientific split approval and cross-file reconciliation remain pending.
 - The origin taxonomy and gate thresholds are development examples, not clinically approved definitions or operating points.
+- Clinical rules are a documented diagnostic/review subset, not the entire guideline,
+  a treatment engine or clinical validation. Independent CUP oncologist/pathologist
+  signoff remains pending. The 2023 withdrawn genomic prohibitions are not active rules.
+- Clinical assertions currently require standalone JSON editing. Review entries are
+  locally versioned but self-reported, not authenticated or tamper-proof audit records.
+- No real cohort/outcome data were invented to populate calibration or survival charts.
 - The runtime's synthetic-data declaration is not a deidentification detector.
 
 The first live milestone is a synthetic contract smoke test. The first scientific milestone is a blinded, labeled cohort experiment with the evidence types the project will actually use. Both have owners and acceptance criteria in the [phase plan](PLAN.md).

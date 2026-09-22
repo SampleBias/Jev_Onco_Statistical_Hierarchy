@@ -17,7 +17,7 @@ Known-primary metastatic tumors with origin information masked are an initial pr
 | ID | Owner | Task and concrete output |
 | --- | --- | --- |
 | P04-01 | ML + clinical | Freeze protocol, class mapping, label adjudication, exclusions and measurable release criteria before test access |
-| P04-02 | Backend/ML | Create `nexus-eval`: batched case runs with immutable request/response artifacts, resume support and all failures in the denominator |
+| P04-02 | Backend/ML | Create `josh-eval`: batched case runs with immutable request/response artifacts, resume support and all failures in the denominator |
 | P04-03 | ML | Compute top-1/top-3 accuracy, macro/weighted F1, per-class recall/precision, confusion matrix, coverage and selective error |
 | P04-04 | Statistician | Evaluate raw probability reliability with multiclass Brier score, log loss, classwise reliability plots, ECE with declared bins, and patient-bootstrap confidence intervals |
 | P04-05 | ML | Compare Jev against majority-class and empirical class-prior references computed from the development partition; freeze these references before final testing |

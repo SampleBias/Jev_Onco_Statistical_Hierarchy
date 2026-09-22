@@ -4,7 +4,7 @@ Status: structured import milestone implemented in 0.3.0; raw GENIE mapping, cli
 
 ## Delivered milestone
 
-`nexus-ingest` now imports canonical JSON/JSONL and normalized CSV/TSV findings, produces schema 2 cases with source references and observation status, and writes protected bundles with every rejected record reported. `nexus import` and `nexus batch` expose the workflow. The TUI opens bundles with `--batch`/`b`, browses cases with `[`/`]`, and shows a fifth Import quality view. Changed case fingerprints prevent loading, and case changes clear previous results.
+`josh-ingest` now imports canonical JSON/JSONL and normalized CSV/TSV findings, produces schema 2 cases with source references and observation status, and writes protected bundles with every rejected record reported. `josh import` and `josh batch` expose the workflow. The TUI opens bundles with `--batch`/`b`, browses cases with `[`/`]`, and shows a fifth Import quality view. Changed case fingerprints prevent loading, and case changes clear previous results.
 
 See the [import guide](../data/IMPORT_GUIDE.md), [synthetic fixtures](../../fixtures/import/README.md), [generated contracts](../../contracts/README.md) and [build evidence](../BUILD_STATUS.md).
 
@@ -42,7 +42,7 @@ Use the [GENIE data access page](https://aacrprojectgenie.org/data/) for permitt
 
 | ID | Owner | Task and concrete output |
 | --- | --- | --- |
-| P02-01 | Data engineer | Create `nexus-ingest`, streaming JSONL/CSV/TSV readers and per-row validation reports; batch failures must not silently discard records |
+| P02-01 | Data engineer | Create `josh-ingest`, streaming JSONL/CSV/TSV readers and per-row validation reports; batch failures must not silently discard records |
 | P02-02 | Curator + backend | Extend case schema with source reference, units, assay/panel, specimen/timepoint, reference build and observation status; provide migration from schema v1 |
 | P02-03 | Data engineer | Implement patient-to-sample joins; detect duplicate IDs, orphan samples, multiple specimens and patient overlap; never join on a truncated or floating-point ID |
 | P02-04 | Bioinformatician | Define genomic normalization: gene identifiers, reference build, alleles, variant annotations, CNA encoding and tested-gene coverage; compute numeric summaries in code |

@@ -1,6 +1,11 @@
 # Foundation handoff — application 0.2.0
 
-This records the Phase 01 baseline. Application 0.3.0 adds `nexus-ingest`, case schema 2 alongside schema 1, result schema 2, import/split/label schemas and import exit code 3. See the [Phase 02 import guide](../data/IMPORT_GUIDE.md) for current additions. The original schema 1 request fingerprint remains regression-tested.
+This records the Phase 01 baseline. Application 0.3.0 adds `josh-ingest`, case schema 2 alongside schema 1, result schema 2, import/split/label schemas and import exit code 3. See the [Phase 02 import guide](../data/IMPORT_GUIDE.md) for current additions. The original schema 1 request fingerprint remains regression-tested.
+
+Application 0.4.0 adds schema 3 local clinical context, versioned NICE review reports,
+review-record exports and Ratatui visualization tabs. Schema 1/2 remain accepted and
+their provider payloads are unchanged. See the [clinical review guide](../CLINICAL_REVIEW_GUIDE.md)
+for compatibility, source coverage and limitations. Clinical signoff is pending.
 
 ## Reproducible build
 
@@ -21,10 +26,10 @@ The lockfile pins registry versions/checksums. Toolchain and lockfile pinning im
 
 ## Contracts
 
-Run `nexus schema case`, `nexus schema result`, `nexus schema jev-request`, `nexus schema jev-response`, `nexus schema error` or `nexus schema openapi`. Committed artifacts are in [contracts](../../contracts/README.md). Regenerate them with:
+Run `josh schema case`, `josh schema result`, `josh schema jev-request`, `josh schema jev-response`, `josh schema error` or `josh schema openapi`. Committed artifacts are in [contracts](../../contracts/README.md). Regenerate them with:
 
 ```sh
-cargo run -p nexus-app --example export_contracts --offline --locked
+cargo run -p josh-app --example export_contracts --offline --locked
 ```
 
 The developer generator intentionally updates committed artifacts. Normal `--output` and TUI exports still refuse to overwrite existing files. Tests compare committed documents to generated values, resolve every local reference, validate example values against the schemas and validate actual HTTP responses against OpenAPI components. Schema generation uses [Schemars](https://docs.rs/schemars/1.2.2/schemars/); the test-only validator has default network-fetching features disabled.
@@ -53,12 +58,12 @@ Every result includes both hashes, result schema version 1, model, prompt, taxon
 
 | Module/artifact | Role owner | Review needed |
 | --- | --- | --- |
-| `nexus-core/domain.rs` and case schema | Backend + data engineer | Import compatibility, field semantics, limits |
+| `josh-core/domain.rs` and case schema | Backend + data engineer | Import compatibility, field semantics, limits |
 | `prompt.rs`, `taxonomy.rs` | ML lead + clinical reviewer | Evidence leakage, label definitions, evaluation impact |
 | `policy.rs` | ML/statistics + clinical reviewer | Abstention behavior and unvalidated operating points |
 | `provider.rs`, `schema.rs`, `provenance.rs`, `errors.rs` | Backend lead | Wire/schema/hash compatibility |
-| `nexus-jev` | Backend + platform | Provider boundary, data policy, reliability |
-| `nexus-app` | App lead + QA | CLI/TUI/API behavior, exports, regression coverage |
+| `josh-jev` | Backend + platform | Provider boundary, data policy, reliability |
+| `josh-app` | App lead + QA | CLI/TUI/API behavior, exports, regression coverage |
 | CI/toolchain/dependency inventory | Platform lead | Reproducible supported builds and dependency review |
 
 Breaking case/result shape changes require the corresponding schema version and application release bump, an explicit migration note, regenerated artifacts and tests. Changes to field order or fingerprint serialization require a fingerprint version review. Changes to preprocessing, prompts, labels or gates require the matching version change and relevant development/held-out evaluation; package version alone is insufficient. Never silently replace the pinned Jev model.

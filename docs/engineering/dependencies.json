@@ -1,7 +1,7 @@
 {
   "inventory_version": 1,
   "scope": "Cargo metadata: workspace, build, development and platform-conditional dependencies; not a shipped-binary SBOM",
-  "cargo_lock_sha256": "6b2aca41592674e78c6ac53766e520ad54d29a8055bd00edfdcd7546a70d4b78",
+  "cargo_lock_sha256": "5a3ce15b47d9ceb51f9d82a06e4bc76e419615f6551fde23c8322adb2c06070f",
   "packages": [
     {
       "name": "ahash",
@@ -697,6 +697,34 @@
       "has_license_file": false
     },
     {
+      "name": "josh-app",
+      "version": "0.4.0",
+      "source": "workspace",
+      "declared_license": null,
+      "has_license_file": false
+    },
+    {
+      "name": "josh-core",
+      "version": "0.4.0",
+      "source": "workspace",
+      "declared_license": null,
+      "has_license_file": false
+    },
+    {
+      "name": "josh-ingest",
+      "version": "0.4.0",
+      "source": "workspace",
+      "declared_license": null,
+      "has_license_file": false
+    },
+    {
+      "name": "josh-jev",
+      "version": "0.4.0",
+      "source": "workspace",
+      "declared_license": null,
+      "has_license_file": false
+    },
+    {
       "name": "js-sys",
       "version": "0.3.105",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
@@ -834,34 +862,6 @@
       "version": "1.2.3",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "declared_license": "MIT",
-      "has_license_file": false
-    },
-    {
-      "name": "nexus-app",
-      "version": "0.3.0",
-      "source": "workspace",
-      "declared_license": null,
-      "has_license_file": false
-    },
-    {
-      "name": "nexus-core",
-      "version": "0.3.0",
-      "source": "workspace",
-      "declared_license": null,
-      "has_license_file": false
-    },
-    {
-      "name": "nexus-ingest",
-      "version": "0.3.0",
-      "source": "workspace",
-      "declared_license": null,
-      "has_license_file": false
-    },
-    {
-      "name": "nexus-jev",
-      "version": "0.3.0",
-      "source": "workspace",
-      "declared_license": null,
       "has_license_file": false
     },
     {

@@ -1,6 +1,6 @@
 # Origin dictionary — development draft
 
-Version: `demo-primary-sites-v0.1`. Owner: clinical/pathology reviewer, unassigned. Review status: pending for every entry. The executable dictionary is `crates/nexus-core/src/taxonomy.rs`; `nexus taxonomy` prints its current descriptions. This draft documents the existing prototype, not a medically approved classification system.
+Version: `demo-primary-sites-v0.1`. Owner: clinical/pathology reviewer, unassigned. Review status: pending for every entry. The executable dictionary is `crates/josh-core/src/taxonomy.rs`; `josh taxonomy` prints its current descriptions. This draft documents the existing prototype, not a medically approved classification system.
 
 | Runtime ID | Prototype grouping | Inclusion/exclusion questions to resolve |
 | --- | --- | --- |

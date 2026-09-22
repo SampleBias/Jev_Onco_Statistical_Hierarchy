@@ -8,9 +8,9 @@ A reproducible workspace and a small stable contract between imports, Jev and th
 
 ## Delivered now
 
-- `nexus-core`: strict JSON case types, illustrative taxonomy, typed Jev questions/answers, result validation, abstention, version strings and request fingerprint.
-- `nexus-jev`: pinned-model HTTPS adapter with synthetic-only preflight, bounded responses and sanitized errors.
-- `nexus-app`: `validate`, `prepare`, `demo`, `replay`, `classify`, `example`, `doctor`, `taxonomy`, `tui`, and loopback `serve` commands. CLI includes stdin, JSON/text output and protected file exports.
+- `josh-core`: strict JSON case types, illustrative taxonomy, typed Jev questions/answers, result validation, abstention, version strings and request fingerprint.
+- `josh-jev`: pinned-model HTTPS adapter with synthetic-only preflight, bounded responses and sanitized errors.
+- `josh-app`: `validate`, `prepare`, `demo`, `replay`, `classify`, `example`, `doctor`, `taxonomy`, `tui`, and loopback `serve` commands. CLI includes stdin, JSON/text output and protected file exports.
 - Ratatui TUI: evidence/request/results/help views, open/reload, demo/live actions, scrolling, JSON exports and terminal restoration.
 - Synthetic example, offline API tests, model-contract tests, `Cargo.lock`, formatting/lint/test CI definition.
 
@@ -29,7 +29,7 @@ A reproducible workspace and a small stable contract between imports, Jev and th
 
 ## Implementation evidence
 
-- P01-01: generated [JSON Schemas and OpenAPI](../../contracts/README.md), `nexus schema`, schema validation and artifact drift tests.
+- P01-01: generated [JSON Schemas and OpenAPI](../../contracts/README.md), `josh schema`, schema validation and artifact drift tests.
 - P01-02: separate domain, provider, prompt, taxonomy, policy, provenance, error and schema modules; gate constants in `policy.rs`.
 - P01-03: typed error codes/envelopes for CLI and HTTP, sanitized parser/provider failures, JSON routing/method/body-limit failures.
 - P01-04: CLI/API byte-boundary and trailing-JSON tests; TUI failed-open tests preserve the prior case/result; existing navigation/export tests retained.

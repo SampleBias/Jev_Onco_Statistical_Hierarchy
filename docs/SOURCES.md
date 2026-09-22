@@ -22,3 +22,25 @@ Checked 2026-09-21. Prefer these original sources over third-party websites usin
 User-supplied link: `https://docs.typesafe.ai/introduction/coding-agents`. It was unavailable through the browser during review; the documentation navigation's accessible agent guide and official skill were read instead. No skill package was installed.
 
 Software references are linked in [Architecture](ARCHITECTURE.md). Dependency resolutions are recorded in `Cargo.lock`; the lockfile is the reproducible build input, not the latest-version tag of a documentation page.
+
+## Clinical review and terminal visualizations — checked 2026-09-22
+
+- [NICE CG104 recommendations](https://www.nice.org.uk/guidance/cg104/chapter/Recommendations):
+  selected local diagnostic/review prompts with recommendation IDs; not a full implementation.
+- [NICE update information](https://www.nice.org.uk/guidance/cg104/chapter/Update-information):
+  withdrawn 2023 gene-expression restrictions, not active prohibitions.
+- [NICE overview](https://www.nice.org.uk/guidance/CG104):
+  adult scope and recorded 2025-07-16 review; no clinical validation of JOSH is implied.
+- [NHS national genomic test directories](https://www.england.nhs.uk/publication/national-genomic-test-directories/):
+  external eligibility reference, not rules copied into the classifier.
+- [Ratatui BarChart](https://ratatui.rs/examples/widgets/barchart/),
+  [Table](https://ratatui.rs/examples/widgets/table/),
+  [Chart](https://ratatui.rs/examples/widgets/chart/) and
+  [Tabs](https://ratatui.rs/examples/widgets/tabs/):
+  implementation references for the installed 0.30.2 release.
+
+NICE pages sometimes returned 403 on direct retrieval; their indexed official
+recommendations/update text and official guideline PDF were used for verification.
+Exact source mapping, omissions and software-specific safety choices are documented
+in the [clinical review guide](CLINICAL_REVIEW_GUIDE.md). Visualizations are interface
+choices, not a claim that NICE mandates particular chart formats.

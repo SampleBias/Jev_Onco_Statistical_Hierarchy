@@ -7,11 +7,11 @@ Imports run locally and send nothing to Jev. They produce validated case files f
 ```bash
 cargo build --workspace --locked
 mkdir -p results
-./target/debug/nexus import fixtures/import/synthetic-findings.csv \
+./target/debug/josh import fixtures/import/synthetic-findings.csv \
   --input-format csv --source-id synthetic-v1 \
   --out-dir results/import-001 --format text
-./target/debug/nexus batch results/import-001 --format text
-./target/debug/nexus tui --batch results/import-001
+./target/debug/josh batch results/import-001 --format text
+./target/debug/josh tui --batch results/import-001
 ```
 
 The output directory must be new, even if an existing directory is empty. Choose `import-002` for another run. Its parent must exist. Both `results/` and `data/` at the repository root are ignored by Git. New bundle directories use mode 0700 and files use 0600 on Unix.
@@ -21,9 +21,9 @@ In the TUI, use `[` and `]` to browse cases, `5` for import quality, and `b` to 
 Single-case and JSONL migration use the same command:
 
 ```bash
-./target/debug/nexus import fixtures/synthetic-case.json \
+./target/debug/josh import fixtures/synthetic-case.json \
   --input-format json --source-id legacy-example --out-dir results/migrated-001
-./target/debug/nexus import fixtures/import/synthetic-cases.jsonl \
+./target/debug/josh import fixtures/import/synthetic-cases.jsonl \
   --input-format jsonl --source-id synthetic-jsonl --out-dir results/jsonl-001
 ```
 
@@ -65,6 +65,12 @@ The demonstration `known_primary` values are authored test labels. They are not 
 
 Canonical schema 1 input remains supported. Import upgrades it to schema 2, adds source references and observation statuses, and leaves unknown patient/sample/cutoff metadata null. It does not invent a patient group from a case ID. Existing schema 2 documents retain their declared source references; the manifest separately fingerprints the input file. Such references do not independently authenticate an original source file.
 
+Application 0.4.0 also accepts canonical schema 3 JSON/JSONL and preserves its
+clinical context and review history unchanged, with bundle/request fingerprints
+checked on round-trip. CSV/TSV still produces schema 2; it does not infer clinical
+assessments from text. See the [clinical review guide](../CLINICAL_REVIEW_GUIDE.md)
+for deliberate schema 3 upgrades. Clinical context and reviews never enter provider state.
+
 Schema 2 requires `metadata` and `source`/`observation` on every finding. Local source references contain a caller-selected source ID, full source SHA-256, record ordinal and field locator. A record ordinal includes the CSV/TSV header as record 1; multiline CSV values therefore do not correspond to physical line numbers. JSONL ordinals are line numbers and a single JSON case is record 1. Preserve the original input under its source ID/checksum to make the chain auditable.
 
 The provider state is built with an explicit allowlist. It excludes patient/sample/institution IDs, case IDs, data-class declarations, evidence cutoff metadata, source locators/checksums, labels and split assignments. Observed values, statuses, units, assay, timepoint and reference build are retained. Censored ages use `age_lower_bound_exclusive` with `age_years: null`. The request prompt is `cup-research-v0.2` for schema 2; the original schema 1 prompt and request digest are preserved. Result schema 2 records the case schema version; policy `unvalidated-research-gates-v0.2` adds abstention/preflight protection for cases with only unknown or not-tested findings.
@@ -74,7 +80,7 @@ The provider state is built with an explicit allowlist. It excludes patient/samp
 | Artifact | Contents |
 | --- | --- |
 | `manifest.json` | Versioned source checksum, counts, every error/warning record, missingness, status/label/partition counts, case/request fingerprints and sidecar hashes |
-| `cases/CASE_ID.json` | Compact canonical schema 2 case; accepted by `validate`, `prepare`, `demo`, `classify` and the TUI |
+| `cases/CASE_ID.json` | Compact canonical schema 2 or 3 case; accepted by `validate`, `prepare`, `demo`, `classify`, `guidance` and the TUI |
 | `cases.jsonl` | All accepted cases, ordered by case ID; findings retain source order |
 | `labels.json` | Accepted-case evaluation labels only; not loaded as evidence in the TUI |
 | `splits.json` | Patient-group assignments, seed and holdout configuration |
@@ -87,7 +93,7 @@ Byte counts are deterministic. `token_budget_verified` remains false: a byte bou
 
 Duplicate JSON case IDs, repeated finding IDs, inconsistent repeated case metadata/labels and duplicate specimen IDs across cases withdraw all affected known case IDs. A bad row that can be associated with a case also invalidates that whole case. Unparseable records with no recoverable ID are reported separately. `rejected_cases` counts identifiable invalid case IDs; `rejected_records` includes all excluded records, including records without a valid ID. Labels and partitions are emitted only for accepted cases.
 
-Exit 0 means import completed without rejected records, including runs with quality warnings. Exit 3 means a partial or fully rejected import; the report and any accepted cases are still written. Exit 1 means a fatal options/source/IO error; exit 2 is invalid CLI syntax. JSON-mode reports go to stdout, sanitized fatal error envelopes to stderr. `--output` is disallowed for import because its report is already in the bundle. `nexus batch DIRECTORY` verifies the report and sidecar hashes; individual case fingerprints are checked when the TUI loads each case. Report inspection itself exits 0 even when inspecting a partial run.
+Exit 0 means import completed without rejected records, including runs with quality warnings. Exit 3 means a partial or fully rejected import; the report and any accepted cases are still written. Exit 1 means a fatal options/source/IO error; exit 2 is invalid CLI syntax. JSON-mode reports go to stdout, sanitized fatal error envelopes to stderr. `--output` is disallowed for import because its report is already in the bundle. `josh batch DIRECTORY` verifies the report and sidecar hashes; individual case fingerprints are checked when the TUI loads each case. Report inspection itself exits 0 even when inspecting a partial run.
 
 ## Partitions and remaining scientific work
 

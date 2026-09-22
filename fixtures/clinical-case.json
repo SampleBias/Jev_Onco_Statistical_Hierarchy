@@ -1,0 +1,46 @@
+{
+  "schema_version": 3,
+  "case_id": "SYNTHETIC-001",
+  "data_class": "synthetic",
+  "age_years": 62,
+  "sex_at_birth": "female",
+  "specimen_site": "cervical lymph node",
+  "metadata": {"patient_id": null, "sample_id": null, "institution_id": null, "evidence_cutoff": "synthetic day 14"},
+  "findings": [
+    {"id":"F1","kind":"histology","name":"morphology","value":"adenocarcinoma","observation":{"status":"observed","units":null,"assay":"synthetic histology","timepoint":"day 7","reference_build":null},"source":{"source_id":"synthetic-clinical","source_sha256":"0000000000000000000000000000000000000000000000000000000000000000","record":1,"field":"morphology"}},
+    {"id":"F2","kind":"ihc","name":"CK7","value":"positive","observation":{"status":"positive","units":null,"assay":"synthetic IHC","timepoint":"day 8","reference_build":null},"source":{"source_id":"synthetic-clinical","source_sha256":"0000000000000000000000000000000000000000000000000000000000000000","record":2,"field":"CK7"}},
+    {"id":"F3","kind":"ihc","name":"CK20","value":"negative","observation":{"status":"negative","units":null,"assay":"synthetic IHC","timepoint":"day 8","reference_build":null},"source":{"source_id":"synthetic-clinical","source_sha256":"0000000000000000000000000000000000000000000000000000000000000000","record":3,"field":"CK20"}},
+    {"id":"F4","kind":"ihc","name":"TTF-1","value":"equivocal","observation":{"status":"equivocal","units":null,"assay":"synthetic IHC","timepoint":"day 8","reference_build":null},"source":{"source_id":"synthetic-clinical","source_sha256":"0000000000000000000000000000000000000000000000000000000000000000","record":4,"field":"TTF-1"}},
+    {"id":"F5","kind":"ihc","name":"ER","value":"not tested","observation":{"status":"not_tested","units":null,"assay":null,"timepoint":null,"reference_build":null},"source":{"source_id":"synthetic-clinical","source_sha256":"0000000000000000000000000000000000000000000000000000000000000000","record":5,"field":"ER"}},
+    {"id":"F6","kind":"ihc","name":"PLAP","value":"unknown","observation":{"status":"unknown","units":null,"assay":null,"timepoint":null,"reference_build":null},"source":{"source_id":"synthetic-clinical","source_sha256":"0000000000000000000000000000000000000000000000000000000000000000","record":6,"field":"PLAP"}}
+  ],
+  "clinical": {
+    "assessment": {"reviewer_id":"synthetic-reviewer","recorded_on":"2026-09-22","source":"Invented software fixture, not a patient or approved clinical example"},
+    "stage":"provisional_cup",
+    "lineage":"carcinoma",
+    "features": {
+      "metastatic_disease":true, "histology_confirmed":true, "initial_workup_complete":true,
+      "specialist_review_complete":false, "further_investigations_complete":false,
+      "fit_for_treatment":true, "investigation_changes_management":true,
+      "understands_investigation_purpose":true, "understands_benefits_and_risks":true, "willing_to_accept_treatment":true,
+      "adenocarcinoma":true, "cervical_lymphadenopathy":true, "extra_cervical_presentation":false,
+      "negative_ent_panendoscopy":true, "radical_treatment_possible":true,
+      "gi_primary_suggested":false, "breast_primary_suggested":false,
+      "germ_cell_presentation":false, "hepatocellular_presentation":false,
+      "prostate_presentation":false, "ovarian_presentation":false,
+      "axillary_adenocarcinoma":false, "upper_mid_neck_squamous":false,
+      "inguinal_only_squamous":false, "brain_only_after_workup":false,
+      "liver_metastases":false, "key_worker_assigned":true
+    },
+    "ecog_performance_status":1,
+    "ldh":{"value":190,"units":"U/L","day":0,"source":"synthetic laboratory fixture"},
+    "albumin":{"value":38,"units":"g/L","day":0,"source":"synthetic laboratory fixture"},
+    "investigations":[
+      {"kind":"ct_chest_abdomen_pelvis","status":"completed","day":2,"result":"No primary identified in this invented scenario","reason":null,"source":"synthetic CT report"},
+      {"kind":"biopsy_histology","status":"completed","day":7,"result":"Adenocarcinoma in this invented scenario","reason":null,"source":"synthetic pathology report"},
+      {"kind":"cup_team","status":"completed","day":12,"result":"Initial team discussion; further review pending","reason":null,"source":"synthetic MDT note"},
+      {"kind":"pet_ct","status":"planned","day":18,"result":null,"reason":"Synthetic conditional-indication example","source":"synthetic planning note"}
+    ],
+    "reviews":[]
+  }
+}

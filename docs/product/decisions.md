@@ -11,7 +11,7 @@ Recorded 2026-09-21. Role owners await assignment to named developers/reviewers.
 | D005 | Research review only; no calibrated probability until evaluated | Engineering scope; clinical review pending | Distinct raw scores, calibration metadata, abstention and review state |
 | D006 | Keep live synthetic-only restriction | Current implementation; data steward owns expansion | Dataset rights and provider handling approval remain unverified |
 | D007 | Use known-primary blinded cases for measurable feasibility | Draft; ML + clinical lead | True CUP ground truth may be unresolved; score against an independent reference |
-| D008 | Private GitHub repository | Accepted by user; repository owner | `SampleBias/Jev_Onco_Nexus` is private; distribution license remains undecided |
+| D008 | Private GitHub repository | Accepted by user; repository owner | `SampleBias/Jev_Onco_Statistical_Hierarchy` is private; distribution license remains undecided |
 | D009 | Keep source audit; write fresh Rust implementation | Implemented; technical lead | Historical reference Open_Nexus commit `ee8069cdaaf997721cb071dffe1cb243651a5f56`; no upstream model weights or patient datasets imported |
 | D010 | Pinned toolchain, generated contracts and dependency inventory | Implemented; platform + backend | See the foundation handoff and committed artifacts |
 

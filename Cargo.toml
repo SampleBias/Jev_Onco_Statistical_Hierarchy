@@ -1,9 +1,9 @@
 [workspace]
-members = ["crates/nexus-core", "crates/nexus-jev", "crates/nexus-ingest", "crates/nexus-app"]
+members = ["crates/josh-core", "crates/josh-jev", "crates/josh-ingest", "crates/josh-app"]
 resolver = "2"
 
 [workspace.package]
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
 publish = false
 rust-version = "1.98.1"
