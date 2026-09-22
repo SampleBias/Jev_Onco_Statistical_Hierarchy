@@ -18,6 +18,11 @@
         "provider_http",
         "provider_response",
         "terminal_required",
+        "invalid_import_columns",
+        "import_limit",
+        "empty_import",
+        "invalid_bundle",
+        "no_imported_cases",
         "internal_error"
       ],
       "type": "string"

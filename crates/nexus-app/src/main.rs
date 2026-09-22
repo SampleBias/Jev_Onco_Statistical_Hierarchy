@@ -36,14 +36,28 @@ enum SchemaKind {
     Result,
     Error,
     Openapi,
+    ImportReport,
+    Splits,
+    Labels,
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+enum InputFormat {
+    Json,
+    Jsonl,
+    Csv,
+    Tsv,
 }
 
 #[derive(Subcommand)]
 enum Command {
     /// Open the terminal workbench; defaults to a bundled synthetic case.
     Tui {
-        #[arg(short, long)]
+        #[arg(short, long, conflicts_with = "batch")]
         case: Option<PathBuf>,
+        /// Open a verified import bundle and browse cases with [ and ].
+        #[arg(long, conflicts_with = "case")]
+        batch: Option<PathBuf>,
     },
     /// Print an editable synthetic case template; use --output to save it.
     Example,
@@ -58,6 +72,26 @@ enum Command {
     },
     /// Validate case JSON. Use '-' to read stdin.
     Validate { case: PathBuf },
+    /// Import/migrate evidence locally; never sends records to Jev. Exit 3 means rejected records.
+    #[command(
+        after_help = "Example: nexus import fixtures/import/synthetic-findings.csv --input-format csv --source-id synthetic-v1 --out-dir results/run-001\nJSONL contains one canonical case per line. CSV/TSV is one finding per row.\nRequired columns: case_id,data_class,finding_id,kind,name,value\nSee docs/data/IMPORT_GUIDE.md for optional columns, labels and partitions.\nLimits: 64 MiB source, 50,000 records, 2,000 cases. Output directory must be new; parent must exist."
+    )]
+    Import {
+        /// Input file or '-' for stdin.
+        input: PathBuf,
+        #[arg(long, value_enum)]
+        input_format: InputFormat,
+        #[arg(long)]
+        source_id: String,
+        #[arg(long)]
+        out_dir: PathBuf,
+        #[arg(long, default_value = "development-v1")]
+        split_seed: String,
+        #[arg(long)]
+        holdout_institution: Option<String>,
+    },
+    /// Verify an import bundle's sidecars and show its quality report.
+    Batch { directory: PathBuf },
     /// Preview the exact Jev request without sending it. Use '-' to read stdin.
     Prepare { case: PathBuf },
     /// Run a labeled mock. Omit CASE for the bundled example.
@@ -73,14 +107,15 @@ enum Command {
     },
 }
 
-async fn run(args: Args) -> Result<(), AppError> {
+async fn run(args: Args) -> Result<bool, AppError> {
     let mut human = None;
+    let mut rejected_records = false;
     let value = match args.command {
-        Command::Tui { case } => {
+        Command::Tui { case, batch } => {
             if args.output.is_some() {
                 return Err(ErrorEnvelope::new(ErrorCode::InvalidArguments).into());
             }
-            return nexus_app::tui::run(case).await;
+            return nexus_app::tui::run(case, batch).await.map(|()| false);
         }
         Command::Serve { port } => {
             if args.output.is_some() {
@@ -94,7 +129,7 @@ async fn run(args: Args) -> Result<(), AppError> {
                     let _ = tokio::signal::ctrl_c().await;
                 })
                 .await?;
-            return Ok(());
+            return Ok(false);
         }
         Command::Example => serde_json::to_value(workflows::example_case())?,
         Command::Schema { kind } => {
@@ -105,6 +140,9 @@ async fn run(args: Args) -> Result<(), AppError> {
                 SchemaKind::Result => "result.schema.json",
                 SchemaKind::Error => "error.schema.json",
                 SchemaKind::Openapi => "openapi.json",
+                SchemaKind::ImportReport => "import-report.schema.json",
+                SchemaKind::Splits => "splits.schema.json",
+                SchemaKind::Labels => "labels.schema.json",
             };
             nexus_app::contracts::documents()
                 .remove(name)
@@ -145,6 +183,49 @@ async fn run(args: Args) -> Result<(), AppError> {
             ));
             serde_json::json!({"valid": true, "case_id": case.case_id, "findings": case.findings.len()})
         }
+        Command::Import {
+            input,
+            input_format,
+            source_id,
+            out_dir,
+            split_seed,
+            holdout_institution,
+        } => {
+            // A report is always stored inside the bundle. Avoid a second export failing
+            // after a successful import, which would obscure the partial-import exit status.
+            if args.output.is_some() {
+                return Err(ErrorEnvelope::new(ErrorCode::InvalidArguments).into());
+            }
+            let format = match input_format {
+                InputFormat::Json => nexus_ingest::InputFormat::Json,
+                InputFormat::Jsonl => nexus_ingest::InputFormat::Jsonl,
+                InputFormat::Csv => nexus_ingest::InputFormat::Csv,
+                InputFormat::Tsv => nexus_ingest::InputFormat::Tsv,
+            };
+            let report = workflows::import_cases(
+                &input,
+                &nexus_ingest::Options {
+                    format,
+                    source_id,
+                    split_seed,
+                    holdout_institution,
+                },
+                &out_dir,
+            )?;
+            rejected_records = report.rejected_records > 0;
+            human = Some(format!(
+                "{}\n\nBundle directory: {}\nOpen this directory with nexus tui --batch.",
+                workflows::import_report_text(&report),
+                workflows::display_text(&out_dir.display().to_string())
+            ));
+            serde_json::to_value(report)?
+        }
+        Command::Batch { directory } => {
+            let report = nexus_ingest::bundle::read_report(&directory)?;
+            // Inspecting a complete partial/rejected report succeeds; import exit 3 records the failure.
+            human = Some(workflows::import_report_text(&report));
+            serde_json::to_value(report)?
+        }
         Command::Prepare { case } => serde_json::to_value(prepare(&workflows::load_case(&case)?)?)?,
         Command::Demo { case } => {
             let case = match case {
@@ -181,7 +262,7 @@ async fn run(args: Args) -> Result<(), AppError> {
     } else {
         writeln!(std::io::stdout().lock(), "{content}")?;
     }
-    Ok(())
+    Ok(rejected_records)
 }
 
 #[tokio::main]
@@ -210,7 +291,8 @@ async fn main() -> ExitCode {
     };
     let format = args.format;
     match run(args).await {
-        Ok(()) => ExitCode::SUCCESS,
+        Ok(false) => ExitCode::SUCCESS,
+        Ok(true) => ExitCode::from(3),
         Err(error) => {
             if error
                 .downcast_ref::<std::io::Error>()

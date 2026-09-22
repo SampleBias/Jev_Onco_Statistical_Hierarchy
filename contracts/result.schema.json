@@ -63,6 +63,11 @@
     "case_revision_sha256": {
       "type": "string"
     },
+    "case_schema_version": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
     "conflicting_evidence": {
       "format": "double",
       "type": "number"
@@ -128,6 +133,7 @@
   },
   "required": [
     "result_schema_version",
+    "case_schema_version",
     "case_id",
     "case_revision_sha256",
     "fingerprint_version",

@@ -1,9 +1,9 @@
 [workspace]
-members = ["crates/nexus-core", "crates/nexus-jev", "crates/nexus-app"]
+members = ["crates/nexus-core", "crates/nexus-jev", "crates/nexus-ingest", "crates/nexus-app"]
 resolver = "2"
 
 [workspace.package]
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 publish = false
 rust-version = "1.98.1"
@@ -18,3 +18,5 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "rus
 axum = "0.8"
 clap = { version = "4", features = ["derive"] }
 schemars = "=1.2.2"
+csv = "=1.4.0"
+tempfile = "3"

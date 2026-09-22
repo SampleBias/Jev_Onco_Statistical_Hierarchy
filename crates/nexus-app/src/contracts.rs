@@ -5,6 +5,18 @@ use std::collections::BTreeMap;
 pub fn documents() -> BTreeMap<String, Value> {
     let mut docs = nexus_core::schema::documents();
     docs.insert("openapi.json".into(), openapi());
+    docs.insert(
+        "import-report.schema.json".into(),
+        nexus_core::schema::output::<nexus_ingest::ImportReport>(),
+    );
+    docs.insert(
+        "labels.schema.json".into(),
+        nexus_core::schema::output::<Vec<nexus_ingest::LabelRecord>>(),
+    );
+    docs.insert(
+        "splits.schema.json".into(),
+        nexus_core::schema::output::<nexus_ingest::SplitManifest>(),
+    );
     docs
 }
 

@@ -1,4 +1,32 @@
 use nexus_core::{Case, DataClass};
+
+#[tokio::test]
+async fn unobserved_schema_two_evidence_fails_before_network() {
+    let mut case = case();
+    case.schema_version = 2;
+    case.metadata = Some(nexus_core::CaseMetadata::default());
+    for finding in &mut case.findings {
+        finding.value = "not tested".into();
+        finding.observation = Some(nexus_core::Observation {
+            status: nexus_core::ObservationStatus::NotTested,
+            units: None,
+            assay: None,
+            timepoint: None,
+            reference_build: None,
+        });
+        finding.source = Some(nexus_core::SourceReference {
+            source_id: "synthetic".into(),
+            source_sha256: "a".repeat(64),
+            record: 1,
+            field: "finding".into(),
+        });
+    }
+    case.validate().unwrap();
+    assert!(matches!(
+        nexus_jev::classify(&case, "synthetic-test-key").await,
+        Err(nexus_jev::Error::Validation(_))
+    ));
+}
 use nexus_jev::{Error, classify};
 
 fn case() -> Case {

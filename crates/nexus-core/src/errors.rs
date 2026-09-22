@@ -21,6 +21,11 @@ pub enum ErrorCode {
     ProviderHttp,
     ProviderResponse,
     TerminalRequired,
+    InvalidImportColumns,
+    ImportLimit,
+    EmptyImport,
+    InvalidBundle,
+    NoImportedCases,
     InternalError,
 }
 
@@ -48,7 +53,7 @@ impl ErrorEnvelope {
             ErrorCode::NotFound => "route not found",
             ErrorCode::MethodNotAllowed => "method not allowed",
             ErrorCode::FileNotFound => "input file not found",
-            ErrorCode::OutputExists => "output file already exists; choose a new path",
+            ErrorCode::OutputExists => "output file or directory already exists; choose a new path",
             ErrorCode::IoError => "file, terminal or socket operation failed",
             ErrorCode::MissingApiKey => {
                 "a nonempty TYPESAFE_API_KEY is required; use 'nexus demo' offline"
@@ -61,6 +66,15 @@ impl ErrorEnvelope {
                 "TUI requires an interactive terminal; use 'nexus demo --format text' in scripts"
             }
             ErrorCode::InternalError => "internal operation failed",
+            ErrorCode::InvalidImportColumns => {
+                "unsupported, missing or duplicate import columns; see 'nexus import --help' and docs/data/IMPORT_GUIDE.md"
+            }
+            ErrorCode::ImportLimit => "source exceeds the import byte, record or case limit",
+            ErrorCode::EmptyImport => "source has no records",
+            ErrorCode::InvalidBundle => "import bundle is incomplete, incompatible or has changed",
+            ErrorCode::NoImportedCases => {
+                "bundle has no accepted cases; inspect its report with 'nexus batch DIRECTORY'"
+            }
         };
         Self {
             error: ErrorDetail { code, message },

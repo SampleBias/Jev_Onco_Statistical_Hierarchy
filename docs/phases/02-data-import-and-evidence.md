@@ -1,6 +1,27 @@
 # Phase 02 — Data import and evidence preparation
 
-Status: planned; only canonical single-case JSON is currently implemented. Lead: data engineer/bioinformatician. Reviewers: clinical curator, backend and ML lead. Estimate: 8–15 person-days, excluding data-access waits. Depends on: Phase 00 data scope and Phase 01 contracts. Unlocks: reliable Jev experiments and evaluation.
+Status: structured import milestone implemented in 0.3.0; raw GENIE mapping, clinical/data review and real-cohort acceptance remain pending. Lead: data engineer/bioinformatician. Reviewers: clinical curator, backend and ML lead. Estimate: 8–15 person-days, excluding data-access waits. Depends on: Phase 00 data scope and Phase 01 contracts. Unlocks: synthetic cohort workflows and provider integration tests.
+
+## Delivered milestone
+
+`nexus-ingest` now imports canonical JSON/JSONL and normalized CSV/TSV findings, produces schema 2 cases with source references and observation status, and writes protected bundles with every rejected record reported. `nexus import` and `nexus batch` expose the workflow. The TUI opens bundles with `--batch`/`b`, browses cases with `[`/`]`, and shows a fifth Import quality view. Changed case fingerprints prevent loading, and case changes clear previous results.
+
+See the [import guide](../data/IMPORT_GUIDE.md), [synthetic fixtures](../../fixtures/import/README.md), [generated contracts](../../contracts/README.md) and [build evidence](../BUILD_STATUS.md).
+
+| Package | Implemented evidence | Remaining acceptance work |
+| --- | --- | --- |
+| P02-01 | Bounded source snapshots, JSONL/CSV/TSV record readers, whole-case rejection and reports | Release-specific raw source adapters |
+| P02-02 | Schema 2 source references, status, units, assay, timepoint, reference build, local specimen metadata and censored age; schema 1 migration | Clinical field/assay review |
+| P02-03 | Findings joined by case ID; string IDs, duplicate findings/cases/specimens, repeated metadata conflicts and multiple patient specimens checked | Separate GENIE patient/sample/mutation/CNA joins and orphan detection |
+| P02-04 | Reference-build/assay metadata preserved | Genomic coordinates/alleles/CNA/coverage normalization and numeric feature methods are not implemented |
+| P02-05 | Narrow lexical status aliases, explicit missing/not-tested/negative distinctions and contradiction rejection | Clinical interpretation, intensity/method mappings and terminology review |
+| P02-06 | Tabular labels in a separate sidecar; canonical unknown fields rejected; explicit provider-state allowlist | Reviewed source ontology mapping and indirect prose-leakage audit |
+| P02-07 | Deterministic patient-group partitions, institution holdout and unassigned missing groups | Actual cohort grouping across files, statistical review and frozen scientific splits |
+| P02-08 | Stable ordering, case/request fingerprints, source/record/case/request byte caps, overflow rejection | Provider tokenization remains unverified and explicitly marked false |
+| P02-09 | Local-only imports; existing synthetic-only live policy retained | Dataset rights, deidentification, external-processing and retention approval |
+| P02-10 | Synthetic fixtures and import, CLI, TUI, schema and provenance tests | Quality review of an authorized real cohort |
+
+This completes the first structured import implementation, not the entire scientific/data phase. Engineering for Phase 03 can now use these fixtures without waiting for real records.
 
 ## Outcome
 

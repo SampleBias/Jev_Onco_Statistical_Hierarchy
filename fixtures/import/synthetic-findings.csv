@@ -1,0 +1,8 @@
+case_id,patient_id,sample_id,institution_id,data_class,age_years,sex_at_birth,specimen_site,evidence_cutoff,finding_id,kind,name,value,status,units,assay,timepoint,reference_build,known_primary
+DEMO-001,0001,S001,SITE-A,synthetic,>89,female,lymph node,before_origin_review,F1,histology,morphology,adenocarcinoma,observed,,synthetic-assay,baseline,,lung
+DEMO-001,0001,S001,SITE-A,synthetic,>89,female,lymph node,before_origin_review,F2,ihc,CK7,positive,positive,,synthetic-assay,baseline,,lung
+DEMO-002,0001,S002,SITE-A,synthetic,>89,female,bone,before_origin_review,F1,histology,morphology,adenocarcinoma,observed,,synthetic-assay,baseline,,lung
+DEMO-002,0001,S002,SITE-A,synthetic,>89,female,bone,before_origin_review,F2,ihc,CK7,negative,negative,,synthetic-assay,baseline,,lung
+DEMO-003,0002,S003,SITE-B,synthetic,54,male,liver,before_origin_review,F1,histology,morphology,poorly differentiated carcinoma,observed,,synthetic-assay,baseline,,colorectal
+DEMO-003,0002,S003,SITE-B,synthetic,54,male,liver,before_origin_review,F2,ihc,CK20,not tested,not_tested,,synthetic-assay,baseline,,colorectal
+DEMO-003,0002,S003,SITE-B,synthetic,54,male,liver,before_origin_review,F3,ihc,SATB2,unknown,unknown,,synthetic-assay,baseline,,colorectal

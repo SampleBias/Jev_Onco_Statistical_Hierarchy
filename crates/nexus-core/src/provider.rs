@@ -66,6 +66,7 @@ pub struct RankedOrigin {
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct ResultRecord {
     pub result_schema_version: u32,
+    pub case_schema_version: u32,
     pub case_id: String,
     pub case_revision_sha256: String,
     pub fingerprint_version: &'static str,

@@ -1,6 +1,6 @@
 # Developer delivery plan
 
-Version 0.3 — 2026-09-21. Objective: rebuild the useful Open_Nexus workflow in Rust with **Jev as the sole classifier**, ingest case evidence, return ranked origin assignments with explicit probability semantics, and support human research review.
+Version 0.4 — 2026-09-21. Objective: rebuild the useful Open_Nexus workflow in Rust with **Jev as the sole classifier**, ingest case evidence, return ranked origin assignments with explicit probability semantics, and support human research review.
 
 Scope decision: exclude XGBoost implementation and benchmarks, recovery or retraining of the original model weights, and SHAP explanations. These are not dependencies, deliverables or optional tasks. Historical descriptions remain in the source audit only. Evaluation uses labeled cases and deterministic class-frequency references; the application presents source evidence, probabilities and uncertainty.
 
@@ -16,7 +16,7 @@ Estimates are planning ranges in **person-days**, assuming experienced developer
 | --- | --- | --- | --- | --- | --- |
 | [00](phases/00-scope-and-feasibility.md) | Scope, source audit, taxonomy and scientific feasibility | Technical lead + clinical lead | 3–5 | None | Scope/protocol drafts delivered; clinical/data review open |
 | [01](phases/01-rust-foundation.md) | Rust domain model, contracts, tooling | Rust backend | 4–7 | 00 scope draft | 0.2.0 implementation delivered; technical/QA review pending |
-| [02](phases/02-data-import-and-evidence.md) | Case imports, provenance, cohort preparation | Data engineer + clinical curator | 8–15 | 00, 01 contracts | Planned |
+| [02](phases/02-data-import-and-evidence.md) | Case imports, provenance, cohort preparation | Data engineer + clinical curator | 8–15 | 00, 01 contracts | Structured imports delivered in 0.3.0; GENIE/real-cohort review pending |
 | [03](phases/03-jev-classifier.md) | Jev integration, prompts, taxonomy, reliability | Rust backend + ML engineer | 6–10 | 01; 02 fixtures for acceptance | Initial adapter delivered |
 | [04](phases/04-evaluation-and-calibration.md) | Jev evaluation, calibration, abstention validation | ML/statistics lead | 10–20 | 02, 03 and labeled cohort | Planned |
 | [05](phases/05-research-application.md) | Rust web UI, persistence, review workflows | Rust frontend + backend | 10–18 | 01, 03; 04 before calibrated UI | Planned |

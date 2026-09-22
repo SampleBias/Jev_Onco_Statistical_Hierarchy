@@ -1,0 +1,246 @@
+{
+  "$defs": {
+    "CaseEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "type": "string"
+        },
+        "case_revision_sha256": {
+          "type": "string"
+        },
+        "request_bytes": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "request_sha256": {
+          "type": "string"
+        },
+        "state_bytes": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "case_id",
+        "case_revision_sha256",
+        "request_sha256",
+        "state_bytes",
+        "request_bytes"
+      ],
+      "type": "object"
+    },
+    "ImportStatus": {
+      "enum": [
+        "complete",
+        "partial",
+        "rejected"
+      ],
+      "type": "string"
+    },
+    "InputFormat": {
+      "enum": [
+        "json",
+        "jsonl",
+        "csv",
+        "tsv"
+      ],
+      "type": "string"
+    },
+    "Issue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/IssueCode"
+        },
+        "record": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "record",
+        "code"
+      ],
+      "type": "object"
+    },
+    "IssueCode": {
+      "enum": [
+        "invalid_json",
+        "invalid_row",
+        "invalid_case",
+        "record_too_large",
+        "duplicate_case",
+        "duplicate_finding",
+        "conflicting_metadata",
+        "conflicting_label",
+        "invalid_label",
+        "invalid_age",
+        "invalid_status",
+        "conflicting_status",
+        "duplicate_sample",
+        "invalidated_case",
+        "case_budget_exceeded",
+        "request_budget_exceeded",
+        "missing_patient_group",
+        "multiple_specimens",
+        "unknown_observation"
+      ],
+      "type": "string"
+    },
+    "SourceManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "format": {
+          "$ref": "#/$defs/InputFormat"
+        },
+        "records": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "source_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_id",
+        "sha256",
+        "format",
+        "bytes",
+        "records"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "accepted_cases": {
+      "format": "uint",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "accepted_records": {
+      "format": "uint",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "artifacts_sha256": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object"
+    },
+    "cases": {
+      "items": {
+        "$ref": "#/$defs/CaseEntry"
+      },
+      "type": "array"
+    },
+    "importer_version": {
+      "type": "string"
+    },
+    "issues": {
+      "items": {
+        "$ref": "#/$defs/Issue"
+      },
+      "type": "array"
+    },
+    "label_counts": {
+      "additionalProperties": {
+        "format": "uint",
+        "minimum": 0,
+        "type": "integer"
+      },
+      "type": "object"
+    },
+    "manifest_version": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "missingness": {
+      "additionalProperties": {
+        "format": "uint",
+        "minimum": 0,
+        "type": "integer"
+      },
+      "type": "object"
+    },
+    "observation_counts": {
+      "additionalProperties": {
+        "format": "uint",
+        "minimum": 0,
+        "type": "integer"
+      },
+      "type": "object"
+    },
+    "rejected_cases": {
+      "format": "uint",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "rejected_records": {
+      "format": "uint",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "source": {
+      "$ref": "#/$defs/SourceManifest"
+    },
+    "split_counts": {
+      "additionalProperties": {
+        "format": "uint",
+        "minimum": 0,
+        "type": "integer"
+      },
+      "type": "object"
+    },
+    "status": {
+      "$ref": "#/$defs/ImportStatus"
+    },
+    "token_budget_verified": {
+      "description": "Exact provider tokenization is not implemented; byte bounds are not token counts.",
+      "type": "boolean"
+    },
+    "warnings": {
+      "items": {
+        "$ref": "#/$defs/Issue"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "manifest_version",
+    "importer_version",
+    "status",
+    "source",
+    "accepted_cases",
+    "rejected_cases",
+    "accepted_records",
+    "rejected_records",
+    "issues",
+    "warnings",
+    "observation_counts",
+    "missingness",
+    "label_counts",
+    "split_counts",
+    "token_budget_verified",
+    "cases",
+    "artifacts_sha256"
+  ],
+  "title": "ImportReport",
+  "type": "object"
+}

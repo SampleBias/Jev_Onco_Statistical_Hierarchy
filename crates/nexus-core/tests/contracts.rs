@@ -209,7 +209,7 @@ fn provider_request_fingerprint_preserves_initial_wire_contract() {
         "86189ed162901f0bc8a8b5475f74a2d04161edcb7d40b9da5a874dd7d926264c"
     );
     let replay = interpret(&case(), mock_response(), Source::Replay).unwrap();
-    assert_eq!(replay.result_schema_version, 1);
+    assert_eq!(replay.result_schema_version, 2);
     assert_eq!(replay.fingerprint_version, "typed-json-sha256-v1");
     assert_eq!(replay.probability_kind, "unverified_replay_distribution");
 }

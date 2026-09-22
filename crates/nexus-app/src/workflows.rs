@@ -37,6 +37,54 @@ pub fn load_case(path: &Path) -> Result<Case, AppError> {
     Ok(case)
 }
 
+pub fn import_cases(
+    path: &Path,
+    options: &nexus_ingest::Options,
+    destination: &Path,
+) -> Result<nexus_ingest::ImportReport, AppError> {
+    let mut bundle = if path == Path::new("-") {
+        nexus_ingest::import(std::io::stdin().lock(), options)?
+    } else {
+        nexus_ingest::import(std::fs::File::open(path)?, options)?
+    };
+    nexus_ingest::bundle::write(destination, &mut bundle)?;
+    Ok(bundle.report)
+}
+
+pub fn import_report_text(report: &nexus_ingest::ImportReport) -> String {
+    let mut lines = vec![
+        format!(
+            "Import: {:?} | Source: {}",
+            report.status, report.source.source_id
+        ),
+        format!(
+            "Cases: {} accepted / {} identifiable cases rejected",
+            report.accepted_cases, report.rejected_cases
+        ),
+        format!(
+            "Records: {} accepted / {} rejected / {} total",
+            report.accepted_records, report.rejected_records, report.source.records
+        ),
+        format!("Source SHA-256: {}", report.source.sha256),
+        format!("Observation statuses: {:?}", report.observation_counts),
+        format!("Missing fields: {:?}", report.missingness),
+        format!("Partitions: {:?}", report.split_counts),
+        "Local import only. No provider request was sent.".into(),
+    ];
+    for (name, items) in [("Errors", &report.issues), ("Warnings", &report.warnings)] {
+        lines.push(format!("\n{name}: {}", items.len()));
+        for issue in items.iter().take(20) {
+            lines.push(format!("  record {}: {:?}", issue.record, issue.code));
+        }
+        if items.len() > 20 {
+            lines.push(
+                "  First 20 shown; the complete list is in manifest.json or JSON output.".into(),
+            );
+        }
+    }
+    lines.join("\n")
+}
+
 pub fn demo(case: &Case) -> Result<ResultRecord, AppError> {
     Ok(interpret(case, mock_response(), Source::Mock)?)
 }

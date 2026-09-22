@@ -1,6 +1,6 @@
 # CLI and terminal workbench
 
-The `nexus` binary supports scripts and an interactive Rust TUI. Both use the same case validation, Jev request preparation and result interpretation. The first build is a research scaffold with synthetic examples; scientific evaluation and bulk data imports remain in the phase plan.
+The `nexus` binary supports scripts and an interactive Rust TUI. Both use the same case validation, Jev request preparation and result interpretation. Version 0.3.0 adds structured batch imports and a bundle browser. Scientific evaluation and raw GENIE import remain in the phase plan.
 
 ## Start
 
@@ -23,10 +23,13 @@ A terminal of at least 48 columns by 12 rows is required; 100 by 35 or larger is
 | Key | Action |
 | --- | --- |
 | `1`, `2`, `3`, `4` | Evidence, Request, Results, Help |
+| `5` | Import quality report |
 | `Tab`, `Shift-Tab` | Next/previous view |
 | `↑`/`↓`, `k`/`j` | Scroll |
 | `PgUp`, `PgDn`, `Home` | Page or return to top |
 | `o` | Enter a case JSON path and load it |
+| `b` | Open an import bundle directory and verify its report/sidecars |
+| `[`, `]` | Previous/next imported case; verify its fingerprint and clear previous results |
 | `r` | Reload the current file and clear the previous result |
 | `d` | Run an offline mock; no API request |
 | `c` | Review confirmation for one live synthetic Jev call |
@@ -39,6 +42,8 @@ The Evidence view shows the specimen and individual observations. Request shows 
 
 Use a normal editor to change case JSON, then reload. Path dialogs accept literal relative or absolute paths; they do not expand `~`, environment variables or shell commands. A failed load preserves the current case. While a live request is pending, navigation works and case changes/new runs are disabled. Quitting cancels local waiting; the provider may already have received the request and incurred a charge.
 
+Imported bundle cases are fingerprint-checked. Make a standalone copy before editing one; modifying a bundle case in place causes its next load to fail. Open an import with `nexus tui --batch DIRECTORY` or press `b` in the workbench. The Import view supports `s` to export the complete report.
+
 ## CLI commands
 
 | Command | Purpose |
@@ -48,14 +53,18 @@ Use a normal editor to change case JSON, then reload. Path dialogs accept litera
 | `nexus taxonomy` | List all development taxonomy outcomes |
 | `nexus schema KIND` | Print `case`, `jev-request`, `jev-response`, `result`, `error` JSON Schema or `openapi` |
 | `nexus validate CASE` | Validate JSON and report case ID/finding count |
+| `nexus import INPUT --input-format FORMAT --source-id ID --out-dir NEW_DIR` | Import JSON/JSONL/CSV/TSV locally with quality reports; migrate schema 1 |
+| `nexus batch DIRECTORY` | Inspect an import bundle and verify report/sidecar integrity |
 | `nexus prepare CASE` | Print the exact request without sending it |
 | `nexus demo [CASE]` | Offline mock; defaults to bundled example |
 | `nexus classify CASE` | Send one synthetic case to Jev |
 | `nexus replay CASE RESPONSE` | Interpret an unverified local provider fixture |
-| `nexus tui [--case CASE]` | Open the terminal workbench |
+| `nexus tui [--case CASE] [--batch DIRECTORY]` | Open a standalone case or an import bundle; flags are mutually exclusive |
 | `nexus serve [--port 3000]` | Run offline loopback HTTP endpoints |
 
 `--help` works on each command; `--version` reports the package version. JSON is the default output for scripts. `--format text` displays a readable summary/table for validation, taxonomy, results and diagnostics. Templates and request previews remain JSON in either mode. Diagnostics go to stderr and do not contaminate stdout. Successful commands exit 0, application errors exit 1, and invalid CLI arguments exit 2.
+
+Import additionally exits 3 when records are rejected, while preserving the report and any accepted cases. `--output` is not accepted for import; its report is already written inside the new bundle. The [import guide](data/IMPORT_GUIDE.md) covers columns, status normalization, patient groups, labels and limits. `nexus schema` also supports `import-report`, `labels` and `splits`.
 
 In 0.2.0, JSON-mode failures use a stable envelope on stderr, for example `{"error":{"code":"invalid_json","message":"input does not match the JSON schema"}}`. Scripts should inspect `error.code`; readable wording may change. Invalid arguments use `invalid_arguments` and never echo submitted values. Help/version remain readable text. See [contracts and compatibility](engineering/foundation.md).
 

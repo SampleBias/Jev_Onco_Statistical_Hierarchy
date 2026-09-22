@@ -12,6 +12,7 @@ path = "src/main.rs"
 [dependencies]
 nexus-core = { path = "../nexus-core" }
 nexus-jev = { path = "../nexus-jev" }
+nexus-ingest = { path = "../nexus-ingest" }
 serde.workspace = true
 serde_json.workspace = true
 clap.workspace = true

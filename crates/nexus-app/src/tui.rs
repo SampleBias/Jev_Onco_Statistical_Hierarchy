@@ -10,12 +10,13 @@ use ratatui::{
 };
 use std::{io::IsTerminal, path::PathBuf, time::Duration};
 
-const HELP: &str = "GETTING STARTED\n\nThe workbench opens a bundled synthetic case by default.\nPress o to load case JSON, or r to reload the current file.\nReview Evidence, then inspect the exact payload in Request.\n\nKEYS\n\n1 / 2 / 3 / 4   Evidence / Request / Results / Help\nTab / Shift-Tab  Next / previous tab\nUp / Down, j/k   Scroll\nPgUp / PgDn     Scroll one page\nHome            Back to top\no               Open case JSON\nr               Reload case and clear previous results\nd               Offline demo; always labeled MOCK\nc               Confirm sending the synthetic case to Jev\ns               Save Request or Results as JSON to a NEW file\nq / Ctrl-C      Quit and restore the terminal\nEsc             Close a dialog\n\nLIVE CLASSIFICATION\n\nSet TYPESAFE_API_KEY before launching. Keys are never shown.\nA live call sends evidence to api.typesafe.ai and may incur charges.\nOnly declared synthetic cases are accepted in this first build.\nDuring a request, case changes and additional runs are disabled.\nQuitting cancels local waiting; Jev may already have received the request.\n\nREADING RESULTS\n\nRaw probabilities and provider confidence are different quantities.\nNo clinical calibration is established. All results require review.\nThe demo uses a uniform distribution and does not classify cancer.\nAll 14 outcomes remain visible; scrolling never changes probability mass.\n\nEXPORTS\n\nOn Request, s exports the payload without credentials.\nOn Results, s exports the complete result with provenance.\nExisting files are protected. Parent folders must already exist.\nEdit case JSON in your usual editor, then reload here.";
+const HELP: &str = "GETTING STARTED\n\nThe workbench opens a bundled synthetic case by default.\nPress o to load case JSON, or r to reload the current file.\nReview Evidence, then inspect the exact payload in Request.\n\nKEYS\n\n1 / 2 / 3 / 4 / 5  Evidence / Request / Results / Help / Import\nTab / Shift-Tab  Next / previous tab\nUp / Down, j/k   Scroll\nPgUp / PgDn     Scroll one page\nHome            Back to top\no               Open case JSON\nb               Open an import bundle directory\n[ / ]           Previous / next case in the bundle\n5               Import quality report\nr               Reload case and clear previous results\nd               Offline demo; always labeled MOCK\nc               Confirm sending the synthetic case to Jev\ns               Save Request or Results as JSON to a NEW file\nq / Ctrl-C      Quit and restore the terminal\nEsc             Close a dialog\n\nLIVE CLASSIFICATION\n\nSet TYPESAFE_API_KEY before launching. Keys are never shown.\nA live call sends evidence to api.typesafe.ai and may incur charges.\nOnly declared synthetic cases are accepted in this first build.\nDuring a request, case changes and additional runs are disabled.\nQuitting cancels local waiting; Jev may already have received the request.\n\nREADING RESULTS\n\nRaw probabilities and provider confidence are different quantities.\nNo clinical calibration is established. All results require review.\nThe demo uses a uniform distribution and does not classify cancer.\nAll 14 outcomes remain visible; scrolling never changes probability mass.\n\nEXPORTS\n\nOn Request, s exports the payload without credentials.\nOn Results, s exports the complete result with provenance.\nOn Import, s exports the complete quality report.\nExisting files are protected. Parent folders must already exist.\nEdit standalone case JSON in your editor, then reload.\nImported bundle cases are fingerprint-checked; make a standalone copy before editing.";
 
 #[derive(Debug, PartialEq, Eq)]
 enum Dialog {
     None,
     Open,
+    OpenBatch,
     Save,
     ConfirmLive,
 }
@@ -31,6 +32,13 @@ pub struct App {
     status: String,
     error: bool,
     pending: Option<tokio::task::JoinHandle<Result<ResultRecord, String>>>,
+    batch: Option<BatchSession>,
+}
+
+struct BatchSession {
+    root: PathBuf,
+    report: nexus_ingest::ImportReport,
+    index: usize,
 }
 
 impl App {
@@ -56,7 +64,61 @@ impl App {
                 .into(),
             error: false,
             pending: None,
+            batch: None,
         })
+    }
+
+    pub fn from_batch(root: PathBuf) -> Result<Self, AppError> {
+        let mut app = Self::new(None)?;
+        app.load_batch(root)?;
+        Ok(app)
+    }
+
+    fn load_batch(&mut self, root: PathBuf) -> Result<(), AppError> {
+        let report = nexus_ingest::bundle::read_report(&root)?;
+        let entry = report
+            .cases
+            .first()
+            .ok_or_else(|| ErrorEnvelope::new(ErrorCode::NoImportedCases))?;
+        let case = nexus_ingest::bundle::read_case(&root, entry)?;
+        self.path = Some(root.join("cases").join(format!("{}.json", case.case_id)));
+        self.case = case;
+        self.result = None;
+        self.batch = Some(BatchSession {
+            root,
+            report,
+            index: 0,
+        });
+        self.select_tab(0);
+        self.message(
+            "Import bundle verified. Use [ and ] for cases; 5 shows the quality report.",
+            false,
+        );
+        Ok(())
+    }
+
+    fn batch_case(&mut self, offset: isize) -> Result<(), AppError> {
+        let batch = self
+            .batch
+            .as_ref()
+            .ok_or("open an import bundle with b first")?;
+        let index = batch
+            .index
+            .saturating_add_signed(offset)
+            .min(batch.report.cases.len() - 1);
+        let case = nexus_ingest::bundle::read_case(&batch.root, &batch.report.cases[index])?;
+        self.path = Some(
+            batch
+                .root
+                .join("cases")
+                .join(format!("{}.json", case.case_id)),
+        );
+        self.case = case;
+        self.result = None;
+        self.batch.as_mut().expect("batch is open").index = index;
+        self.select_tab(0);
+        self.message("Case fingerprint verified. Previous result cleared.", false);
+        Ok(())
     }
 
     fn message(&mut self, text: impl Into<String>, error: bool) {
@@ -79,12 +141,22 @@ impl App {
         self.case = case;
         self.path = path;
         self.result = None;
+        self.batch = None;
         self.select_tab(0);
         self.message("Case loaded and validated. Previous result cleared.", false);
         Ok(())
     }
 
     fn exported(&self) -> Result<String, AppError> {
+        if self.tab == 4 {
+            return workflows::pretty(
+                &self
+                    .batch
+                    .as_ref()
+                    .ok_or("open an import bundle with b first")?
+                    .report,
+            );
+        }
         if self.tab == 1 {
             return workflows::pretty(&prepare(&self.case)?);
         }
@@ -155,6 +227,8 @@ impl App {
                         Err("enter a file path".into())
                     } else if self.dialog == Dialog::Open {
                         self.load(Some(path))
+                    } else if self.dialog == Dialog::OpenBatch {
+                        self.load_batch(path)
                     } else {
                         self.exported()
                             .and_then(|content| workflows::save_new(&path, &content))
@@ -176,9 +250,9 @@ impl App {
         }
         match key.code {
             KeyCode::Char('q') => return true,
-            KeyCode::Tab => self.select_tab((self.tab + 1) % 4),
-            KeyCode::BackTab => self.select_tab((self.tab + 3) % 4),
-            KeyCode::Char('1'..='4') => {
+            KeyCode::Tab => self.select_tab((self.tab + 1) % 5),
+            KeyCode::BackTab => self.select_tab((self.tab + 4) % 5),
+            KeyCode::Char('1'..='5') => {
                 if let KeyCode::Char(c) = key.code {
                     self.select_tab((c as u8 - b'1') as usize);
                 }
@@ -189,16 +263,37 @@ impl App {
             KeyCode::PageDown => self.scroll = self.scroll.saturating_add(12),
             KeyCode::PageUp => self.scroll = self.scroll.saturating_sub(12),
             KeyCode::Home => self.scroll = 0,
-            KeyCode::Char('o' | 'r' | 'd' | 'c') if self.pending.is_some() => self.message(
-                "Jev run in progress. Wait before changing the case or starting another run.",
-                true,
-            ),
+            KeyCode::Char('o' | 'b' | '[' | ']' | 'r' | 'd' | 'c') if self.pending.is_some() => {
+                self.message(
+                    "Jev run in progress. Wait before changing the case or starting another run.",
+                    true,
+                )
+            }
             KeyCode::Char('o') => {
                 self.dialog = Dialog::Open;
                 self.input.clear();
             }
+            KeyCode::Char('b') => {
+                self.dialog = Dialog::OpenBatch;
+                self.input.clear();
+            }
+            KeyCode::Char('[' | ']') => {
+                let offset = if key.code == KeyCode::Char('[') {
+                    -1
+                } else {
+                    1
+                };
+                if let Err(e) = self.batch_case(offset) {
+                    self.message(e.to_string(), true);
+                }
+            }
             KeyCode::Char('r') => {
-                if let Err(e) = self.load(self.path.clone()) {
+                let loaded = if self.batch.is_some() {
+                    self.batch_case(0)
+                } else {
+                    self.load(self.path.clone())
+                };
+                if let Err(e) = loaded {
                     self.message(e.to_string(), true);
                 }
             }
@@ -213,8 +308,8 @@ impl App {
             KeyCode::Char('c') => {
                 if self.case.data_class != DataClass::Synthetic {
                     self.message("Live requests currently accept synthetic cases only.", true);
-                } else if self.case.findings.is_empty() {
-                    self.message("Add findings before a live request.", true);
+                } else if !self.case.has_observed_evidence() {
+                    self.message("Add observed findings before a live request.", true);
                 } else if !workflows::key_configured() {
                     self.message(
                         "TYPESAFE_API_KEY is missing. Set it before launch, or press d for a demo.",
@@ -257,19 +352,30 @@ impl App {
         match self.tab {
             0 => {
                 let mut lines = vec![format!("Case: {}", self.case.case_id), format!("Data: {:?}", self.case.data_class),
-                    format!("Age: {} | Sex at birth: {}", self.case.age_years.map(|a| a.to_string()).unwrap_or("unknown".into()), self.case.sex_at_birth.as_ref().map(|s| format!("{s:?}")).unwrap_or("unknown".into())),
+                    format!("Age: {} | Sex at birth: {}", self.case.age_years.map(|a| a.to_string()).or_else(|| self.case.age_lower_bound_exclusive.map(|a| format!(">{a}"))).unwrap_or("unknown".into()), self.case.sex_at_birth.as_ref().map(|s| format!("{s:?}")).unwrap_or("unknown".into())),
                     format!("Specimen: {}", workflows::display_text(self.case.specimen_site.as_deref().unwrap_or("unknown"))),
                     format!("Input: {}", self.path.as_ref().map(|p| workflows::display_text(&p.display().to_string())).unwrap_or("bundled synthetic example".into())),
                     String::new(), format!("FINDINGS ({})", self.case.findings.len()), String::new()];
+                if let Some(batch) = &self.batch {
+                    lines.insert(1, format!("Batch case {} / {} | [ previous  ] next | 5 quality report", batch.index + 1, batch.report.cases.len()));
+                }
                 for finding in &self.case.findings {
                     lines.push(format!("{}  {:?} / {}", finding.id, finding.kind, workflows::display_text(&finding.name)));
-                    lines.push(format!("    {}", workflows::display_text(&finding.value))); lines.push(String::new());
+                    lines.push(format!("    {}", workflows::display_text(&finding.value)));
+                    if let Some(observation) = &finding.observation {
+                        lines.push(format!("    Status: {:?} | Assay: {} | Units: {}", observation.status, workflows::display_text(observation.assay.as_deref().unwrap_or("unknown")), workflows::display_text(observation.units.as_deref().unwrap_or("unspecified"))));
+                    }
+                    if let Some(source) = &finding.source {
+                        lines.push(format!("    Source: {} / record {} / {}", source.source_id, source.record, workflows::display_text(&source.field)));
+                    }
+                    lines.push(String::new());
                 }
                 lines.push("Open JSON with o. Edit it in your editor and press r to reload.".into());
                 lines.join("\n")
             }
             1 => prepare(&self.case).map_err(|e| e.to_string()).and_then(|r| workflows::pretty(&r).map_err(|e| e.to_string())).unwrap_or_else(|e| e),
             2 => self.result.as_ref().map(workflows::result_text).unwrap_or_else(|| if self.pending.is_some() { "Waiting for Jev…\n\nTabs remain available. Case changes are paused until the request finishes.".into() } else { "No result yet.\n\nPress d for an offline mock, or c to send a synthetic case to Jev.\nThe mock does not make a cancer prediction.".into() }),
+            4 => self.batch.as_ref().map(|b| workflows::import_report_text(&b.report)).unwrap_or_else(|| "No import bundle open.\n\nCreate one with nexus import (see --help), then press b to open its directory.\nThe report lists rejected records, missing fields and observation statuses.\nUse [ and ] to browse cases; s exports the report.".into()),
             _ => HELP.into(),
         }
     }
@@ -309,9 +415,13 @@ impl App {
             header,
         );
         frame.render_widget(
-            Tabs::new(["1 Evidence", "2 Request", "3 Results", "4 Help"])
-                .select(self.tab)
-                .highlight_style(Style::default().fg(Color::Black).bg(Color::Cyan).bold()),
+            Tabs::new(if area.width >= 72 {
+                ["1 Evidence", "2 Request", "3 Results", "4 Help", "5 Import"]
+            } else {
+                ["1 Case", "2 Req", "3 Res", "4 Help", "5 Batch"]
+            })
+            .select(self.tab)
+            .highlight_style(Style::default().fg(Color::Black).bg(Color::Cyan).bold()),
             tabs,
         );
         let paragraph = Paragraph::new(self.body()).wrap(Wrap { trim: false });
@@ -324,6 +434,7 @@ impl App {
             0 => " Case evidence ",
             1 => " Request preview — not sent ",
             2 => " Results — research only ",
+            4 => " Import quality report ",
             _ => " Help ",
         };
         frame.render_widget(
@@ -342,7 +453,7 @@ impl App {
                 })),
             status,
         );
-        frame.render_widget(Paragraph::new("o Open  r Reload  d Demo  c Jev  s Save  ? Help  q Quit\nTab: views  ↑↓/j/k: scroll  PgUp/PgDn: page").style(Style::default().fg(Color::DarkGray)), footer);
+        frame.render_widget(Paragraph::new("o Open  b Batch  [/] Case  d Demo  c Jev  s Save  q Quit\nTab: views  ↑↓/j/k: scroll  r Reload  ? Help").style(Style::default().fg(Color::DarkGray)), footer);
         if self.dialog != Dialog::None {
             let popup = Rect {
                 x: area.x + 2,
@@ -363,6 +474,13 @@ impl App {
                     " Open case JSON ",
                     format!(
                         "Enter a file path (no shell expansion):\n{}\n\nEnter: load    Esc: cancel",
+                        workflows::display_text(&self.input)
+                    ),
+                ),
+                Dialog::OpenBatch => (
+                    " Open import bundle ",
+                    format!(
+                        "Enter the import output directory:\n{}\n\nEnter: verify and open    Esc: cancel",
                         workflows::display_text(&self.input)
                     ),
                 ),
@@ -402,11 +520,14 @@ impl Drop for RestoreTerminal {
     }
 }
 
-pub async fn run(path: Option<PathBuf>) -> Result<(), AppError> {
+pub async fn run(path: Option<PathBuf>, batch: Option<PathBuf>) -> Result<(), AppError> {
     if !std::io::stdin().is_terminal() || !std::io::stdout().is_terminal() {
         return Err(ErrorEnvelope::new(ErrorCode::TerminalRequired).into());
     }
-    let mut app = App::new(path)?;
+    let mut app = match batch {
+        Some(root) => App::from_batch(root)?,
+        None => App::new(path)?,
+    };
     let _restore = RestoreTerminal;
     let mut terminal = ratatui::try_init()?;
     loop {
@@ -441,7 +562,7 @@ mod tests {
     async fn pending_request_blocks_case_changes_and_duplicate_runs() {
         let mut app = App::new(None).unwrap();
         app.pending = Some(tokio::spawn(std::future::pending()));
-        for action in ['o', 'r', 'd', 'c'] {
+        for action in ['o', 'b', '[', ']', 'r', 'd', 'c'] {
             app.key(KeyEvent::new(KeyCode::Char(action), KeyModifiers::NONE));
             assert!(app.pending.is_some());
             assert_eq!(app.dialog, Dialog::None);

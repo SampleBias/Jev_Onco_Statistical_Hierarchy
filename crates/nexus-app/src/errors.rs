@@ -28,6 +28,21 @@ pub fn envelope(error: &AppError) -> ErrorEnvelope {
             nexus_jev::Error::Http(_) => ErrorCode::ProviderHttp,
             nexus_jev::Error::Response => ErrorCode::ProviderResponse,
         }
+    } else if let Some(e) = error.downcast_ref::<nexus_ingest::Error>() {
+        match e {
+            nexus_ingest::Error::Io(e) => match e.kind() {
+                std::io::ErrorKind::AlreadyExists => ErrorCode::OutputExists,
+                std::io::ErrorKind::NotFound => ErrorCode::FileNotFound,
+                _ => ErrorCode::IoError,
+            },
+            nexus_ingest::Error::Options => ErrorCode::InvalidArguments,
+            nexus_ingest::Error::SourceTooLarge | nexus_ingest::Error::TooManyRecords => {
+                ErrorCode::ImportLimit
+            }
+            nexus_ingest::Error::Columns => ErrorCode::InvalidImportColumns,
+            nexus_ingest::Error::EmptySource => ErrorCode::EmptyImport,
+            nexus_ingest::Error::InvalidBundle => ErrorCode::InvalidBundle,
+        }
     } else {
         ErrorCode::InternalError
     };

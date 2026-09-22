@@ -1,7 +1,7 @@
 {
   "inventory_version": 1,
   "scope": "Cargo metadata: workspace, build, development and platform-conditional dependencies; not a shipped-binary SBOM",
-  "cargo_lock_sha256": "f34d109ac065c06aeedf1c34335c0a0246bf4f46dc2f193953df9c66460ee9e1",
+  "cargo_lock_sha256": "6b2aca41592674e78c6ac53766e520ad54d29a8055bd00edfdcd7546a70d4b78",
   "packages": [
     {
       "name": "ahash",
@@ -281,6 +281,20 @@
       "version": "0.1.7",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "declared_license": "MIT OR Apache-2.0",
+      "has_license_file": false
+    },
+    {
+      "name": "csv",
+      "version": "1.4.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "declared_license": "Unlicense/MIT",
+      "has_license_file": false
+    },
+    {
+      "name": "csv-core",
+      "version": "0.1.13",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "declared_license": "Unlicense/MIT",
       "has_license_file": false
     },
     {
@@ -824,21 +838,28 @@
     },
     {
       "name": "nexus-app",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "source": "workspace",
       "declared_license": null,
       "has_license_file": false
     },
     {
       "name": "nexus-core",
-      "version": "0.2.0",
+      "version": "0.3.0",
+      "source": "workspace",
+      "declared_license": null,
+      "has_license_file": false
+    },
+    {
+      "name": "nexus-ingest",
+      "version": "0.3.0",
       "source": "workspace",
       "declared_license": null,
       "has_license_file": false
     },
     {
       "name": "nexus-jev",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "source": "workspace",
       "declared_license": null,
       "has_license_file": false

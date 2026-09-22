@@ -4,7 +4,7 @@ Status: design plus an implemented first slice. Jev is the sole classifier. Rust
 
 ```mermaid
 flowchart LR
-    A[Case JSON / future CSV and GENIE imports] --> B[Rust validation and evidence preparation]
+    A[Case JSON / JSONL / normalized CSV and TSV] --> B[Rust validation and evidence preparation]
     B --> C[Versioned taxonomy and Jev questions]
     C --> D[Hosted Jev]
     D --> E[Strict answer validation]
@@ -23,7 +23,7 @@ flowchart LR
 | `nexus-core` | Implemented | Typed case/evidence, taxonomy, questions, result contract and abstention |
 | `nexus-jev` | Initial adapter implemented | Official endpoint, server-side key, HTTPS, timeouts, bounded response parsing |
 | `nexus-app` | CLI/TUI/offline API implemented | File workflows, Ratatui terminal workbench and loopback Axum service |
-| `nexus-ingest` | Phase 02 | Versioned CSV/TSV/GENIE mappers and provenance |
+| `nexus-ingest` | Structured imports implemented | Bounded JSON/JSONL/CSV/TSV import, schema migration, provenance, reports, labels and group partitions; raw GENIE mapper pending |
 | `nexus-eval` | Phase 04 | Cohort runs, metrics, calibration and artifact compatibility |
 | `nexus-store` | Phase 05 | PostgreSQL persistence, immutable runs and audit events via SQLx |
 | `nexus-web` | Phase 05 | Leptos Rust UI with Axum integration |
@@ -40,7 +40,9 @@ Limits: 16 KiB serialized case; at most 64 findings; finding names at most 128 b
 
 `case_id` and `data_class` are excluded from provider state. Findings are still user-supplied text and may contain identifying information or instructions. The initial adapter enforces a synthetic-data declaration; it does not certify that arbitrary text is synthetic or deidentified. Actual deidentification and source review belong in the ingestion/release workflow.
 
-Version 1 has no free-form report document, raw mutation table, expression matrix or image input. Evidence must already be summarized. It is not a GENIE importer. Source identifiers, assay coverage, genomic coordinates/reference build, measurement units, timepoints and missingness need the versioned extension in Phase 02.
+Neither case schema accepts a free-form report document, raw mutation table, expression matrix or image. Evidence must already be summarized. A raw GENIE release needs a mapper before using the structured importer.
+
+Schema 2 is now implemented alongside schema 1. It adds local patient/sample/institution/cutoff metadata, per-finding source ID/checksum/record/field references, observation status, units, assay, timepoint and reference build, plus an exclusive lower age bound. Import automatically migrates schema 1; absent patient grouping remains unassigned. It does not add raw genomic coordinate/allele normalization or assay coverage inference. The prepared state uses an explicit allowlist, excluding all local metadata, source locators and evaluation labels. See [import contracts and behavior](data/IMPORT_GUIDE.md).
 
 ## Model contract
 
@@ -56,7 +58,7 @@ Mock inference is deliberately uniform. Replay is for developer fixtures, not au
 
 Implemented outputs include requested/resolved pinned model, prompt version, taxonomy version, gate-policy version, exact serialized request SHA-256, usage and local case ID. SHA-256 is a reproducibility fingerprint, not anonymization. Current fingerprints preserve vector order; reordering findings changes the request.
 
-Future persistent runs also need case revision, source checksums, importer/annotation versions, source access terms, reference release, model request timestamp, provider request ID, latency, error/retry history, calibration version and reviewer actions. Store labels in a separate evaluation table inaccessible to request preparation.
+Results already record case/request fingerprints; import bundles record source checksum, importer version, labels, split configuration and sidecar hashes. Case schema 2 uses prompt `cup-research-v0.2`; schema 1 retains its original prompt. Policy `unvalidated-research-gates-v0.2` adds a guard against unobserved-only evidence; result schema 2 records the input schema version. Future persistent runs also need source access terms, reference release, annotation versions, model request timestamp, provider request ID, latency, error/retry history, calibration version and reviewer actions. Store labels in a separate evaluation table inaccessible to request preparation.
 
 ## Service behavior and boundaries
 

@@ -78,6 +78,8 @@ pub fn interpret(
     }
     if case.findings.is_empty() {
         reasons.push("no_findings");
+    } else if !case.has_observed_evidence() {
+        reasons.push("no_observed_findings");
     }
     if choice == "insufficient_evidence" || choice == "other_origin" {
         reasons.push("unresolved_origin");
@@ -102,6 +104,7 @@ pub fn interpret(
     };
     Ok(ResultRecord {
         result_schema_version: RESULT_SCHEMA_VERSION,
+        case_schema_version: case.schema_version,
         case_id: case.case_id.clone(),
         case_revision_sha256: provenance::case_revision(case)?,
         fingerprint_version: provenance::FINGERPRINT_VERSION,
@@ -116,7 +119,7 @@ pub fn interpret(
         },
         calibration_status: "not_validated_for_cup",
         model: response.model,
-        prompt_version: PROMPT_VERSION,
+        prompt_version: prompt_version(case),
         taxonomy_version: TAXONOMY_VERSION,
         policy_version: POLICY_VERSION,
         request_sha256: provenance::request_sha256(&request)?,

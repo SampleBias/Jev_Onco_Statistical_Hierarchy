@@ -1,0 +1,72 @@
+{
+  "$defs": {
+    "Partition": {
+      "enum": [
+        "development",
+        "calibration",
+        "test",
+        "unassigned"
+      ],
+      "type": "string"
+    },
+    "SplitEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "type": "string"
+        },
+        "partition": {
+          "$ref": "#/$defs/Partition"
+        },
+        "patient_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "case_id",
+        "patient_id",
+        "partition"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "algorithm": {
+      "type": "string"
+    },
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/SplitEntry"
+      },
+      "type": "array"
+    },
+    "holdout_institution": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "seed": {
+      "type": "string"
+    },
+    "version": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "algorithm",
+    "seed",
+    "holdout_institution",
+    "entries"
+  ],
+  "title": "SplitManifest",
+  "type": "object"
+}

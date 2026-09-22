@@ -1,5 +1,7 @@
 # Foundation handoff — application 0.2.0
 
+This records the Phase 01 baseline. Application 0.3.0 adds `nexus-ingest`, case schema 2 alongside schema 1, result schema 2, import/split/label schemas and import exit code 3. See the [Phase 02 import guide](../data/IMPORT_GUIDE.md) for current additions. The original schema 1 request fingerprint remains regression-tested.
+
 ## Reproducible build
 
 Supported and tested baseline: Rust/Cargo 1.98.1 on Linux x86-64. CI uses Ubuntu 24.04 with a pinned toolchain and action commits; local development was also tested on Arch Linux. macOS and Windows are not yet supported/tested targets. No lower Rust version is claimed as the minimum supported version.

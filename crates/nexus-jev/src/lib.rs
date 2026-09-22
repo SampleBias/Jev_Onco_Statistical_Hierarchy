@@ -30,9 +30,9 @@ pub async fn classify(case: &Case, key: &str) -> Result<ResultRecord, Error> {
     if key.trim().is_empty() {
         return Err(Error::MissingKey);
     }
-    if case.findings.is_empty() {
+    if !case.has_observed_evidence() {
         return Err(nexus_core::ValidationError(
-            "at least one finding is required for a live request",
+            "at least one observed finding is required for a live request",
         )
         .into());
     }

@@ -3,6 +3,37 @@
     "schemas": {
       "Case": {
         "$defs": {
+          "CaseMetadata": {
+            "additionalProperties": false,
+            "properties": {
+              "evidence_cutoff": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "institution_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "patient_id": {
+                "description": "Local group ID for cohort partitioning; never sent to Jev.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "sample_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "type": "object"
+          },
           "DataClass": {
             "enum": [
               "synthetic",
@@ -36,6 +67,27 @@
                 "type": "string",
                 "x-maxUtf8Bytes": 128
               },
+              "observation": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Case/$defs/Observation"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "source": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Case/$defs/SourceReference"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Local provenance. Excluded from the provider state."
+              },
               "value": {
                 "description": "Nonblank; limit is measured in UTF-8 bytes by the runtime validator.",
                 "maxLength": 1024,
@@ -52,6 +104,54 @@
             ],
             "type": "object"
           },
+          "Observation": {
+            "additionalProperties": false,
+            "properties": {
+              "assay": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "reference_build": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "status": {
+                "$ref": "#/components/schemas/Case/$defs/ObservationStatus"
+              },
+              "timepoint": {
+                "description": "Relative study timepoint; do not put direct identifiers here.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "units": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "status"
+            ],
+            "type": "object"
+          },
+          "ObservationStatus": {
+            "enum": [
+              "observed",
+              "positive",
+              "negative",
+              "equivocal",
+              "not_tested",
+              "unknown"
+            ],
+            "type": "string"
+          },
           "SexAtBirth": {
             "enum": [
               "female",
@@ -60,11 +160,107 @@
               "unknown"
             ],
             "type": "string"
+          },
+          "SourceReference": {
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "type": "string"
+              },
+              "record": {
+                "description": "One-based input record; CSV/TSV header is record 1. Not a physical line number.",
+                "format": "uint64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              "source_id": {
+                "type": "string"
+              },
+              "source_sha256": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "source_id",
+              "source_sha256",
+              "record",
+              "field"
+            ],
+            "type": "object"
           }
         },
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "additionalProperties": false,
+        "allOf": [
+          {
+            "else": {
+              "properties": {
+                "age_lower_bound_exclusive": {
+                  "type": "null"
+                },
+                "findings": {
+                  "items": {
+                    "properties": {
+                      "observation": {
+                        "type": "null"
+                      },
+                      "source": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                },
+                "metadata": {
+                  "type": "null"
+                }
+              }
+            },
+            "if": {
+              "properties": {
+                "schema_version": {
+                  "const": 2
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "findings": {
+                  "items": {
+                    "properties": {
+                      "observation": {
+                        "type": "object"
+                      },
+                      "source": {
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "observation"
+                    ]
+                  }
+                },
+                "metadata": {
+                  "type": "object"
+                }
+              },
+              "required": [
+                "metadata"
+              ]
+            }
+          }
+        ],
         "properties": {
+          "age_lower_bound_exclusive": {
+            "description": "Schema 2: preserve censored ages such as >89 without treating them as exact.",
+            "format": "uint8",
+            "maximum": 119,
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
           "age_years": {
             "format": "uint8",
             "maximum": 120,
@@ -89,9 +285,20 @@
             "maxItems": 64,
             "type": "array"
           },
+          "metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Case/$defs/CaseMetadata"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Schema 2 local metadata; never included in the provider state."
+          },
           "schema_version": {
             "format": "uint32",
-            "maximum": 1,
+            "maximum": 2,
             "minimum": 1,
             "type": "integer"
           },
@@ -145,6 +352,11 @@
               "provider_http",
               "provider_response",
               "terminal_required",
+              "invalid_import_columns",
+              "import_limit",
+              "empty_import",
+              "invalid_bundle",
+              "no_imported_cases",
               "internal_error"
             ],
             "type": "string"
@@ -349,6 +561,11 @@
           "case_revision_sha256": {
             "type": "string"
           },
+          "case_schema_version": {
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
           "conflicting_evidence": {
             "format": "double",
             "type": "number"
@@ -414,6 +631,7 @@
         },
         "required": [
           "result_schema_version",
+          "case_schema_version",
           "case_id",
           "case_revision_sha256",
           "fingerprint_version",
@@ -442,7 +660,7 @@
   "info": {
     "description": "Research development. No live classification, authentication, persistence or clinical calibration.",
     "title": "Jev Onco Nexus offline research API",
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   "openapi": "3.1.0",
   "paths": {

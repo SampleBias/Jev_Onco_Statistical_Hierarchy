@@ -1,0 +1,30 @@
+{
+  "$defs": {
+    "LabelRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "type": "string"
+        },
+        "primary_origin": {
+          "type": "string"
+        },
+        "taxonomy_version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "primary_origin",
+        "taxonomy_version"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "items": {
+    "$ref": "#/$defs/LabelRecord"
+  },
+  "title": "Array_of_LabelRecord",
+  "type": "array"
+}

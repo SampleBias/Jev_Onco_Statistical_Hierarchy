@@ -138,3 +138,54 @@ async fn actual_routes_conform_to_generated_openapi_responses() {
         );
     }
 }
+
+#[test]
+fn imported_v2_cases_reports_labels_and_splits_match_schemas() {
+    let options = nexus_ingest::Options {
+        format: nexus_ingest::InputFormat::Csv,
+        source_id: "synthetic-v1".into(),
+        split_seed: "test".into(),
+        holdout_institution: None,
+    };
+    let bundle = nexus_ingest::import(
+        include_bytes!("../../../fixtures/import/synthetic-findings.csv").as_slice(),
+        &options,
+    )
+    .unwrap();
+    let docs = contracts::documents();
+    for (name, value) in [
+        (
+            "case.schema.json",
+            serde_json::to_value(&bundle.cases[0]).unwrap(),
+        ),
+        (
+            "import-report.schema.json",
+            serde_json::to_value(&bundle.report).unwrap(),
+        ),
+        (
+            "labels.schema.json",
+            serde_json::to_value(&bundle.labels).unwrap(),
+        ),
+        (
+            "splits.schema.json",
+            serde_json::to_value(&bundle.splits).unwrap(),
+        ),
+    ] {
+        assert!(
+            jsonschema::validator_for(&docs[name])
+                .unwrap()
+                .is_valid(&value),
+            "{name}"
+        );
+    }
+    let mut invalid = serde_json::to_value(&bundle.cases[0]).unwrap();
+    invalid["findings"][0]
+        .as_object_mut()
+        .unwrap()
+        .remove("source");
+    assert!(
+        !jsonschema::validator_for(&docs["case.schema.json"])
+            .unwrap()
+            .is_valid(&invalid)
+    );
+}
