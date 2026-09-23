@@ -3,7 +3,7 @@ use crate::ui;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{
     Frame,
-    layout::{Constraint, Layout, Margin},
+    layout::{Constraint, Layout, Margin, Rect},
     style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Clear, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, Wrap},
@@ -214,6 +214,10 @@ impl Guide {
             .style(Style::default().fg(ui::ACCENT)),
             search,
         );
+        let text_area = Rect {
+            width: body.width.saturating_sub(1),
+            ..body
+        };
         let all: Vec<_> = MANUAL.lines().collect();
         let indices: Vec<_> = if self.filtered {
             self.matches.clone()
@@ -228,7 +232,7 @@ impl Guide {
             let prefix = indices.iter().position(|i| *i == target).unwrap_or(0);
             self.scroll = Paragraph::new(lines[..prefix].to_vec())
                 .wrap(Wrap { trim: false })
-                .line_count(body.width.max(1));
+                .line_count(text_area.width.max(1));
         }
         let paragraph = Paragraph::new(if lines.is_empty() {
             vec![Line::from(
@@ -238,23 +242,26 @@ impl Guide {
             lines
         })
         .wrap(Wrap { trim: false });
-        self.total = paragraph.line_count(body.width.max(1));
+        self.total = paragraph.line_count(text_area.width.max(1));
         self.page = body.height as usize;
         self.scroll = self.scroll.min(self.total.saturating_sub(self.page));
         frame.render_widget(
             paragraph.scroll((self.scroll.min(u16::MAX as usize) as u16, 0)),
-            body,
+            text_area,
         );
-        frame.render_stateful_widget(
-            Scrollbar::new(ScrollbarOrientation::VerticalRight)
-                .thumb_style(Style::default().fg(ui::ACCENT))
-                .begin_symbol(None)
-                .end_symbol(None),
-            area,
-            &mut ScrollbarState::new(self.total)
-                .position(self.scroll)
-                .viewport_content_length(self.page),
-        );
+        if self.total > self.page && self.page > 0 {
+            frame.render_stateful_widget(
+                Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                    .thumb_style(Style::default().fg(ui::ACCENT))
+                    .track_style(Style::default().fg(ui::RAISED))
+                    .begin_symbol(None)
+                    .end_symbol(None),
+                body,
+                &mut ScrollbarState::new(self.total)
+                    .position(self.scroll)
+                    .viewport_content_length(self.page),
+            );
+        }
         let help = if let Some(e) = &self.error {
             format!("Invalid pattern: {e}")
         } else if self.draft.is_some() {
