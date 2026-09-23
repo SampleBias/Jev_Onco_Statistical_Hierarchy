@@ -1,5 +1,37 @@
 # Build status — 2026-09-22
 
+## 0.5.0 — first data-first redesign milestone
+
+Implemented independent Sample/Dataset/Assay/artifact contracts; long/wide expression
+CSV/TSV detection/import; HGNC symbol/ID, Ensembl and Entrez mapping; explicit
+identity/log2(x+1) transforms; QC; immutable source/measurement bundles; local
+reproduction; JSON/CSV/TSV measurement exports; and a default Ratatui data workbench
+with import settings, detection preview, paste, sample navigation and gene search.
+Legacy case schemas 1–3, provider payloads and the clinical interface remain available.
+The [expression guide](data/EXPRESSION_GUIDE.md) records exact behavior and limits.
+
+Verification: 134 workspace tests passed, including 34 new feature/import/CLI/TUI
+checks; rustfmt and clippy with warnings denied passed; generated schema drift and
+actual dataset-schema checks passed; dependency inventory records 277 packages.
+A real PTY smoke test passed sample-first startup, exploration/search, import
+settings, bracketed paste, resizing, quit and terminal/paste-mode restoration.
+This verifies software behavior, not cancer classification.
+
+A debug-build scale check used 20,000 real approved HGNC symbols with invented
+measurements for four samples and the full public HGNC dictionary: all 80,000
+records mapped, import took approximately 5.4 seconds with 160,368 KiB peak child
+RSS, and local reproduction passed. This was a synthetic scale check on this Linux
+machine, not a reference-cohort experiment or a general performance guarantee.
+
+The full redesign Phase 1 remains in progress. No reference-cancer comparison,
+molecular Jev inference, molecular OOD detector, calibration, real cancer cohort,
+cohort inference, repository connector or PDF report was delivered by this milestone.
+Clinical guidance is available through explicit legacy entry points; no records were
+removed. No live Jev request was made during this implementation.
+
+## Historical 0.4.0 verification
+
+
 ## Implemented and verified
 
 Application 0.4.0 adds five themed Ratatui visualization views, schema 3 local clinical

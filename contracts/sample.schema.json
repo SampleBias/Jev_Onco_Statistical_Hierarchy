@@ -1,0 +1,244 @@
+{
+  "$defs": {
+    "Artifact": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "path": {
+          "description": "Relative to the immutable dataset bundle; never an arbitrary file locator.",
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "type": "object"
+    },
+    "Assay": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact": {
+          "$ref": "#/$defs/Artifact"
+        },
+        "assay_id": {
+          "type": "string"
+        },
+        "modality": {
+          "$ref": "#/$defs/Modality"
+        },
+        "qc": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QcReport"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "assay_id",
+        "modality",
+        "artifact"
+      ],
+      "type": "object"
+    },
+    "DataClass": {
+      "enum": [
+        "synthetic",
+        "deidentified_research"
+      ],
+      "type": "string"
+    },
+    "Modality": {
+      "enum": [
+        "expression",
+        "variants",
+        "ihc",
+        "histology",
+        "copy_number",
+        "methylation",
+        "fusions",
+        "structural_variants",
+        "mirna",
+        "proteomics",
+        "pathology_embedding",
+        "legacy_annotations"
+      ],
+      "type": "string"
+    },
+    "QcIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "source_record": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "type": "object"
+    },
+    "QcReport": {
+      "additionalProperties": false,
+      "properties": {
+        "ambiguous_records": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "duplicate_gene_records": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "gene_id_mapping_rate": {
+          "description": "Unambiguously mapped records / total records, including missing measurements.",
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "invalid_values": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "issues": {
+          "items": {
+            "$ref": "#/$defs/QcIssue"
+          },
+          "type": "array"
+        },
+        "mapped_records": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "maximum": {
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "measured_values": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "minimum": {
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "missing_values": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "reference_compatibility": {
+          "description": "This import milestone has no cancer reference or inference pipeline.",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/QcStatus"
+        },
+        "total_records": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "unmapped_records": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "zero_values": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "status",
+        "total_records",
+        "measured_values",
+        "missing_values",
+        "invalid_values",
+        "zero_values",
+        "mapped_records",
+        "ambiguous_records",
+        "unmapped_records",
+        "duplicate_gene_records",
+        "issues",
+        "reference_compatibility"
+      ],
+      "type": "object"
+    },
+    "QcStatus": {
+      "enum": [
+        "pass",
+        "warning",
+        "blocked"
+      ],
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "assays": {
+      "items": {
+        "$ref": "#/$defs/Assay"
+      },
+      "type": "array"
+    },
+    "data_class": {
+      "$ref": "#/$defs/DataClass"
+    },
+    "patient_group_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "sample_id": {
+      "type": "string"
+    },
+    "sample_schema_version": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "sample_schema_version",
+    "sample_id",
+    "data_class",
+    "assays"
+  ],
+  "title": "Sample",
+  "type": "object"
+}

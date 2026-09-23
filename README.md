@@ -1,13 +1,14 @@
 # Jev Onco Statistical Hierarchy (JOSH)
 
-A Rust research prototype for evaluating **Jev as a cancer-of-unknown-primary (CUP) origin classifier**. Imported observations become structured case evidence; Jev ranks a versioned set of origins; Rust validates the answer and decides whether to abstain or send it for review.
+A Rust molecular-data workbench for cancer-of-unknown-primary research, using **Ratatui** and a CLI. JOSH is moving toward Sample → Data → Features → Reference comparison → Jev inference → Evidence and uncertainty.
 
-Jev is the sole classifier in the rebuild. The development scope covers data preparation, Jev integration, evaluation/calibration and evidence review; the original classifier, its model artifacts and its explanation tooling are excluded.
+**Current status (0.5.0):** the first data-first milestone adds independent samples, expression CSV/TSV import, HGNC gene mapping, explicit transformations, molecular import QC, source archives and a new default Ratatui workbench. See the [expression guide](docs/data/EXPRESSION_GUIDE.md). Reference-cancer comparisons and Jev inference on these expression features are still pending; Phase 1 is not complete.
 
-**Current status (0.4.0):** adds themed Ratatui visualizations, schema 3 clinical context, a local source-linked subset of NICE CG104 review rules, and versioned review-note exports to the existing import/classifier workbench. Clinical signoff, raw GENIE mapping and live provider verification remain pending. No cancer-specific accuracy or calibration has been established. The demo is a uniform mock distribution, not a prediction. Live inference currently accepts synthetic cases only.
+Jev remains the sole origin classifier. The existing summarized-case Jev CLI and legacy TUI remain available with synthetic-only live requests. No cancer-specific accuracy or calibration has been established. XGBoost, original weights and SHAP remain excluded.
 
 ## Read first
 
+- [Data-first redesign gap assessment](docs/assessment/DATA_FIRST_GAP_ASSESSMENT.md) — current code versus the design team's molecular workbench specification; proposed changes and three developer phases, retaining Rust, Jev and Ratatui
 - [Developer roadmap and phase index](docs/PLAN.md)
 - [CLI and TUI user guide](docs/TERMINAL_GUIDE.md)
 - [Visualizations, NICE rule coverage and clinical review guide](docs/CLINICAL_REVIEW_GUIDE.md)
@@ -36,9 +37,19 @@ cargo run --locked --bin josh -- demo fixtures/synthetic-case.json
 
 `prepare` prints the exact request without sending it. `demo` always abstains and returns `source: mock`. The example is invented and has no ground-truth origin. Do not interpret its distribution as medical evidence.
 
-The TUI opens a bundled synthetic clinical example. Press `6` for Visuals (left/right cycles score bars, IHC matrix, pathway, timeline and evidence counts), `7` for NICE Guidance, and `8` for clinical context/review history. Evidence, Request, Results, Help and Import remain on `1`–`5`. Press `d` for a labeled offline mock. Clinical stages are clinician-recorded, never inferred from model scores.
+The TUI opens two invented expression samples. Its primary views are Samples, Datasets, Analyze, Explore, Models, Reference and Projects. Press `i` to import, `p` to paste a table, `o` to open a dataset, `[`/`]` to change samples and `/` to search genes. No provider request occurs in these data workflows.
 
-On Guidance, `a` records a reasoned local review; **8 then s** saves the complete case to a new file. `o` opens case JSON, `c` requests a confirmed live synthetic call, and `q` quits (asking before discarding unsaved reviews). Full controls and clinical limitations are in the [clinical review guide](docs/CLINICAL_REVIEW_GUIDE.md).
+```bash
+mkdir -p results
+./target/debug/josh dataset import fixtures/expression/synthetic-expression.tsv \
+  --dataset-id expression-demo --units tpm --transform log2-one-plus \
+  --gene-map fixtures/expression/hgnc-subset.tsv --gene-map-release fixture-v1 \
+  --platform invented-demonstration --synthetic --out-dir results/expression-demo
+./target/debug/josh tui --dataset results/expression-demo
+./target/debug/josh dataset verify results/expression-demo --reproduce
+```
+
+The original case/clinical interface is available with `josh tui --legacy`, `--case FILE` or `--batch DIRECTORY`. Its source-linked NICE guidance, clinical review records and score/IHC charts remain compatible. See the [clinical review guide](docs/CLINICAL_REVIEW_GUIDE.md).
 
 The CLI supports `--format text`, `--output NEW_FILE`, stdin via `-`, `--help`, and `--version`. `josh example` prints a case template; `josh demo` works with no input file. Exports never overwrite an existing file. See the [terminal guide](docs/TERMINAL_GUIDE.md) for all commands and keys.
 
@@ -108,6 +119,8 @@ Tests cover input limits, label leakage through undeclared fields, provider cont
 
 ## Next implementation milestone
 
-Next is [Phase 03](docs/phases/03-jev-classifier.md): provider transport tests, Jev reliability, request budgets and a live synthetic smoke test. [Phase 02](docs/phases/02-data-import-and-evidence.md) still needs raw GENIE mapping and an authorized reviewed cohort. [Phase 00](docs/phases/00-scope-and-feasibility.md) clinical/data decisions remain open. A small, labeled, correctly masked cohort is still needed to measure whether Jev can infer origin from this project's evidence.
+[Redesign Phase 1](docs/redesign/01-samples-expression-and-reference.md) is in progress. The sample/expression/mapping/QC milestone is implemented; next are a compatible known-primary reference, numerical comparisons, a structured molecular Jev evidence package and frozen evaluation. Provider transport hardening and a live synthetic contract check also remain required. The new data workbench does not yet return tissue-of-origin predictions.
+
+[Phase 2](docs/redesign/02-multimodal-and-cohorts.md) adds variants, structured IHC and cohorts; [Phase 3](docs/redesign/03-modalities-and-connectors.md) adds secondary modalities and repository connectors. The [assessment](docs/assessment/DATA_FIRST_GAP_ASSESSMENT.md) records the 0.4.0 baseline and all requirement gaps.
 
 The upstream repository was inspected at commit `ee8069cdaaf997721cb071dffe1cb243651a5f56`. Its source was not copied into this implementation. Its GPL-2.0 license and the provenance of any future reused data-processing code or datasets must remain tracked; no distribution license has been selected for this new scaffold yet.

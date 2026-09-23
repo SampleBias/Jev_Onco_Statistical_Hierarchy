@@ -23,6 +23,10 @@
         "empty_import",
         "invalid_bundle",
         "no_imported_cases",
+        "dataset_format",
+        "dataset_configuration",
+        "gene_mapping",
+        "sample_selection",
         "internal_error"
       ],
       "type": "string"

@@ -1,0 +1,11 @@
+[package]
+name = "josh-features"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+josh-core = { path = "../josh-core" }
+csv.workspace = true
+thiserror.workspace = true

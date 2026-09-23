@@ -19,6 +19,7 @@ clap.workspace = true
 tokio.workspace = true
 axum.workspace = true
 schemars.workspace = true
+csv.workspace = true
 thiserror.workspace = true
 ratatui = { version = "0.30.2", default-features = false, features = ["crossterm_0_29", "unstable-rendered-line-info"] }
 crossterm = "0.29"

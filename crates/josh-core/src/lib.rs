@@ -7,6 +7,7 @@ mod policy;
 mod prompt;
 pub mod provenance;
 mod provider;
+pub mod sample;
 pub mod schema;
 mod taxonomy;
 

@@ -10,8 +10,10 @@ use schemars::JsonSchema;
 use serde::Serialize;
 
 pub mod contracts;
+pub mod data;
 pub mod errors;
 pub mod tui;
+pub mod workbench;
 pub mod workflows;
 
 #[derive(Serialize, JsonSchema)]

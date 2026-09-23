@@ -26,6 +26,10 @@ pub enum ErrorCode {
     EmptyImport,
     InvalidBundle,
     NoImportedCases,
+    DatasetFormat,
+    DatasetConfiguration,
+    GeneMapping,
+    SampleSelection,
     InternalError,
 }
 
@@ -65,6 +69,16 @@ impl ErrorEnvelope {
             ErrorCode::TerminalRequired => {
                 "TUI requires an interactive terminal; use 'josh demo --format text' in scripts"
             }
+            ErrorCode::DatasetFormat => {
+                "unsupported expression table; use dataset detect and configure layout/columns"
+            }
+            ErrorCode::DatasetConfiguration => {
+                "invalid dataset configuration; check --sample-id, units, transform and mapping release"
+            }
+            ErrorCode::GeneMapping => {
+                "invalid HGNC dictionary; approved gene and identifier columns are required"
+            }
+            ErrorCode::SampleSelection => "choose a valid --sample ID from the dataset",
             ErrorCode::InternalError => "internal operation failed",
             ErrorCode::InvalidImportColumns => {
                 "unsupported, missing or duplicate import columns; see 'josh import --help' and docs/data/IMPORT_GUIDE.md"

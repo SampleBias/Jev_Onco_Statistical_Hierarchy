@@ -7,3 +7,6 @@ mod types;
 
 pub use ingest::{import, migrate};
 pub use types::*;
+
+pub mod dataset;
+pub mod expression;

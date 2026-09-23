@@ -1,5 +1,19 @@
 # Data inventory
 
+## 0.5.0 additions
+
+- `fixtures/expression/synthetic-expression.tsv`: two invented six-gene profiles;
+  no cancer labels or known-primary reference.
+- `fixtures/expression/hgnc-subset.tsv`: six actual approved HGNC records extracted
+  from the public dictionary on 2026-09-22; source hash and URL are in its
+  [provenance record](../../fixtures/expression/hgnc-subset.provenance.json).
+- The full HGNC dictionary was downloaded for mapping verification. It is an
+  identifier authority, not a cancer reference. A scale check used 20,000 mapped
+  genes and four invented sample columns; it supplies no biological performance
+  evidence. Real tumor reference acquisition remains pending.
+
+## Historical inventory
+
 Recorded 2026-09-21. Owner: data engineer with data steward and clinical curator. **No real patient cohort has been imported.** Counts below refer to local records unless explicitly marked as planning inputs.
 
 | Asset / candidate | Version and access | Modalities and labels | Local count / rights status | Next step |

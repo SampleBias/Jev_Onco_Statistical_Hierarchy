@@ -2,12 +2,22 @@
 
 The `josh` binary supports scripts and an interactive Rust TUI. Both use the same case validation, Jev request preparation and result interpretation. Version 0.4.0 adds visualizations and local NICE clinical review to the structured import workflow. Scientific evaluation and raw GENIE import remain in the phase plan.
 
-## Start
+## Data workbench — 0.5.0
+
+`josh tui` now opens the sample-first expression workbench. Use `josh dataset --help`
+for detection, import, inspection, gene exploration, exports and local reproduction.
+The [expression guide](data/EXPRESSION_GUIDE.md) documents all new commands and keys.
+No API key is needed for these local workflows.
+
+The remainder of this page documents the compatible **legacy case interface**.
+Launch it with `josh tui --legacy`, `--case FILE` or `--batch DIRECTORY`.
+
+## Legacy start
 
 ```bash
 cargo build --locked --bin josh
 ./target/debug/josh doctor --format text
-./target/debug/josh tui
+./target/debug/josh tui --legacy
 ```
 
 The TUI opens a bundled synthetic case even when launched outside the checkout. To load your own canonical case:
@@ -45,7 +55,7 @@ A terminal of at least 48 columns by 12 rows is required; 100 by 35 or larger is
 
 The Evidence view shows the specimen and individual observations. Request shows the actual provider payload with local case identifiers omitted. Results preserves the complete distribution, model version, review flags and request fingerprint. Mock scores are explicitly labeled and never presented as a cancer prediction.
 
-The default TUI example uses schema 3 and invented clinical context. The coordinated
+The legacy TUI example uses schema 3 and invented clinical context. The coordinated
 navy/teal/cyan/blue/violet views are best at 120×40 or larger. Unknown/not-tested
 results remain distinct. No model score assigns a clinical stage.
 See the [clinical review guide](CLINICAL_REVIEW_GUIDE.md) for schema migration,
@@ -105,7 +115,7 @@ Use `-` as a case path to read stdin. Replay can read one of its inputs from std
 
 ## Live Jev
 
-Set `TYPESAFE_API_KEY` in the launching process environment using your normal secret-management method. A `.env` file is not automatically loaded. Never pass keys as CLI arguments. Then use `josh classify CASE` or `c` in the TUI. TUI asks `y` before sending. The CLI classify command is itself the explicit send action.
+Set `TYPESAFE_API_KEY` in the launching process environment using your normal secret-management method. A `.env` file is not automatically loaded. Never pass keys as CLI arguments. Then use `josh classify CASE` or `c` in the legacy TUI. TUI asks `y` before sending. The CLI classify command is itself the explicit send action.
 
 Live inference accepts declared synthetic cases only in this first release. That declaration does not detect identifiers or verify provenance. Missing keys and unsuitable cases fail locally. The adapter is pinned to `jev-1.13.0`; no live provider result has yet been verified for this project.
 

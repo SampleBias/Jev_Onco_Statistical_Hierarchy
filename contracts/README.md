@@ -2,6 +2,9 @@
 
 These artifacts are generated from the Rust types and checked in CI:
 
+- [Independent sample](sample.schema.json)
+- [Molecular dataset manifest](dataset.schema.json)
+- [Expression measurement](expression-record.schema.json)
 - [Case input](case.schema.json)
 - [Jev request](jev-request.schema.json)
 - [Jev response](jev-response.schema.json)
@@ -14,3 +17,7 @@ These artifacts are generated from the Rust types and checked in CI:
 - [Patient-group partitions](splits.schema.json)
 
 Run `cargo run -p josh-app --example export_contracts --locked` to refresh them, or `josh schema case` to print one contract. Cases support schemas 1, 2 and 3; current results use schema 2. Guidance reports, import reports and split manifests use version 1. Runtime validation adds relational and byte-budget checks documented in the [foundation handoff](../docs/engineering/foundation.md), [import guide](../docs/data/IMPORT_GUIDE.md) and [clinical review guide](../docs/CLINICAL_REVIEW_GUIDE.md).
+
+Sample/dataset/measurement contracts are distinct from legacy Case schemas. The new
+dataset CLI/TUI is local; these schemas do not imply new HTTP routes. Relational and
+artifact checks are documented in the [expression guide](../docs/data/EXPRESSION_GUIDE.md).

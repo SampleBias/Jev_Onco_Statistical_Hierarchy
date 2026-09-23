@@ -1,0 +1,108 @@
+{
+  "$defs": {
+    "GeneIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "hgnc_id": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "hgnc_id",
+        "symbol"
+      ],
+      "type": "object"
+    },
+    "GeneMapping": {
+      "additionalProperties": false,
+      "properties": {
+        "candidates": {
+          "items": {
+            "$ref": "#/$defs/GeneIdentity"
+          },
+          "type": "array"
+        },
+        "gene": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GeneIdentity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "$ref": "#/$defs/MappingStatus"
+        }
+      },
+      "required": [
+        "status",
+        "candidates"
+      ],
+      "type": "object"
+    },
+    "MappingStatus": {
+      "enum": [
+        "exact",
+        "alias",
+        "version_stripped",
+        "ambiguous",
+        "unmapped",
+        "not_attempted"
+      ],
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "mapping": {
+      "$ref": "#/$defs/GeneMapping"
+    },
+    "original_gene_id": {
+      "type": "string"
+    },
+    "original_value": {
+      "type": "string"
+    },
+    "raw_expression": {
+      "format": "double",
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "source_column": {
+      "description": "One-based original column index.",
+      "format": "uint",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "source_record": {
+      "description": "CSV parser record ordinal including header; not physical line number.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "transformed_expression": {
+      "format": "double",
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "original_gene_id",
+    "original_value",
+    "source_record",
+    "source_column",
+    "mapping"
+  ],
+  "title": "ExpressionRecord",
+  "type": "object"
+}

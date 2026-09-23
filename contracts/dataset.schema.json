@@ -1,0 +1,563 @@
+{
+  "$defs": {
+    "Artifact": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "path": {
+          "description": "Relative to the immutable dataset bundle; never an arbitrary file locator.",
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "type": "object"
+    },
+    "Assay": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact": {
+          "$ref": "#/$defs/Artifact"
+        },
+        "assay_id": {
+          "type": "string"
+        },
+        "modality": {
+          "$ref": "#/$defs/Modality"
+        },
+        "qc": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QcReport"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "assay_id",
+        "modality",
+        "artifact"
+      ],
+      "type": "object"
+    },
+    "DataClass": {
+      "enum": [
+        "synthetic",
+        "deidentified_research"
+      ],
+      "type": "string"
+    },
+    "Delimiter": {
+      "enum": [
+        "auto",
+        "csv",
+        "tsv"
+      ],
+      "type": "string"
+    },
+    "Detection": {
+      "additionalProperties": false,
+      "properties": {
+        "columns": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "delimiter": {
+          "$ref": "#/$defs/Delimiter"
+        },
+        "layout": {
+          "$ref": "#/$defs/MatrixLayout"
+        },
+        "modality": {
+          "$ref": "#/$defs/Modality"
+        },
+        "notices": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "sample_columns": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "delimiter",
+        "layout",
+        "modality",
+        "columns",
+        "sample_columns",
+        "notices"
+      ],
+      "type": "object"
+    },
+    "DictionaryField": {
+      "additionalProperties": false,
+      "properties": {
+        "meaning": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "original_column": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "units": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExpressionUnit"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "meaning"
+      ],
+      "type": "object"
+    },
+    "ExpressionConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "delimiter": {
+          "$ref": "#/$defs/Delimiter"
+        },
+        "gene_column": {
+          "type": "string"
+        },
+        "gene_namespace": {
+          "$ref": "#/$defs/GeneNamespace"
+        },
+        "layout": {
+          "$ref": "#/$defs/MatrixLayout"
+        },
+        "organism": {
+          "description": "Human gene mapping is the only supported mapping authority in this version.",
+          "type": "string"
+        },
+        "platform": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reference_genome": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sample_column": {
+          "type": "string"
+        },
+        "single_sample_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "transform": {
+          "$ref": "#/$defs/Transform"
+        },
+        "units": {
+          "$ref": "#/$defs/ExpressionUnit"
+        },
+        "value_column": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "delimiter",
+        "layout",
+        "gene_column",
+        "value_column",
+        "sample_column",
+        "gene_namespace",
+        "units",
+        "transform",
+        "organism"
+      ],
+      "type": "object"
+    },
+    "ExpressionUnit": {
+      "enum": [
+        "unknown",
+        "counts",
+        "tpm",
+        "fpkm",
+        "normalized",
+        "microarray_intensity",
+        "log2",
+        "z_score"
+      ],
+      "type": "string"
+    },
+    "GeneNamespace": {
+      "enum": [
+        "auto",
+        "hgnc_id",
+        "symbol",
+        "ensembl",
+        "entrez"
+      ],
+      "type": "string"
+    },
+    "MappingAsset": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact": {
+          "$ref": "#/$defs/Artifact"
+        },
+        "release": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "release",
+        "artifact"
+      ],
+      "type": "object"
+    },
+    "MatrixLayout": {
+      "enum": [
+        "auto",
+        "long",
+        "wide"
+      ],
+      "type": "string"
+    },
+    "Modality": {
+      "enum": [
+        "expression",
+        "variants",
+        "ihc",
+        "histology",
+        "copy_number",
+        "methylation",
+        "fusions",
+        "structural_variants",
+        "mirna",
+        "proteomics",
+        "pathology_embedding",
+        "legacy_annotations"
+      ],
+      "type": "string"
+    },
+    "QcIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "source_record": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "type": "object"
+    },
+    "QcReport": {
+      "additionalProperties": false,
+      "properties": {
+        "ambiguous_records": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "duplicate_gene_records": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "gene_id_mapping_rate": {
+          "description": "Unambiguously mapped records / total records, including missing measurements.",
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "invalid_values": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "issues": {
+          "items": {
+            "$ref": "#/$defs/QcIssue"
+          },
+          "type": "array"
+        },
+        "mapped_records": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "maximum": {
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "measured_values": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "minimum": {
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "missing_values": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "reference_compatibility": {
+          "description": "This import milestone has no cancer reference or inference pipeline.",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/QcStatus"
+        },
+        "total_records": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "unmapped_records": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "zero_values": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "status",
+        "total_records",
+        "measured_values",
+        "missing_values",
+        "invalid_values",
+        "zero_values",
+        "mapped_records",
+        "ambiguous_records",
+        "unmapped_records",
+        "duplicate_gene_records",
+        "issues",
+        "reference_compatibility"
+      ],
+      "type": "object"
+    },
+    "QcStatus": {
+      "enum": [
+        "pass",
+        "warning",
+        "blocked"
+      ],
+      "type": "string"
+    },
+    "Sample": {
+      "additionalProperties": false,
+      "properties": {
+        "assays": {
+          "items": {
+            "$ref": "#/$defs/Assay"
+          },
+          "type": "array"
+        },
+        "data_class": {
+          "$ref": "#/$defs/DataClass"
+        },
+        "patient_group_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sample_id": {
+          "type": "string"
+        },
+        "sample_schema_version": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "sample_schema_version",
+        "sample_id",
+        "data_class",
+        "assays"
+      ],
+      "type": "object"
+    },
+    "SourceAsset": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact": {
+          "$ref": "#/$defs/Artifact"
+        },
+        "original_name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "original_name",
+        "artifact"
+      ],
+      "type": "object"
+    },
+    "Transform": {
+      "enum": [
+        "identity",
+        "log2_one_plus"
+      ],
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "accession": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "citation": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "data_dictionary": {
+      "items": {
+        "$ref": "#/$defs/DictionaryField"
+      },
+      "type": "array"
+    },
+    "dataset_id": {
+      "type": "string"
+    },
+    "dataset_schema_version": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "detection": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Detection"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "expression_config": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ExpressionConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "gene_map": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/MappingAsset"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "imported_at_unix_seconds": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "notices": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "pipeline_version": {
+      "type": "string"
+    },
+    "samples": {
+      "items": {
+        "$ref": "#/$defs/Sample"
+      },
+      "type": "array"
+    },
+    "source": {
+      "$ref": "#/$defs/SourceAsset"
+    },
+    "source_name": {
+      "type": "string"
+    },
+    "study": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "dataset_schema_version",
+    "dataset_id",
+    "source_name",
+    "imported_at_unix_seconds",
+    "pipeline_version",
+    "source",
+    "samples",
+    "data_dictionary",
+    "notices"
+  ],
+  "title": "DatasetManifest",
+  "type": "object"
+}

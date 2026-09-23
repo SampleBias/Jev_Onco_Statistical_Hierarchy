@@ -1,0 +1,14 @@
+{
+  "source": "https://storage.googleapis.com/public-download-files/hgnc/tsv/tsv/hgnc_complete_set.txt",
+  "retrieved_on": "2026-09-22",
+  "source_sha256": "69bb5722d5a42bb355580deb2c9f197ce3d7f7d13807173b9674a7db65e52191",
+  "subset_symbols": [
+    "CDX2",
+    "KRAS",
+    "KRT20",
+    "KRT7",
+    "NKX2-1",
+    "TP53"
+  ],
+  "purpose": "Six real identifier mappings only; expression fixture values are invented, not reference cancer data."
+}

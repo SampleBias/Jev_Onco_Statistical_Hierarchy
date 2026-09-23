@@ -1,5 +1,22 @@
 # Architecture and contracts
 
+## Data workbench foundation — 0.5.0
+
+The sample-first path is now implemented independently of the legacy Case pipeline:
+source CSV/TSV → `josh-ingest::expression` → Sample/Assay/artifacts →
+`josh-features` gene mapping and explicit transforms → QC → immutable dataset bundle
+→ shared dataset CLI and Ratatui workbench. Imports never contact Jev.
+
+`josh-core::sample` defines the new contracts. `josh-ingest::dataset` persists and
+verifies source/derived artifacts and can reproduce mappings/values/QC. Legacy Case
+import retains the original bytes as annotations. A dictionary maps genes; it is not
+a cancer reference. Reference comparison, molecular evidence packages and molecular
+Jev analysis are still pending. See the [expression guide](data/EXPRESSION_GUIDE.md)
+and [active phase](redesign/01-samples-expression-and-reference.md).
+
+The remaining sections describe the retained case-classifier architecture and
+historical future-module proposals; the active roadmap prioritizes Ratatui.
+
 Status: design plus an implemented first slice. Jev is the sole classifier. Rust owns parsing, numeric transformations, orchestration, validation, storage and review. A hosted model means local GPU hardware is unnecessary for this initial application; large genomics preprocessing has its own resource needs.
 
 ```mermaid

@@ -1,5 +1,38 @@
 # Developer delivery plan
 
+## Active direction — data-first redesign, 2026-09-22
+
+The design team's molecular-data specification establishes **Samples → Data →
+Features → Reference comparison → Jev inference → Evidence and uncertainty** as the
+product workflow. Rust, Jev as the sole classifier, Ratatui and CLI remain fixed.
+Expression is the first modality; clinical intake and browser delivery are no longer
+the primary implementation priorities.
+
+Read the [gap assessment](assessment/DATA_FIRST_GAP_ASSESSMENT.md) before starting
+new work. It maps all 34 specification sections and 12 acceptance criteria to the
+current 0.4.0 implementation and identifies changes, compatibility requirements and
+scientific dependencies. The proposed delivery sequence is:
+
+| Redesign phase | Scope | Developer plan |
+| --- | --- | --- |
+| 1 | Samples, expression, gene mapping/QC, references, Jev evidence and Ratatui | [Phase 1](redesign/01-samples-expression-and-reference.md) |
+| 2 | Variants, IHC, multimodal conflicts, cohorts and report exports | [Phase 2](redesign/02-multimodal-and-cohorts.md) |
+| 3 | Secondary modalities and repository connectors | [Phase 3](redesign/03-modalities-and-connectors.md) |
+
+The first Phase 1 milestone is implemented in 0.5.0: Sample/assay/artifact contracts,
+legacy Case attachment import, expression CSV/TSV through mapping/QC, and a Ratatui
+data workbench. The full phase remains in progress; reference comparisons and
+molecular Jev analysis are next. See the [expression guide](data/EXPRESSION_GUIDE.md). Carry forward unfinished provider
+reliability, evaluation/calibration and operations work. Re-estimate after the first
+reference/pipeline scope is fixed; the historical estimate below does not cover the
+expanded redesign.
+
+## Original roadmap — historical baseline
+
+The remaining sections and linked `phases/00`–`07` documents describe the original
+delivery plan and prior milestones. Retain them for traceability; where priorities
+conflict, follow the data-first direction and redesign files above.
+
 Version 0.4 — 2026-09-21. Objective: rebuild the useful Open_Nexus workflow in Rust with **Jev as the sole classifier**, ingest case evidence, return ranked origin assignments with explicit probability semantics, and support human research review.
 
 Scope decision: exclude XGBoost implementation and benchmarks, recovery or retraining of the original model weights, and SHAP explanations. These are not dependencies, deliverables or optional tasks. Historical descriptions remain in the source audit only. Evaluation uses labeled cases and deterministic class-frequency references; the application presents source evidence, probabilities and uncertainty.

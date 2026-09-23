@@ -28,6 +28,22 @@ pub fn envelope(error: &AppError) -> ErrorEnvelope {
             josh_jev::Error::Http(_) => ErrorCode::ProviderHttp,
             josh_jev::Error::Response => ErrorCode::ProviderResponse,
         }
+    } else if let Some(e) = error.downcast_ref::<josh_ingest::dataset::DatasetError>() {
+        use josh_ingest::dataset::DatasetError as D;
+        match e {
+            D::Io(e) => match e.kind() {
+                std::io::ErrorKind::AlreadyExists => ErrorCode::OutputExists,
+                std::io::ErrorKind::NotFound => ErrorCode::FileNotFound,
+                _ => ErrorCode::IoError,
+            },
+            D::Limit => ErrorCode::ImportLimit,
+            D::Detection | D::Columns | D::Format => ErrorCode::DatasetFormat,
+            D::SampleId | D::Configuration => ErrorCode::DatasetConfiguration,
+            D::Empty => ErrorCode::EmptyImport,
+            D::GeneMap => ErrorCode::GeneMapping,
+            D::InvalidBundle => ErrorCode::InvalidBundle,
+            D::Serialization => ErrorCode::InternalError,
+        }
     } else if let Some(e) = error.downcast_ref::<josh_ingest::Error>() {
         match e {
             josh_ingest::Error::Io(e) => match e.kind() {

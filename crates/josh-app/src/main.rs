@@ -40,6 +40,9 @@ enum SchemaKind {
     Splits,
     Labels,
     Guidance,
+    Sample,
+    Dataset,
+    ExpressionRecord,
 }
 
 #[derive(Clone, Copy, ValueEnum)]
@@ -52,13 +55,24 @@ enum InputFormat {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Open the terminal workbench; defaults to a bundled synthetic case.
+    /// Molecular dataset import, QC, exploration and reproducibility.
+    Dataset {
+        #[command(subcommand)]
+        command: Box<josh_app::data::DatasetCommand>,
+    },
+    /// Open the sample/data workbench; legacy cases remain available explicitly.
     Tui {
         #[arg(short, long, conflicts_with = "batch")]
         case: Option<PathBuf>,
         /// Open a verified import bundle and browse cases with [ and ].
         #[arg(long, conflicts_with = "case")]
         batch: Option<PathBuf>,
+        /// Open a molecular dataset bundle.
+        #[arg(long, conflicts_with_all = ["case", "batch", "legacy"])]
+        dataset: Option<PathBuf>,
+        /// Open the original case and clinical-review interface.
+        #[arg(long)]
+        legacy: bool,
     },
     /// Print an editable synthetic case template; use --output to save it.
     Example {
@@ -116,13 +130,40 @@ enum Command {
 
 async fn run(args: Args) -> Result<bool, AppError> {
     let mut human = None;
+    let mut raw_output = None;
     let mut rejected_records = false;
     let value = match args.command {
-        Command::Tui { case, batch } => {
+        Command::Dataset { command } => {
+            if args.output.is_some()
+                && matches!(
+                    &*command,
+                    josh_app::data::DatasetCommand::Import { .. }
+                        | josh_app::data::DatasetCommand::MigrateCase { .. }
+                )
+            {
+                return Err(ErrorEnvelope::new(ErrorCode::InvalidArguments).into());
+            }
+            let result = josh_app::data::execute(*command)?;
+            human = Some(result.human);
+            raw_output = result.raw;
+            rejected_records = result.blocked;
+            result.value
+        }
+        Command::Tui {
+            case,
+            batch,
+            dataset,
+            legacy,
+        } => {
             if args.output.is_some() {
                 return Err(ErrorEnvelope::new(ErrorCode::InvalidArguments).into());
             }
-            return josh_app::tui::run(case, batch).await.map(|()| false);
+            return if legacy || case.is_some() || batch.is_some() {
+                josh_app::tui::run(case, batch).await
+            } else {
+                josh_app::workbench::run(dataset).await
+            }
+            .map(|()| false);
         }
         Command::Serve { port } => {
             if args.output.is_some() {
@@ -160,6 +201,9 @@ async fn run(args: Args) -> Result<bool, AppError> {
                 SchemaKind::Splits => "splits.schema.json",
                 SchemaKind::Labels => "labels.schema.json",
                 SchemaKind::Guidance => "guidance.schema.json",
+                SchemaKind::Sample => "sample.schema.json",
+                SchemaKind::Dataset => "dataset.schema.json",
+                SchemaKind::ExpressionRecord => "expression-record.schema.json",
             };
             josh_app::contracts::documents()
                 .remove(name)
@@ -270,9 +314,13 @@ async fn run(args: Args) -> Result<bool, AppError> {
             serde_json::to_value(result)?
         }
     };
-    let content = match args.format {
-        Format::Json => workflows::pretty(&value)?,
-        Format::Text => human.unwrap_or(workflows::pretty(&value)?),
+    let content = if let Some(raw) = raw_output {
+        raw
+    } else {
+        match args.format {
+            Format::Json => workflows::pretty(&value)?,
+            Format::Text => human.unwrap_or(workflows::pretty(&value)?),
+        }
     };
     if let Some(path) = args.output {
         workflows::save_new(&path, &content)?;

@@ -7,6 +7,7 @@ rust-version.workspace = true
 
 [dependencies]
 josh-core = { path = "../josh-core" }
+josh-features = { path = "../josh-features" }
 serde.workspace = true
 serde_json.workspace = true
 schemars.workspace = true

@@ -26,6 +26,18 @@ pub fn documents() -> BTreeMap<String, Value> {
     BTreeMap::from([
         ("case.schema.json".into(), input::<crate::Case>()),
         (
+            "sample.schema.json".into(),
+            input::<crate::sample::Sample>(),
+        ),
+        (
+            "dataset.schema.json".into(),
+            input::<crate::sample::DatasetManifest>(),
+        ),
+        (
+            "expression-record.schema.json".into(),
+            input::<crate::sample::ExpressionRecord>(),
+        ),
+        (
             "guidance.schema.json".into(),
             output::<crate::guidance::GuidanceReport>(),
         ),

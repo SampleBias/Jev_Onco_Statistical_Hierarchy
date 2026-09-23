@@ -1,5 +1,12 @@
 # Intended use — research draft 0.1
 
+**Direction update (0.5.0):** the primary product is a sample/dataset molecular
+workbench. Expression import, mapping, QC and exploration are implemented; cancer
+reference comparison and molecular Jev inference remain pending. No patient profile
+is required. See the [active Phase 1 plan](../redesign/01-samples-expression-and-reference.md)
+and [expression guide](../data/EXPRESSION_GUIDE.md). The original case-study draft
+below is retained for the legacy classifier; its modality priority is superseded.
+
 Owner: product lead with clinical/pathology reviewer. Written 2026-09-21. Status: engineering scope drafted; clinical approval pending. This document is not evidence that Jev can identify cancer origins accurately.
 
 The application lets a researcher load structured evidence for a malignancy, inspect the exact Jev request, and review ranked candidate origins and unresolved outcomes. The proposed first study uses retrospective, independently confirmed known-primary cases with the origin hidden during inference. Adults are the proposed first population; the general case parser accepts ages 0–120 and does not enforce clinical eligibility. Eligibility belongs in the reviewed cohort manifest.
