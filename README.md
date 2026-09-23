@@ -19,6 +19,12 @@ cargo run --locked --bin josh -- molecular export /tmp/josh-demo/explanation.jso
 Use new output paths. Demo coefficients and measurements are invented. Explanations
 describe model-output changes, not causal effects or calibrated cancer probabilities.
 
+For a clean, ready-to-open input pack and a five-step offline walkthrough, see the
+[basic data demo](fixtures/basic-demo/README.md). Generate it with
+`cargo run --locked -p josh-app --example prepare_demo -- --out-dir results/basic-demo`.
+It includes molecular tables, explicit missing values, expression data and saved
+analytical charts; no Jev key is needed.
+
 ## Read first
 
 - [Data-first redesign gap assessment](docs/assessment/DATA_FIRST_GAP_ASSESSMENT.md) — current code versus the design team's molecular workbench specification; proposed changes and three developer phases, retaining Rust, Jev and Ratatui

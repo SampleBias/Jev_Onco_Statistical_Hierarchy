@@ -1,0 +1,7 @@
+sample_id	id	name	modality	value	units	status	gene	coverage
+DEMO-MOL-02	neutral-cna	MDM2	copy_number	0	discrete_call	observed	MDM2	invented-measured
+DEMO-MOL-02	sbs4	SBS4	signature			not_tested		not-tested
+DEMO-MOL-02	kras	KRAS	mutation			unknown	KRAS	unknown
+DEMO-MOL-02	kit	KIT IHC	ihc	negative		observed		invented-measured
+DEMO-MOL-02	age	Age at sampling	demographic	>89	years	observed		recorded
+DEMO-MOL-02	sex	Recorded sex	demographic			unknown		unknown

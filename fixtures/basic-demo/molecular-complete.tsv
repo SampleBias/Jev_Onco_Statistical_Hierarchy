@@ -1,0 +1,8 @@
+sample_id	id	name	modality	value	units	status	gene	chromosome	position	reference	alternate	consequence	somatic	catalogue	method	mutation_count	reference_build	assay	coverage
+DEMO-MOL-01	sbs4	SBS4	signature	5.0	projection_score	observed								invented-catalogue-v1	invented-software-fixture	120	GRCh38	invented-panel	invented
+DEMO-MOL-01	sbs24	SBS24	signature	1.5	projection_score	observed								invented-catalogue-v1	invented-software-fixture	120	GRCh38	invented-panel	invented
+DEMO-MOL-01	kras	KRAS	mutation			observed	KRAS	12	100	G	A	invented-example	true				GRCh38	invented-panel	invented
+DEMO-MOL-01	mdm2	MDM2	copy_number	2	discrete_call	observed	MDM2										GRCh38	invented-panel	invented
+DEMO-MOL-01	fat1	FAT1	copy_number	-2	discrete_call	observed	FAT1										GRCh38	invented-panel	invented
+DEMO-MOL-01	crebbp	CREBBP	copy_number	-1	discrete_call	observed	CREBBP										GRCh38	invented-panel	invented
+DEMO-MOL-01	age	Age at sampling	demographic	76	years	observed												invented-record	recorded
