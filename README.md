@@ -2,9 +2,22 @@
 
 A Rust molecular-data workbench for cancer-of-unknown-primary research, using **Ratatui** and a CLI. JOSH is moving toward Sample → Data → Features → Reference comparison → Jev inference → Evidence and uncertainty.
 
-**Current status (0.6.0):** Rust expression import/QC now leads into local reference curation, compatibility-gated Pearson comparison and an offline structured Jev request preview. The Ratatui dashboard has quality cards, a histogram, signed similarity bars and a searchable guide (`g`; `F1`/`Ctrl+g` while typing). See the [user guide](docs/USER_GUIDE.md) and [reference guide](docs/data/REFERENCE_GUIDE.md). Live molecular Jev inference, real validated cancer references and scientific evaluation remain open; Phase 1 is not complete.
+**Current status (0.7.0):** Molecular inputs now connect to Jev inference and native Rust Shapley explanations. Ratatui includes linked circular, scatter, signed-bar and waterfall views, with JSON/CSV/SVG exports. Press `m` in the workbench, then `d` for an explicitly analytical demonstration. Expression comparison, the existing clinical interface and the searchable guide remain available. See the [molecular guide](docs/data/MOLECULAR_GUIDE.md) for import, inference, explanation budgets, signatures and cohort commands.
 
-Jev remains the sole origin classifier. The existing summarized-case Jev CLI and legacy TUI remain available with synthetic-only live requests. No cancer-specific accuracy or calibration has been established. XGBoost, original weights and SHAP remain excluded.
+Jev remains the sole origin classifier, with synthetic-only live requests. No cancer-specific accuracy or calibration has been established. XGBoost and original model weights remain excluded. The user-approved September 23 scope adds Rust model-agnostic explanations of Jev outputs; the analytical demo is a software fixture, not a cancer classifier.
+
+```bash
+cargo run --locked --bin josh -- tui
+# Press m, then d. Arrows select evidence, Tab switches views, t changes target.
+# Or create a reproducible offline demonstration:
+cargo run --locked --bin josh -- molecular demo --out-dir /tmp/josh-demo --format text
+cargo run --locked --bin josh -- tui --explanation /tmp/josh-demo/explanation.json
+cargo run --locked --bin josh -- molecular export /tmp/josh-demo/explanation.json \
+  --kind svg --output /tmp/josh-explanation.svg
+```
+
+Use new output paths. Demo coefficients and measurements are invented. Explanations
+describe model-output changes, not causal effects or calibrated cancer probabilities.
 
 ## Read first
 
@@ -117,9 +130,15 @@ cargo test --workspace --locked
 
 Tests cover input limits, label leakage through undeclared fields, provider contracts, probability bounds, model pinning, abstention, mock labeling, request fingerprints, and preflight restrictions. They establish software behavior, not diagnostic performance.
 
-## Next implementation milestone
+## Scientific work still required
 
-[Redesign Phase 1](docs/redesign/01-samples-expression-and-reference.md) is in progress. The sample/expression/mapping/QC milestone is implemented; next are a compatible known-primary reference, numerical comparisons, a structured molecular Jev evidence package and frozen evaluation. Provider transport hardening and a live synthetic contract check also remain required. The new data workbench does not yet return tissue-of-origin predictions.
+[Approved molecular/explanation plan](docs/redesign/04-onconpc-jev-explanations.md)
+builds on expression import and compatible reference comparison. The software now
+supports molecular inference, exact/sampled attribution, experimental SBS96/NNLS
+processing and frozen cohort metrics. Real cancer reference curation, an authenticated
+live Jev check, provider-variation measurements, external cohort evaluation and
+calibration remain separate prerequisites for scientific claims. Local software
+tests and synthetic demonstrations do not establish clinical performance.
 
 [Phase 2](docs/redesign/02-multimodal-and-cohorts.md) adds variants, structured IHC and cohorts; [Phase 3](docs/redesign/03-modalities-and-connectors.md) adds secondary modalities and repository connectors. The [assessment](docs/assessment/DATA_FIRST_GAP_ASSESSMENT.md) records the 0.4.0 baseline and all requirement gaps.
 

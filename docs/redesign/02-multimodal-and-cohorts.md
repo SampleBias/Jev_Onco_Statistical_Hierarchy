@@ -1,6 +1,13 @@
 # Redesign Phase 2 — Variants, IHC and cohort analysis
 
-Status: proposed, not implemented. Depends on [Phase 1](01-samples-expression-and-reference.md)
+Status: partially implemented in 0.7.0 under the approved
+[OncoNPC adaptation](04-onconpc-jev-explanations.md). Canonical molecular tables,
+documented MAF/VCF subsets, same-sample joins, Jev inference and bounded synthetic
+cohort runs are available. Curated modality validation, richer variant/IHC
+normalization, cohort TUI and PDF remain open. See the
+[molecular guide](../data/MOLECULAR_GUIDE.md) for exact limits.
+
+Depends on [Phase 1](01-samples-expression-and-reference.md)
 sample/artifact/reference contracts and pipeline. Leads: bioinformatician and Rust
 backend engineer. Reviewers: molecular pathology curator, statistics lead and QA.
 Fixed stack: Rust, Jev and Ratatui. Direction: [gap assessment](../assessment/DATA_FIRST_GAP_ASSESSMENT.md).

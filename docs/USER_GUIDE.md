@@ -6,11 +6,37 @@ JOSH is a Rust molecular research workbench with a Ratatui interface. Start with
 sample and its molecular measurements. Patient forms are not required. Jev is the
 origin classifier; Rust handles files, gene identifiers, QC and reference comparison.
 
-The current release imports expression data, explores samples, curates a local
-reference, computes numerical similarities and prepares a structured Jev request.
-The molecular request is an OFFLINE PREVIEW. Molecular live inference, calibrated
-cancer probabilities and a validated unknown/out-of-distribution detector are not
-implemented. The legacy summarized-case workflow is separate.
+The current release imports expression and genomic evidence, compares compatible
+references, runs synthetic molecular Jev inference and computes Shapley
+explanations. Calibrated cancer probabilities and a validated out-of-distribution
+detector remain unavailable. The legacy summarized-case workflow remains accessible.
+
+## Molecular explanations and terminal graphics
+
+Press m in the data workbench. After a successful expression comparison, the
+selected sample and reference taxonomy carry into molecular inference. Without
+a comparison, m opens the invented genomic tutorial. Press d for analytical demo
+charts: they are explicitly labeled and do not call Jev.
+
+The outer circular ring groups feature categories; inner sectors show absolute
+attribution magnitude. The scatter shows signed contributions in percentage points.
+Without a compatible background transform, its X axis is explicitly feature rank.
+Raw units are shown in the inspector. A large negative contribution opposes the
+selected class even though its circular sector is large.
+
+- Up/Down: select a feature/group and inspect original measurements and provenance.
+- Tab/Left/Right: circular/scatter and waterfall views; narrow terminals use tables.
+- t: explain another target class from cached distributions, without network calls.
+- o: open molecular feature JSON or a saved explanation archive.
+- c: run Jev after entering a new run-directory path; requires a configured key.
+- e: explain the archived live result, with visible evaluation/token/time budgets.
+- x: cancel further evaluations; an in-flight request may already have been billed.
+- s: save a new .svg, .csv or .json file; existing files are protected.
+- q/Esc: return to the data workbench, or quit a standalone molecular view.
+
+Request values are raw model outputs. The baseline, signed sum and final value
+reconcile numerically; sampling uncertainty is not a clinical confidence interval.
+Full CLI examples, input formats and research limits are in docs/data/MOLECULAR_GUIDE.md.
 
 The startup example contains invented measurements. Its provenance remains marked
 Synthetic in the Sample/Dataset metadata and exports. The application title is

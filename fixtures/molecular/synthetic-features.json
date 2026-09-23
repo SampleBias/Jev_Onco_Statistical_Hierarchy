@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "pipeline_version": "molecular-features-v1",
+  "sample_id": "INVENTED-01",
+  "patient_group_id": "INVENTED-P01",
+  "data_class": "synthetic",
+  "features": [
+    {"id":"sbs4","name":"SBS4","modality":"signature","group":"sbs4","status":"observed","value":{"kind":"signature","signature":"SBS4","value":5.0,"units":"projection_score","catalogue":"invented-catalogue-v1","method":"invented-software-fixture","mutation_count":120},"assay":"invented-panel","reference_build":"GRCh38","coverage":"invented","source":{"source_id":"invented-fixture","sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","record":1}},
+    {"id":"sbs24","name":"SBS24","modality":"signature","group":"sbs24","status":"observed","value":{"kind":"signature","signature":"SBS24","value":1.5,"units":"projection_score","catalogue":"invented-catalogue-v1","method":"invented-software-fixture","mutation_count":120},"assay":"invented-panel","reference_build":"GRCh38","coverage":"invented","source":{"source_id":"invented-fixture","sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","record":2}},
+    {"id":"kras","name":"KRAS","modality":"mutation","group":"kras","status":"observed","value":{"kind":"mutation","gene":"KRAS","chromosome":"12","position":100,"reference":"G","alternate":"A","consequence":"invented-example","somatic":true},"assay":"invented-panel","reference_build":"GRCh38","coverage":"invented","source":{"source_id":"invented-fixture","sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","record":3}},
+    {"id":"mdm2","name":"MDM2","modality":"copy_number","group":"mdm2","status":"observed","value":{"kind":"copy_number","gene":"MDM2","call":2},"assay":"invented-panel","reference_build":"GRCh38","coverage":"invented","source":{"source_id":"invented-fixture","sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","record":4}},
+    {"id":"fat1","name":"FAT1","modality":"copy_number","group":"fat1","status":"observed","value":{"kind":"copy_number","gene":"FAT1","call":-2},"assay":"invented-panel","reference_build":"GRCh38","coverage":"invented","source":{"source_id":"invented-fixture","sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","record":5}},
+    {"id":"crebbp","name":"CREBBP","modality":"copy_number","group":"crebbp","status":"observed","value":{"kind":"copy_number","gene":"CREBBP","call":-1},"assay":"invented-panel","reference_build":"GRCh38","coverage":"invented","source":{"source_id":"invented-fixture","sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","record":6}},
+    {"id":"age","name":"Age at sampling","modality":"demographic","group":"age","status":"observed","value":{"kind":"age","years":76,"lower_bound_exclusive":false},"assay":"invented-record","reference_build":null,"coverage":"recorded","source":{"source_id":"invented-fixture","sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","record":7}}
+  ]
+}

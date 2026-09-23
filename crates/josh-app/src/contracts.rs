@@ -4,6 +4,26 @@ use std::collections::BTreeMap;
 
 pub fn documents() -> BTreeMap<String, Value> {
     let mut docs = josh_core::schema::documents();
+    docs.insert(
+        "cohort.schema.json".into(),
+        josh_core::schema::input::<crate::cohort::Manifest>(),
+    );
+    docs.insert(
+        "explanation.schema.json".into(),
+        josh_core::schema::input::<josh_explain::Archive>(),
+    );
+    docs.insert(
+        "explanation-background.schema.json".into(),
+        josh_core::schema::input::<josh_explain::Background>(),
+    );
+    docs.insert(
+        "signature-catalogue.schema.json".into(),
+        josh_core::schema::input::<josh_features::signatures::Catalogue>(),
+    );
+    docs.insert(
+        "evaluation-records.schema.json".into(),
+        josh_core::schema::input::<Vec<josh_features::evaluation::Record>>(),
+    );
     docs.insert("openapi.json".into(), openapi());
     docs.insert(
         "import-report.schema.json".into(),

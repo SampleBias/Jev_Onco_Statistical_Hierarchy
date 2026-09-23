@@ -28,6 +28,11 @@
         "gene_mapping",
         "sample_selection",
         "reference_configuration",
+        "molecular_format",
+        "explanation_budget",
+        "explanation_cancelled",
+        "explanation_checkpoint",
+        "explanation_uncertain",
         "internal_error"
       ],
       "type": "string"

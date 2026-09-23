@@ -979,7 +979,7 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
 name = "josh-app"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "axum",
  "clap",
@@ -987,6 +987,7 @@ dependencies = [
  "csv",
  "http-body-util",
  "josh-core",
+ "josh-explain",
  "josh-features",
  "josh-ingest",
  "josh-jev",
@@ -996,6 +997,7 @@ dependencies = [
  "schemars",
  "serde",
  "serde_json",
+ "sha2",
  "tempfile",
  "thiserror",
  "tokio",
@@ -1004,7 +1006,7 @@ dependencies = [
 
 [[package]]
 name = "josh-core"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "schemars",
  "serde",
@@ -1014,17 +1016,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "josh-explain"
+version = "0.7.0"
+dependencies = [
+ "josh-core",
+ "schemars",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "josh-features"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "csv",
  "josh-core",
+ "schemars",
+ "serde",
+ "serde_json",
  "thiserror",
 ]
 
 [[package]]
 name = "josh-ingest"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "csv",
  "josh-core",
@@ -1039,7 +1057,7 @@ dependencies = [
 
 [[package]]
 name = "josh-jev"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "josh-core",
  "reqwest",

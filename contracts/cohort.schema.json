@@ -1,0 +1,100 @@
+{
+  "$defs": {
+    "CancerClass": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "parent": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "parent"
+      ],
+      "type": "object"
+    },
+    "Entry": {
+      "additionalProperties": false,
+      "properties": {
+        "features": {
+          "type": "string"
+        },
+        "partition": {
+          "type": "string"
+        },
+        "truth": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "features",
+        "partition",
+        "truth"
+      ],
+      "type": "object"
+    },
+    "TaxonomyDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "classes": {
+          "items": {
+            "$ref": "#/$defs/CancerClass"
+          },
+          "type": "array"
+        },
+        "other_id": {
+          "type": "string"
+        },
+        "unknown_id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "classes",
+        "unknown_id",
+        "other_id"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "cases": {
+      "items": {
+        "$ref": "#/$defs/Entry"
+      },
+      "type": "array"
+    },
+    "protocol_id": {
+      "type": "string"
+    },
+    "schema_version": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "taxonomy": {
+      "$ref": "#/$defs/TaxonomyDefinition"
+    }
+  },
+  "required": [
+    "schema_version",
+    "protocol_id",
+    "taxonomy",
+    "cases"
+  ],
+  "title": "Manifest",
+  "type": "object"
+}

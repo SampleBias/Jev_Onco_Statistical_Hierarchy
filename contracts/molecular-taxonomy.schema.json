@@ -1,0 +1,51 @@
+{
+  "$defs": {
+    "CancerClass": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "parent": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "parent"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "classes": {
+      "items": {
+        "$ref": "#/$defs/CancerClass"
+      },
+      "type": "array"
+    },
+    "other_id": {
+      "type": "string"
+    },
+    "unknown_id": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "version",
+    "classes",
+    "unknown_id",
+    "other_id"
+  ],
+  "title": "TaxonomyDefinition",
+  "type": "object"
+}

@@ -788,6 +788,11 @@
               "gene_mapping",
               "sample_selection",
               "reference_configuration",
+              "molecular_format",
+              "explanation_budget",
+              "explanation_cancelled",
+              "explanation_checkpoint",
+              "explanation_uncertain",
               "internal_error"
             ],
             "type": "string"
@@ -1648,7 +1653,7 @@
   "info": {
     "description": "Research development. No live classification, authentication, persistence or clinical calibration.",
     "title": "Jev Onco Statistical Hierarchy (JOSH) offline research API",
-    "version": "0.6.0"
+    "version": "0.7.0"
   },
   "openapi": "3.1.0",
   "paths": {

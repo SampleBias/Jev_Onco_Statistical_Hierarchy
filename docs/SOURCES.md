@@ -1,5 +1,21 @@
 # Source register
 
+## Molecular explanations — checked 2026-09-23
+
+- [OncoNPC full article and Extended Data Figure 4](https://pmc.ncbi.nlm.nih.gov/articles/PMC11484892/):
+  molecular workflow and figure reference; published XGBoost results do not transfer to Jev.
+- [PermutationExplainer](https://shap.readthedocs.io/en/latest/generated/shap.PermutationExplainer.html)
+  and [Explainer/maskers](https://shap.readthedocs.io/en/latest/generated/shap.Explainer.html):
+  attribution semantics; JOSH implements its numerical engine in Rust.
+- [Ratatui Canvas](https://ratatui.rs/examples/apps/canvas/): native terminal geometry.
+- [COSMIC SBS signatures](https://cancer.sanger.ac.uk/signatures/sbs/): SBS96 context
+  conventions; no catalogue data is redistributed by this implementation.
+- [GDC MAF format](https://docs.gdc.cancer.gov/Data/File_Formats/MAF_Format/):
+  field meaning for the explicitly supported subset.
+
+See the [approved implementation scope](redesign/04-onconpc-jev-explanations.md)
+and [separate verification/scientific report](reports/0.7.0-molecular-validation.md).
+
 Checked 2026-09-21. Prefer these original sources over third-party websites using similar Jev branding. Vendor performance and calibration claims are not independent medical validation.
 
 | Source | Used for |

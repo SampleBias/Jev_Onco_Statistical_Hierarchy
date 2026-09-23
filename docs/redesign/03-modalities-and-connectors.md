@@ -1,6 +1,12 @@
 # Redesign Phase 3 — Secondary modalities and dataset connectors
 
-Status: proposed, not implemented. Depends on [Phase 1](01-samples-expression-and-reference.md)
+Status: CNA and imported/experimental derived SBS signatures were brought forward
+into 0.7.0 by the approved [OncoNPC adaptation](04-onconpc-jev-explanations.md).
+Connectors, methylation, fusions and slide embeddings remain proposed. Native
+signature fitting has numerical tests, not targeted-panel validation; see the
+[molecular guide](../data/MOLECULAR_GUIDE.md).
+
+Depends on [Phase 1](01-samples-expression-and-reference.md)
 adapter/artifact contracts and [Phase 2](02-multimodal-and-cohorts.md) multimodal
 pipeline. Leads: data engineer and bioinformatician. Reviewers: data steward,
 statistics lead, Rust backend and QA. Stack remains Rust, Jev and Ratatui.

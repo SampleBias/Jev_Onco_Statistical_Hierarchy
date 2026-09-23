@@ -8,7 +8,9 @@ proposes changes; it does not claim the redesign has been implemented.
 
 Fixed requirements: **Rust application and scientific processing, Jev as the
 classifier, Ratatui as the primary interactive interface, and a supported CLI.**
-XGBoost, recovery of original weights, and SHAP remain excluded.
+At this historical baseline, XGBoost, original weights and SHAP were excluded.
+The approved [September 23 plan](../redesign/04-onconpc-jev-explanations.md)
+supersedes the SHAP exclusion with Rust model-agnostic Jev explanations.
 
 ## Assessment
 

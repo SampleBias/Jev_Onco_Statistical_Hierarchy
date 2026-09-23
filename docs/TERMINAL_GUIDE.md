@@ -1,6 +1,21 @@
 # CLI and terminal workbench
 
-The `josh` binary supports scripts and an interactive Rust TUI. Both use the same case validation, Jev request preparation and result interpretation. Version 0.4.0 adds visualizations and local NICE clinical review to the structured import workflow. Scientific evaluation and raw GENIE import remain in the phase plan.
+The `josh` binary supports scripts and an interactive Rust TUI. Shared services
+handle validation, Jev requests and archived results. Version 0.7.0 adds molecular
+inference and Rust Shapley graphics; legacy case and NICE review remain available.
+
+## Molecular explanations — 0.7.0
+
+Press m from the workbench, then d for the offline analytical graphics demo. Open
+features or an archive with o; Tab cycles chart views, arrows select evidence,
+t changes the target class using cached responses, and s exports SVG/CSV/JSON.
+The native circular chart and signed scatter share the exact explanation data.
+Small terminals use a table with signed bars. g opens the searchable guide.
+
+`josh tui --explanation FILE` replays an archive offline. c starts an explicitly
+synthetic live inference after a run-directory dialog; e presents the explanation
+budget before starting. x requests cancellation; uncertain calls require explicit
+CLI resumption. Details: [molecular guide](data/MOLECULAR_GUIDE.md).
 
 ## Data workbench — 0.6.0
 
@@ -122,7 +137,11 @@ Use `-` as a case path to read stdin. Replay can read one of its inputs from std
 
 Set `TYPESAFE_API_KEY` in the launching process environment using your normal secret-management method. A `.env` file is not automatically loaded. Never pass keys as CLI arguments. Then use `josh classify CASE` or `c` in the legacy TUI. TUI asks `y` before sending. The CLI classify command is itself the explicit send action.
 
-Live inference accepts declared synthetic cases only in this first release. That declaration does not detect identifiers or verify provenance. Missing keys and unsuitable cases fail locally. The adapter is pinned to `jev-1.13.0`; no live provider result has yet been verified for this project.
+Live inference accepts declared synthetic cases only. That declaration does not
+detect identifiers or verify provenance. Missing keys and unsuitable cases fail
+locally. The adapter is pinned to `jev-1.13.0`; the 0.7.0 synthetic inference,
+explanation and repeatability checks are recorded in the
+[validation report](reports/0.7.0-molecular-validation.md).
 
 ## Development checks
 

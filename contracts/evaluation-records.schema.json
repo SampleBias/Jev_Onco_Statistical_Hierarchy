@@ -1,0 +1,54 @@
+{
+  "$defs": {
+    "Record": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted": {
+          "type": "boolean"
+        },
+        "failure": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "partition": {
+          "type": "string"
+        },
+        "patient_group_id": {
+          "type": "string"
+        },
+        "probabilities": {
+          "additionalProperties": {
+            "format": "double",
+            "type": "number"
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "sample_id": {
+          "type": "string"
+        },
+        "truth": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "sample_id",
+        "patient_group_id",
+        "partition",
+        "truth",
+        "accepted"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "items": {
+    "$ref": "#/$defs/Record"
+  },
+  "title": "Array_of_Record",
+  "type": "array"
+}

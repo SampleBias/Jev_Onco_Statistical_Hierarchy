@@ -1,5 +1,17 @@
 # Developer delivery plan
 
+## Approved molecular explanations — 2026-09-23
+
+The user approved the [OncoNPC-inspired Jev plan](redesign/04-onconpc-jev-explanations.md).
+Version 0.7.0 brings mutations, CNA and SBS features into the molecular workflow,
+adds a native Rust Shapley engine and linked Ratatui charts, and provides signature
+processing and cohort evaluation tooling. Jev remains the sole origin classifier.
+This supersedes the historical blanket SHAP exclusion below. See the
+[molecular guide](data/MOLECULAR_GUIDE.md) and [verified build status](BUILD_STATUS.md).
+Scientific cohort validation, clinical calibration and representative provider
+repeatability studies remain open. A small live synthetic repeatability check is
+recorded in the [validation report](reports/0.7.0-molecular-validation.md).
+
 ## Active direction — data-first redesign, 2026-09-22
 
 The design team's molecular-data specification establishes **Samples → Data →
@@ -23,8 +35,9 @@ The first Phase 1 milestone is implemented in 0.5.0: Sample/assay/artifact contr
 legacy Case attachment import, expression CSV/TSV through mapping/QC, and a Ratatui
 data workbench. Version 0.6.0 adds reference build/validation, numerical comparisons,
 offline molecular Jev request preparation and a searchable guide. The full phase
-remains in progress; real cancer reference curation, live molecular response handling
-and held-out scientific evaluation are next. See the [expression guide](data/EXPRESSION_GUIDE.md). Carry forward unfinished provider
+remains in progress; 0.7.0 completes live molecular response handling and explanation
+archives. Real cancer reference curation and held-out scientific evaluation remain
+open. See the [expression guide](data/EXPRESSION_GUIDE.md). Carry forward unfinished provider
 reliability, evaluation/calibration and operations work. Re-estimate after the first
 reference/pipeline scope is fixed; the historical estimate below does not cover the
 expanded redesign.

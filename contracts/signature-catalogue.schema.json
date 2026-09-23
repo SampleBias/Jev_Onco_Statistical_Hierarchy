@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "channels": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "opportunity_profile": {
+      "type": "string"
+    },
+    "reference_build": {
+      "type": "string"
+    },
+    "signatures": {
+      "additionalProperties": {
+        "items": {
+          "format": "double",
+          "type": "number"
+        },
+        "type": "array"
+      },
+      "type": "object"
+    },
+    "version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "version",
+    "reference_build",
+    "opportunity_profile",
+    "channels",
+    "signatures"
+  ],
+  "title": "Catalogue",
+  "type": "object"
+}

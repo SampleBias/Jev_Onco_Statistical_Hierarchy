@@ -31,6 +31,11 @@ pub enum ErrorCode {
     GeneMapping,
     SampleSelection,
     ReferenceConfiguration,
+    MolecularFormat,
+    ExplanationBudget,
+    ExplanationCancelled,
+    ExplanationCheckpoint,
+    ExplanationUncertain,
     InternalError,
 }
 
@@ -81,6 +86,21 @@ impl ErrorEnvelope {
             }
             ErrorCode::ReferenceConfiguration => {
                 "invalid reference configuration, labels or comparison data"
+            }
+            ErrorCode::MolecularFormat => {
+                "invalid molecular table, sample identity or feature encoding; see docs/data/MOLECULAR_GUIDE.md"
+            }
+            ErrorCode::ExplanationBudget => {
+                "explanation budget or time limit reached; successful evaluations were checkpointed"
+            }
+            ErrorCode::ExplanationCancelled => {
+                "explanation cancelled; successful evaluations were checkpointed"
+            }
+            ErrorCode::ExplanationUncertain => {
+                "previous call completion is uncertain; inspect the checkpoint and use --retry-uncertain only to explicitly resend it"
+            }
+            ErrorCode::ExplanationCheckpoint => {
+                "unable to save explanation checkpoint; processing stopped"
             }
             ErrorCode::SampleSelection => "choose a valid --sample ID from the dataset",
             ErrorCode::InternalError => "internal operation failed",

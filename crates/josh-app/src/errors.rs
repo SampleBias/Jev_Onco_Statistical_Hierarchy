@@ -2,6 +2,34 @@ use crate::workflows::AppError;
 use josh_core::errors::{ErrorCode, ErrorEnvelope};
 
 pub fn envelope(error: &AppError) -> ErrorEnvelope {
+    if let Some(e) = error.downcast_ref::<josh_explain::Error>() {
+        return match e {
+            josh_explain::Error::Invalid(e) => {
+                ErrorEnvelope::invalid_case(josh_core::ValidationError(e.0))
+            }
+            josh_explain::Error::Budget | josh_explain::Error::Timeout => {
+                ErrorEnvelope::new(ErrorCode::ExplanationBudget)
+            }
+            josh_explain::Error::Cancelled => ErrorEnvelope::new(ErrorCode::ExplanationCancelled),
+            josh_explain::Error::Provider => ErrorEnvelope::new(ErrorCode::ProviderTransport),
+            josh_explain::Error::ProviderHttp(_) => ErrorEnvelope::new(ErrorCode::ProviderHttp),
+            josh_explain::Error::ProviderResponse => {
+                ErrorEnvelope::new(ErrorCode::ProviderResponse)
+            }
+            josh_explain::Error::Checkpoint => ErrorEnvelope::new(ErrorCode::ExplanationCheckpoint),
+            josh_explain::Error::Uncertain => ErrorEnvelope::new(ErrorCode::ExplanationUncertain),
+        };
+    }
+    if let Some(e) = error.downcast_ref::<josh_ingest::molecular::Error>() {
+        return match e {
+            josh_ingest::molecular::Error::Validation(e) => {
+                ErrorEnvelope::invalid_case(josh_core::ValidationError(e.0))
+            }
+            josh_ingest::molecular::Error::Limit => ErrorEnvelope::new(ErrorCode::ImportLimit),
+            josh_ingest::molecular::Error::Format => ErrorEnvelope::new(ErrorCode::MolecularFormat),
+            josh_ingest::molecular::Error::Io => ErrorEnvelope::new(ErrorCode::IoError),
+        };
+    }
     if let Some(e) = error.downcast_ref::<ErrorEnvelope>() {
         return ErrorEnvelope {
             error: josh_core::errors::ErrorDetail {

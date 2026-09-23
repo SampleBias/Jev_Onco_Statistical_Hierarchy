@@ -22,6 +22,9 @@ schemars.workspace = true
 csv.workspace = true
 regex = "=1.13.1"
 josh-features = { path = "../josh-features" }
+josh-explain = { path = "../josh-explain" }
+tempfile.workspace = true
+sha2.workspace = true
 thiserror.workspace = true
 ratatui = { version = "0.30.2", default-features = false, features = ["crossterm_0_29", "unstable-rendered-line-info"] }
 crossterm = "0.29"

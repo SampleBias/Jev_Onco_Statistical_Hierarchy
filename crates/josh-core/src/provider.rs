@@ -48,7 +48,7 @@ pub struct JevResponse {
     pub usage: Usage,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, JsonSchema, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum Source {
     Jev,

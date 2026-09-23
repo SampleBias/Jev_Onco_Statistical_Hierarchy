@@ -10,3 +10,4 @@ pub use types::*;
 
 pub mod dataset;
 pub mod expression;
+pub mod molecular;

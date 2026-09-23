@@ -25,6 +25,18 @@ pub fn output<T: JsonSchema>() -> Value {
 pub fn documents() -> BTreeMap<String, Value> {
     BTreeMap::from([
         (
+            "molecular-features.schema.json".into(),
+            input::<crate::molecular::FeatureSet>(),
+        ),
+        (
+            "molecular-inference.schema.json".into(),
+            input::<crate::molecular::InferenceRun>(),
+        ),
+        (
+            "molecular-taxonomy.schema.json".into(),
+            input::<crate::molecular::TaxonomyDefinition>(),
+        ),
+        (
             "reference.schema.json".into(),
             input::<crate::reference::ReferenceRelease>(),
         ),

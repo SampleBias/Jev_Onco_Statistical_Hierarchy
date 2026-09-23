@@ -3,6 +3,7 @@ pub mod clinical;
 mod domain;
 pub mod errors;
 pub mod guidance;
+pub mod molecular;
 mod policy;
 mod prompt;
 pub mod provenance;

@@ -1,4 +1,32 @@
-# Build status — 2026-09-22
+# Build status — 2026-09-23
+
+## 0.7.0 — molecular Jev inference and native Shapley graphics
+
+Implemented the approved OncoNPC-inspired workflow in Rust, Jev and Ratatui:
+typed mutation/CNA/SBS/demographic/IHC/histology/expression features; strict
+CSV/TSV, MAF and VCF subsets; frozen taxonomy-aware Jev runs; grouped exact and
+permutation Shapley; compatible development backgrounds; budgets, cancellation,
+uncertain-attempt accounting and atomic resume checkpoints; circular/scatter/
+waterfall graphics; offline class switching; and protected SVG/CSV/JSON exports.
+Native experimental SBS96/NNLS and synthetic cohort/evaluation tooling are also
+available. The existing expression and legacy workflows remain usable.
+
+The [molecular guide](data/MOLECULAR_GUIDE.md) gives commands and supported formats.
+The [engineering/scientific report](reports/0.7.0-molecular-validation.md) records
+verification and limitations, including the live synthetic run: 14 valid coalition
+evaluations within 16 attempts, zero additivity residual, and correct abstention.
+Four repeated-input requests measured full-input score variation of 0.61–0.63.
+No real cancer data, cancer performance study or clinical calibration was used.
+
+Verification: **172 workspace tests passed**; formatting, clippy with warnings
+denied, generated-schema drift and the 278-package dependency inventory passed.
+Real PTY interaction and exported SVG inspection also passed. The tests include
+zero/tied chart contributions, visible remainder totals, XML escaping, uncertain
+request recovery and reported token usage exceeding its reservation.
+
+The earlier sections below are historical release snapshots. Their statements
+about missing molecular inference, attribution or provider verification describe
+those earlier releases and are superseded by the 0.7.0 report.
 
 ## 0.6.0 — reference comparison, terminal design and searchable guide
 

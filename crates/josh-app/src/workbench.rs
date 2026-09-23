@@ -142,6 +142,7 @@ struct Pending {
 }
 
 pub struct Workbench {
+    molecular: Option<Box<crate::molecular_tui::App>>,
     guide: crate::guide::Guide,
     tick: usize,
     reference: Option<(josh_core::reference::ReferenceRelease, String)>,
@@ -208,7 +209,7 @@ fn load(root: PathBuf) -> Result<Loaded, AppError> {
 
 impl Workbench {
     pub fn new() -> Result<Self, AppError> {
-        let mut app = Self { guide: crate::guide::Guide::default(), tick: 0, reference: None, comparison: None, loaded: demo()?, sample: 0, tab: 0, scroll: 0, query: String::new(), visible: vec![], dialog: Dialog::None,
+        let mut app = Self { molecular: None, guide: crate::guide::Guide::default(), tick: 0, reference: None, comparison: None, loaded: demo()?, sample: 0, tab: 0, scroll: 0, query: String::new(), visible: vec![], dialog: Dialog::None,
             status: "Synthetic expression example. i Import file · p Paste data · o Open dataset · ? Help".into(), pending: None, quit_after_job: false };
         app.filter();
         Ok(app)
@@ -257,8 +258,8 @@ impl Workbench {
     }
     fn analysis_text(&self) -> String {
         match &self.comparison {
-            Some(e) => format!("{}\n\ns Export evidence · e Export exact Jev request preview\nRequest preview is offline; molecular live classification remains pending.\n\nLIMITATIONS\n{}",crate::reference::summary(e),e.limitations.join("\n")),
-            None => "ANALYSIS PIPELINE\n\n● Import sample + preserve source\n● Parse expression + map identifiers\n● Record transform + QC\n○ Compare compatible reference [r then a]\n○ Prepare structured Jev request [e after comparison]\n○ Live molecular Jev inference [pending]\n○ Review origin distribution + uncertainty [pending]\n\nNo clinical profile is required. Explore without an API key.\nReference correlations remain numerical evidence, not cancer probabilities.".into(),
+            Some(e) => format!("{}\n\ns Export evidence · e Export exact Jev request preview\nm Open molecular inference and explanations for this sample\n\nLIMITATIONS\n{}",crate::reference::summary(e),e.limitations.join("\n")),
+            None => "ANALYSIS PIPELINE\n\n● Import sample + preserve source\n● Parse expression + map identifiers\n● Record transform + QC\n○ Compare compatible reference [r then a]\n○ Prepare structured Jev request [e after comparison]\n○ Molecular Jev inference and explanations [m]\n\nCompare a reference first to carry this expression sample into molecular inference. Without a comparison, m opens the invented genomic tutorial.\nNo clinical profile is required. Explore without an API key.\nReference correlations remain numerical evidence, not cancer probabilities.".into(),
         }
     }
     fn filter(&mut self) {
@@ -401,6 +402,9 @@ impl Workbench {
         }
     }
     pub async fn poll(&mut self) {
+        if let Some(molecular) = &mut self.molecular {
+            molecular.poll().await;
+        }
         self.tick = self.tick.wrapping_add(1);
         if self
             .pending
@@ -453,10 +457,38 @@ impl Workbench {
         }
     }
     pub fn key(&mut self, key: KeyEvent) -> bool {
+        if let Some(molecular) = &mut self.molecular {
+            if molecular.key(key) {
+                self.molecular = None;
+            }
+            return false;
+        }
         if key.kind != KeyEventKind::Press {
             return false;
         }
         if self.guide.key(key, !matches!(self.dialog, Dialog::None)) {
+            return false;
+        }
+        if key.code == KeyCode::Char('m')
+            && matches!(self.dialog, Dialog::None)
+            && self.pending.is_none()
+        {
+            let opened = if let Some(e) = &self.comparison {
+                let sample = &self.loaded.manifest.samples[self.sample];
+                crate::molecular_tui::App::from_expression(
+                    e,
+                    sample
+                        .patient_group_id
+                        .as_deref()
+                        .unwrap_or(&sample.sample_id),
+                )
+            } else {
+                crate::molecular_tui::App::new(None, None)
+            };
+            match opened {
+                Ok(app) => self.molecular = Some(Box::new(app)),
+                Err(_) => self.status = "Unable to open molecular analysis".into(),
+            }
             return false;
         }
         if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
@@ -616,12 +648,16 @@ impl Workbench {
             KeyCode::Char('p') if self.pending.is_none() => self.dialog=Dialog::Paste(String::new()),
             KeyCode::Char('/') => {self.tab=3;self.dialog=Dialog::Search(self.query.clone());},
             KeyCode::Char('s') => self.dialog=Dialog::Save(String::new()),
-            KeyCode::Char('?') => self.status="g Full guide · F1/Ctrl+g in forms · / Search inside guide · r Reference · a Compare · s Export · e Jev preview · x Cancel · q Quit".into(),
+            KeyCode::Char('?') => self.status="m Molecular inference/charts · g Full guide · F1/Ctrl+g in forms · r Reference · a Compare · s Export · e Jev preview · x Cancel · q Quit".into(),
             _=>{}
         }
         false
     }
     pub fn paste(&mut self, text: String) {
+        if let Some(molecular) = &mut self.molecular {
+            molecular.paste(&text);
+            return;
+        }
         if self.guide.open {
             self.guide.paste(&text);
             return;
@@ -634,6 +670,10 @@ impl Workbench {
         }
     }
     pub fn draw(&mut self, frame: &mut Frame) {
+        if let Some(molecular) = &mut self.molecular {
+            molecular.draw(frame);
+            return;
+        }
         use crate::ui;
         use ratatui::{
             style::Modifier,
@@ -748,7 +788,7 @@ impl Workbench {
                     ),
                     2 => self.analysis_text(),
                     4 => format!(
-                        "JEV · STRUCTURED DECISIONS\n\nPinned model: {}\nExpression pipeline: {}\n\nJev remains the sole origin classifier. Reference correlations are numerical evidence, not class probabilities.\n\nThis milestone prepares a typed molecular request locally. It does not send molecular data to Jev.\nNo calibrated cancer model or validated OOD detector is installed.\n\nPress g for the full guide and / inside the guide to search.",
+                        "JEV · STRUCTURED DECISIONS\n\nPinned model: {}\nExpression pipeline: {}\n\nJev remains the sole origin classifier. Reference correlations are numerical evidence, not class probabilities.\n\nPress m for molecular inference, circular and scatter explanations. Live calls accept declared synthetic data.\nNo calibrated cancer model or validated OOD detector is installed.\n\nPress g for the full guide and / inside the guide to search.",
                         josh_core::MODEL,
                         EXPRESSION_PIPELINE
                     ),
@@ -783,7 +823,7 @@ impl Workbench {
         );
         frame.render_widget(Paragraph::new(vec![
             Line::from(vec![Span::styled(" g GUIDE ",Style::default().fg(ui::BG).bg(ui::ACCENT).add_modifier(Modifier::BOLD)),Span::raw("  i Import · p Paste · o Open · [/] Sample · / Gene · q Quit")]),
-            Line::from(Span::styled("Tab Views · ↑/↓ Scroll · r Reference · a Compare · s Export · x Cancel · F1 Help",Style::default().fg(ui::MUTED)))
+            Line::from(Span::styled("m Molecular charts · Tab Views · r Reference · a Compare · s Export · x Cancel · F1 Help",Style::default().fg(ui::MUTED)))
         ]),footer);
         // A guide overlay leaves underlying forms and ongoing jobs intact.
         self.draw_dialog(frame, area);

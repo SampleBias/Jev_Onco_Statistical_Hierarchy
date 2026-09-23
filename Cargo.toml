@@ -1,16 +1,16 @@
 [workspace]
-members = ["crates/josh-core", "crates/josh-jev", "crates/josh-ingest", "crates/josh-app", "crates/josh-features"]
+members = ["crates/josh-core", "crates/josh-jev", "crates/josh-ingest", "crates/josh-app", "crates/josh-features", "crates/josh-explain"]
 resolver = "2"
 
 [workspace.package]
-version = "0.6.0"
+version = "0.7.0"
 edition = "2024"
 publish = false
 rust-version = "1.98.1"
 
 [workspace.dependencies]
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde_json = { version = "1", features = ["float_roundtrip"] }
 thiserror = "2"
 sha2 = "0.10"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "time", "signal"] }

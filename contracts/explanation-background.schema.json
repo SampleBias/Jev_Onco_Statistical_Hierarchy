@@ -1,0 +1,384 @@
+{
+  "$defs": {
+    "DataClass": {
+      "enum": [
+        "synthetic",
+        "deidentified_research"
+      ],
+      "type": "string"
+    },
+    "Feature": {
+      "additionalProperties": false,
+      "properties": {
+        "assay": {
+          "type": "string"
+        },
+        "coverage": {
+          "description": "Unknown coverage is distinct from an observed absence.",
+          "type": "string"
+        },
+        "depends_on": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "group": {
+          "description": "Features sharing a group are replaced together; dependencies must be in this group.",
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "modality": {
+          "$ref": "#/$defs/Modality"
+        },
+        "name": {
+          "type": "string"
+        },
+        "reference_build": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/FeatureSource"
+        },
+        "status": {
+          "$ref": "#/$defs/MeasurementStatus"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FeatureValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "modality",
+        "group",
+        "status",
+        "assay",
+        "coverage",
+        "source"
+      ],
+      "type": "object"
+    },
+    "FeatureSet": {
+      "additionalProperties": false,
+      "properties": {
+        "data_class": {
+          "$ref": "#/$defs/DataClass"
+        },
+        "features": {
+          "items": {
+            "$ref": "#/$defs/Feature"
+          },
+          "type": "array"
+        },
+        "patient_group_id": {
+          "type": "string"
+        },
+        "pipeline_version": {
+          "type": "string"
+        },
+        "sample_id": {
+          "type": "string"
+        },
+        "schema_version": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "pipeline_version",
+        "sample_id",
+        "patient_group_id",
+        "data_class",
+        "features"
+      ],
+      "type": "object"
+    },
+    "FeatureSource": {
+      "additionalProperties": false,
+      "properties": {
+        "record": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "source_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_id",
+        "sha256",
+        "record"
+      ],
+      "type": "object"
+    },
+    "FeatureValue": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "number",
+              "type": "string"
+            },
+            "units": {
+              "type": "string"
+            },
+            "value": {
+              "format": "double",
+              "type": "number"
+            }
+          },
+          "required": [
+            "kind",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "category",
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "alternate": {
+              "type": "string"
+            },
+            "chromosome": {
+              "type": "string"
+            },
+            "consequence": {
+              "type": "string"
+            },
+            "gene": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "mutation",
+              "type": "string"
+            },
+            "position": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "reference": {
+              "type": "string"
+            },
+            "somatic": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "gene",
+            "chromosome",
+            "position",
+            "reference",
+            "alternate",
+            "consequence"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "call": {
+              "format": "int8",
+              "maximum": 127,
+              "minimum": -128,
+              "type": "integer"
+            },
+            "gene": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "copy_number",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "gene",
+            "call"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "catalogue": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "signature",
+              "type": "string"
+            },
+            "method": {
+              "type": "string"
+            },
+            "mutation_count": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "signature": {
+              "type": "string"
+            },
+            "units": {
+              "type": "string"
+            },
+            "value": {
+              "format": "double",
+              "type": "number"
+            }
+          },
+          "required": [
+            "kind",
+            "signature",
+            "value",
+            "units",
+            "catalogue",
+            "method",
+            "mutation_count"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "An inseparable vector, e.g. all reference similarities or compositional signatures.",
+          "properties": {
+            "kind": {
+              "const": "vector",
+              "type": "string"
+            },
+            "reference_sha256": {
+              "type": "string"
+            },
+            "units": {
+              "type": "string"
+            },
+            "values": {
+              "additionalProperties": {
+                "format": "double",
+                "type": "number"
+              },
+              "type": "object"
+            }
+          },
+          "required": [
+            "kind",
+            "values",
+            "units",
+            "reference_sha256"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "age",
+              "type": "string"
+            },
+            "lower_bound_exclusive": {
+              "type": "boolean"
+            },
+            "years": {
+              "format": "uint8",
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "kind",
+            "years",
+            "lower_bound_exclusive"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "MeasurementStatus": {
+      "enum": [
+        "observed",
+        "unknown",
+        "not_tested"
+      ],
+      "type": "string"
+    },
+    "Modality": {
+      "enum": [
+        "mutation",
+        "copy_number",
+        "signature",
+        "demographic",
+        "expression",
+        "ihc",
+        "histology"
+      ],
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "partition": {
+      "type": "string"
+    },
+    "release_id": {
+      "type": "string"
+    },
+    "samples": {
+      "items": {
+        "$ref": "#/$defs/FeatureSet"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "release_id",
+    "partition",
+    "samples"
+  ],
+  "title": "Background",
+  "type": "object"
+}

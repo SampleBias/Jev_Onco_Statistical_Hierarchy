@@ -1,0 +1,270 @@
+{
+  "$defs": {
+    "Answer": {
+      "oneOf": [
+        {
+          "properties": {
+            "choice": {
+              "type": "string"
+            },
+            "confidence": {
+              "format": "double",
+              "type": "number"
+            },
+            "probabilities": {
+              "additionalProperties": {
+                "format": "double",
+                "type": "number"
+              },
+              "type": "object"
+            },
+            "type": {
+              "const": "choice",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "choice",
+            "probabilities",
+            "confidence"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "noul": {
+              "format": "double",
+              "type": "number"
+            },
+            "type": {
+              "const": "noul",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "noul"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "CancerClass": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "parent": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "parent"
+      ],
+      "type": "object"
+    },
+    "JevRequest": {
+      "properties": {
+        "model": {
+          "type": "string"
+        },
+        "questions": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Question"
+          },
+          "type": "object"
+        },
+        "state": true
+      },
+      "required": [
+        "model",
+        "state",
+        "questions"
+      ],
+      "type": "object"
+    },
+    "JevResponse": {
+      "properties": {
+        "answers": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Answer"
+          },
+          "type": "object"
+        },
+        "model": {
+          "type": "string"
+        },
+        "usage": {
+          "$ref": "#/$defs/Usage"
+        }
+      },
+      "required": [
+        "model",
+        "answers",
+        "usage"
+      ],
+      "type": "object"
+    },
+    "Question": {
+      "oneOf": [
+        {
+          "properties": {
+            "criteria": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "instructions": {
+              "type": "string"
+            },
+            "type": {
+              "const": "choice",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "instructions",
+            "criteria"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "instructions": {
+              "type": "string"
+            },
+            "type": {
+              "const": "noul",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "instructions"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "Source": {
+      "enum": [
+        "jev",
+        "mock",
+        "replay"
+      ],
+      "type": "string"
+    },
+    "TaxonomyDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "classes": {
+          "items": {
+            "$ref": "#/$defs/CancerClass"
+          },
+          "type": "array"
+        },
+        "other_id": {
+          "type": "string"
+        },
+        "unknown_id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "classes",
+        "unknown_id",
+        "other_id"
+      ],
+      "type": "object"
+    },
+    "Usage": {
+      "properties": {
+        "input_tokens": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "output_tokens": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "input_tokens",
+        "output_tokens"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "calibration_status": {
+      "type": "string"
+    },
+    "feature_sha256": {
+      "type": "string"
+    },
+    "prompt_version": {
+      "type": "string"
+    },
+    "reasons": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "request": {
+      "$ref": "#/$defs/JevRequest"
+    },
+    "request_sha256": {
+      "type": "string"
+    },
+    "response": {
+      "$ref": "#/$defs/JevResponse"
+    },
+    "schema_version": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "source": {
+      "$ref": "#/$defs/Source"
+    },
+    "status": {
+      "type": "string"
+    },
+    "taxonomy": {
+      "$ref": "#/$defs/TaxonomyDefinition"
+    }
+  },
+  "required": [
+    "schema_version",
+    "prompt_version",
+    "feature_sha256",
+    "taxonomy",
+    "request_sha256",
+    "request",
+    "response",
+    "source",
+    "status",
+    "reasons",
+    "calibration_status"
+  ],
+  "title": "InferenceRun",
+  "type": "object"
+}

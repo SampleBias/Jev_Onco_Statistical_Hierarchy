@@ -45,6 +45,14 @@ enum SchemaKind {
     ExpressionRecord,
     Reference,
     MolecularEvidence,
+    MolecularFeatures,
+    MolecularInference,
+    MolecularTaxonomy,
+    Explanation,
+    ExplanationBackground,
+    SignatureCatalogue,
+    EvaluationRecords,
+    Cohort,
 }
 
 #[derive(Clone, Copy, ValueEnum)]
@@ -57,6 +65,11 @@ enum InputFormat {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Molecular imports, Jev inference and native Rust Shapley explanations.
+    Molecular {
+        #[command(subcommand)]
+        command: Box<josh_app::molecular::Command>,
+    },
     /// Curate references, compare molecular profiles and preview structured Jev requests.
     Reference {
         #[command(subcommand)]
@@ -77,6 +90,12 @@ enum Command {
         /// Open a molecular dataset bundle.
         #[arg(long, conflicts_with_all = ["case", "batch", "legacy"])]
         dataset: Option<PathBuf>,
+        /// Open typed molecular observations for Jev analysis.
+        #[arg(long, conflicts_with_all = ["case", "batch", "dataset", "legacy", "explanation"])]
+        molecular: Option<PathBuf>,
+        /// Open a saved explanation, including its circular and scatter charts.
+        #[arg(long, conflicts_with_all = ["case", "batch", "dataset", "legacy", "molecular"])]
+        explanation: Option<PathBuf>,
         /// Open the original case and clinical-review interface.
         #[arg(long)]
         legacy: bool,
@@ -140,6 +159,12 @@ async fn run(args: Args) -> Result<bool, AppError> {
     let mut raw_output = None;
     let mut rejected_records = false;
     let value = match args.command {
+        Command::Molecular { command } => {
+            let result = josh_app::molecular::execute(*command).await?;
+            human = Some(result.text);
+            raw_output = result.raw;
+            result.value
+        }
         Command::Reference { command } => {
             let result = josh_app::reference::execute(command)?;
             human = Some(result.human);
@@ -166,12 +191,16 @@ async fn run(args: Args) -> Result<bool, AppError> {
             case,
             batch,
             dataset,
+            molecular,
+            explanation,
             legacy,
         } => {
             if args.output.is_some() {
                 return Err(ErrorEnvelope::new(ErrorCode::InvalidArguments).into());
             }
-            return if legacy || case.is_some() || batch.is_some() {
+            return if molecular.is_some() || explanation.is_some() {
+                josh_app::molecular_tui::run(molecular, explanation).await
+            } else if legacy || case.is_some() || batch.is_some() {
                 josh_app::tui::run(case, batch).await
             } else {
                 josh_app::workbench::run(dataset).await
@@ -219,6 +248,14 @@ async fn run(args: Args) -> Result<bool, AppError> {
                 SchemaKind::ExpressionRecord => "expression-record.schema.json",
                 SchemaKind::Reference => "reference.schema.json",
                 SchemaKind::MolecularEvidence => "molecular-evidence.schema.json",
+                SchemaKind::MolecularFeatures => "molecular-features.schema.json",
+                SchemaKind::MolecularInference => "molecular-inference.schema.json",
+                SchemaKind::MolecularTaxonomy => "molecular-taxonomy.schema.json",
+                SchemaKind::Explanation => "explanation.schema.json",
+                SchemaKind::ExplanationBackground => "explanation-background.schema.json",
+                SchemaKind::SignatureCatalogue => "signature-catalogue.schema.json",
+                SchemaKind::EvaluationRecords => "evaluation-records.schema.json",
+                SchemaKind::Cohort => "cohort.schema.json",
             };
             josh_app::contracts::documents()
                 .remove(name)
