@@ -1,0 +1,5 @@
+sample_id	patient_group_id	class_id	cancer_type
+REF-A1	GROUP-A1	demo_a	Demonstration A
+REF-A2	GROUP-A2	demo_a	Demonstration A
+REF-B1	GROUP-B1	demo_b	Demonstration B
+REF-B2	GROUP-B2	demo_b	Demonstration B

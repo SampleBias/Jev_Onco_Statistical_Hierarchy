@@ -1,7 +1,7 @@
 # Redesign Phase 1 — Samples, expression and reference comparison
 
 Status: in progress. The first sample/expression workbench milestone is implemented
-in 0.5.0; the full phase is not complete. Assessment baseline: JOSH 0.4.0 (`757692e`).
+in 0.5.0 and reference/UI foundations in 0.6.0; the full phase is not complete. Assessment baseline: JOSH 0.4.0 (`757692e`).
 
 Delivered: separate Sample/Dataset/Assay/artifact contracts, v1–v3 legacy Case
 attachment import, long/wide CSV/TSV expression parsing, configurable detection,
@@ -9,10 +9,16 @@ HGNC mapping, explicit identity/log2(x+1) transforms, QC, immutable bundles,
 local reproduction, measurement exports, and Ratatui data navigation/import/paste.
 See the [implemented behavior and limits](../data/EXPRESSION_GUIDE.md).
 
-R1-01–05 and R1-10–12 have partial deliverables. Canonical standalone-sample import,
-annotation joins, additional normalization, reference releases/comparisons,
-EvidencePackage/AnalysisRun contracts, molecular Jev calls and scientific evaluation
-remain open. R1-06–09 are not complete. The clinical compatibility module remains
+0.6.0 additionally delivers an immutable reference JSON builder with separate labels,
+patient-group and source checks, matched TPM/log2 comparison, overlap gates, signed
+Pearson evidence, a bounded offline Jev request preview, styled Ratatui dashboard and
+a searchable embedded guide. See the [reference guide](../data/REFERENCE_GUIDE.md).
+
+R1-01–08 and R1-10–12 have partial engineering deliverables. Canonical standalone-sample import,
+annotation joins, additional normalization, curated/validated cancer reference releases,
+reference percentiles, AnalysisRun contracts, molecular Jev calls and scientific
+evaluation remain open. R1-06–09 are not complete; synthetic reference tests do not
+meet their scientific or provider acceptance criteria. The clinical compatibility module remains
 in the existing core crate, but is not required by the expression pipeline.
 Direction: [gap assessment](../assessment/DATA_FIRST_GAP_ASSESSMENT.md).
 Leads: Rust backend engineer and bioinformatician. Reviewers: research/statistics

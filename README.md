@@ -2,7 +2,7 @@
 
 A Rust molecular-data workbench for cancer-of-unknown-primary research, using **Ratatui** and a CLI. JOSH is moving toward Sample → Data → Features → Reference comparison → Jev inference → Evidence and uncertainty.
 
-**Current status (0.5.0):** the first data-first milestone adds independent samples, expression CSV/TSV import, HGNC gene mapping, explicit transformations, molecular import QC, source archives and a new default Ratatui workbench. See the [expression guide](docs/data/EXPRESSION_GUIDE.md). Reference-cancer comparisons and Jev inference on these expression features are still pending; Phase 1 is not complete.
+**Current status (0.6.0):** Rust expression import/QC now leads into local reference curation, compatibility-gated Pearson comparison and an offline structured Jev request preview. The Ratatui dashboard has quality cards, a histogram, signed similarity bars and a searchable guide (`g`; `F1`/`Ctrl+g` while typing). See the [user guide](docs/USER_GUIDE.md) and [reference guide](docs/data/REFERENCE_GUIDE.md). Live molecular Jev inference, real validated cancer references and scientific evaluation remain open; Phase 1 is not complete.
 
 Jev remains the sole origin classifier. The existing summarized-case Jev CLI and legacy TUI remain available with synthetic-only live requests. No cancer-specific accuracy or calibration has been established. XGBoost, original weights and SHAP remain excluded.
 

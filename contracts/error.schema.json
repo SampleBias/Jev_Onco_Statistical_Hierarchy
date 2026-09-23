@@ -27,6 +27,7 @@
         "dataset_configuration",
         "gene_mapping",
         "sample_selection",
+        "reference_configuration",
         "internal_error"
       ],
       "type": "string"

@@ -43,6 +43,8 @@ enum SchemaKind {
     Sample,
     Dataset,
     ExpressionRecord,
+    Reference,
+    MolecularEvidence,
 }
 
 #[derive(Clone, Copy, ValueEnum)]
@@ -55,6 +57,11 @@ enum InputFormat {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Curate references, compare molecular profiles and preview structured Jev requests.
+    Reference {
+        #[command(subcommand)]
+        command: josh_app::reference::ReferenceCommand,
+    },
     /// Molecular dataset import, QC, exploration and reproducibility.
     Dataset {
         #[command(subcommand)]
@@ -133,6 +140,12 @@ async fn run(args: Args) -> Result<bool, AppError> {
     let mut raw_output = None;
     let mut rejected_records = false;
     let value = match args.command {
+        Command::Reference { command } => {
+            let result = josh_app::reference::execute(command)?;
+            human = Some(result.human);
+            rejected_records = result.blocked;
+            result.value
+        }
         Command::Dataset { command } => {
             if args.output.is_some()
                 && matches!(
@@ -204,6 +217,8 @@ async fn run(args: Args) -> Result<bool, AppError> {
                 SchemaKind::Sample => "sample.schema.json",
                 SchemaKind::Dataset => "dataset.schema.json",
                 SchemaKind::ExpressionRecord => "expression-record.schema.json",
+                SchemaKind::Reference => "reference.schema.json",
+                SchemaKind::MolecularEvidence => "molecular-evidence.schema.json",
             };
             josh_app::contracts::documents()
                 .remove(name)

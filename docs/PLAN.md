@@ -21,8 +21,10 @@ scientific dependencies. The proposed delivery sequence is:
 
 The first Phase 1 milestone is implemented in 0.5.0: Sample/assay/artifact contracts,
 legacy Case attachment import, expression CSV/TSV through mapping/QC, and a Ratatui
-data workbench. The full phase remains in progress; reference comparisons and
-molecular Jev analysis are next. See the [expression guide](data/EXPRESSION_GUIDE.md). Carry forward unfinished provider
+data workbench. Version 0.6.0 adds reference build/validation, numerical comparisons,
+offline molecular Jev request preparation and a searchable guide. The full phase
+remains in progress; real cancer reference curation, live molecular response handling
+and held-out scientific evaluation are next. See the [expression guide](data/EXPRESSION_GUIDE.md). Carry forward unfinished provider
 reliability, evaluation/calibration and operations work. Re-estimate after the first
 reference/pipeline scope is fixed; the historical estimate below does not cover the
 expanded redesign.

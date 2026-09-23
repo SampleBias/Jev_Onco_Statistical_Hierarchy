@@ -13,6 +13,14 @@ pub fn envelope(error: &AppError) -> ErrorEnvelope {
     if let Some(e) = error.downcast_ref::<josh_core::ValidationError>() {
         return ErrorEnvelope::invalid_case(josh_core::ValidationError(e.0));
     }
+    if let Some(e) = error.downcast_ref::<josh_features::reference::ReferenceError>() {
+        return ErrorEnvelope {
+            error: josh_core::errors::ErrorDetail {
+                code: ErrorCode::ReferenceConfiguration,
+                message: e.0,
+            },
+        };
+    }
     let code = if let Some(e) = error.downcast_ref::<std::io::Error>() {
         match e.kind() {
             std::io::ErrorKind::NotFound => ErrorCode::FileNotFound,

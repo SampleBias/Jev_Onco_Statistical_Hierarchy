@@ -2,11 +2,15 @@
 
 The `josh` binary supports scripts and an interactive Rust TUI. Both use the same case validation, Jev request preparation and result interpretation. Version 0.4.0 adds visualizations and local NICE clinical review to the structured import workflow. Scientific evaluation and raw GENIE import remain in the phase plan.
 
-## Data workbench — 0.5.0
+## Data workbench — 0.6.0
 
 `josh tui` now opens the sample-first expression workbench. Use `josh dataset --help`
 for detection, import, inspection, gene exploration, exports and local reproduction.
 The [expression guide](data/EXPRESSION_GUIDE.md) documents all new commands and keys.
+Use `josh reference --help` for reference curation, comparison and offline Jev request
+preparation. Press `g` to open the complete searchable [user guide](USER_GUIDE.md);
+`F1` or `Ctrl+g` opens it inside forms. The guide has regex search, match navigation
+and full context. See the [reference guide](data/REFERENCE_GUIDE.md).
 No API key is needed for these local workflows.
 
 The remainder of this page documents the compatible **legacy case interface**.
@@ -49,7 +53,8 @@ A terminal of at least 48 columns by 12 rows is required; 100 by 35 or larger is
 | `d` | Run an offline mock; no API request |
 | `c` | Review confirmation for one live synthetic Jev call |
 | `s` | Export Request, Results, Import, Visuals or Guidance; on Review, save the complete case |
-| `?` | Help |
+| `?` | Legacy Help view |
+| `g`, `F1`, `Ctrl+g` | Shared searchable user guide (`F1`/`Ctrl+g` while editing) |
 | `Esc` | Close a dialog |
 | `q`, `Ctrl-C` | Quit; asks before discarding unsaved reviews |
 

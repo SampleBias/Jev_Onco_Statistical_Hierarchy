@@ -30,6 +30,7 @@ pub enum ErrorCode {
     DatasetConfiguration,
     GeneMapping,
     SampleSelection,
+    ReferenceConfiguration,
     InternalError,
 }
 
@@ -77,6 +78,9 @@ impl ErrorEnvelope {
             }
             ErrorCode::GeneMapping => {
                 "invalid HGNC dictionary; approved gene and identifier columns are required"
+            }
+            ErrorCode::ReferenceConfiguration => {
+                "invalid reference configuration, labels or comparison data"
             }
             ErrorCode::SampleSelection => "choose a valid --sample ID from the dataset",
             ErrorCode::InternalError => "internal operation failed",

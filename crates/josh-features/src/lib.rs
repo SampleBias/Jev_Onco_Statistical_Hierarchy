@@ -1,4 +1,6 @@
 //! Deterministic gene mapping and numerical processing; no network or classifier.
+pub mod reference;
+
 use josh_core::sample::*;
 use std::collections::{BTreeMap, BTreeSet};
 

@@ -1,5 +1,11 @@
 # Data inventory
 
+## 0.6.0 additions
+
+`fixtures/reference/` contains four invented reference profiles and one independent
+invented query, with separate sample/group labels. Demonstration A/B are software
+classes, not cancer labels. No real known-primary tumor cohort has been acquired.
+
 ## 0.5.0 additions
 
 - `fixtures/expression/synthetic-expression.tsv`: two invented six-gene profiles;

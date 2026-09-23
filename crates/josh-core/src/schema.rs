@@ -24,6 +24,14 @@ pub fn output<T: JsonSchema>() -> Value {
 
 pub fn documents() -> BTreeMap<String, Value> {
     BTreeMap::from([
+        (
+            "reference.schema.json".into(),
+            input::<crate::reference::ReferenceRelease>(),
+        ),
+        (
+            "molecular-evidence.schema.json".into(),
+            input::<crate::reference::EvidencePackage>(),
+        ),
         ("case.schema.json".into(), input::<crate::Case>()),
         (
             "sample.schema.json".into(),

@@ -1,5 +1,37 @@
 # Build status — 2026-09-22
 
+## 0.6.0 — reference comparison, terminal design and searchable guide
+
+The header reads Jev Onco Statistical Hierarchy / Molecular Data Workbench. Dataset
+classification stays in provenance. Ratatui now renders themed panels, quality
+cards, an observed-expression histogram, signed correlation bars and job activity.
+The shared offline guide opens with g in navigation or F1/Ctrl+g inside editors,
+with bounded regex search, highlights, match navigation and full-context viewing.
+It preserves forms and works in the legacy interface as well.
+
+Local reference build/inspect/compare/prepare commands now curate explicitly labeled
+TPM/log2 datasets into fixed-gene class means. Comparison checks processing metadata,
+gene dictionary, source/sample/group overlap, QC and gene coverage. Evidence exports
+preserve all signed correlations and explicit incompatible/insufficient/undefined
+states. Jev request previews use typed questions and omit query identifiers.
+The [reference guide](data/REFERENCE_GUIDE.md) and [embedded user guide](USER_GUIDE.md)
+record exact scope and operational limits.
+
+Verification: 148 workspace tests passed, including numerical oracle checks, reference
+rejection paths, JSON Schemas, reproducible comparisons, request identifier exclusion,
+protected exports, guide keyboard/search behavior, legacy access, asynchronous jobs
+and stale-result invalidation. Formatting and clippy with warnings denied passed;
+the dependency inventory remains 277 packages (regex was already locked). A real
+PTY check passed branding, guide search/context, help over an unfinished form,
+reference loading/comparison, offline request export, resizing and terminal
+restoration. The actual Ratatui buffer was also visually inspected. No provider
+request or real cancer cohort was used.
+
+Phase 1 remains in progress: curated/validated cancer references, scientific splits,
+reference percentiles, live molecular provider response handling, full analysis-run
+archives, evaluation, calibration and a validated OOD detector remain open. The
+synthetic tutorial's Demonstration A/B labels are not cancer reference classes.
+
 ## 0.5.0 — first data-first redesign milestone
 
 Implemented independent Sample/Dataset/Assay/artifact contracts; long/wide expression

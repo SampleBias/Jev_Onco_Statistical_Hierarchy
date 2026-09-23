@@ -1,0 +1,156 @@
+{
+  "$defs": {
+    "ComparisonStatus": {
+      "enum": [
+        "compared",
+        "incompatible",
+        "insufficient_data",
+        "undefined_similarity"
+      ],
+      "type": "string"
+    },
+    "ReferenceSimilarity": {
+      "additionalProperties": false,
+      "properties": {
+        "cancer_type": {
+          "type": "string"
+        },
+        "class_id": {
+          "type": "string"
+        },
+        "pearson_r": {
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "reference_samples": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "class_id",
+        "cancer_type",
+        "reference_samples"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "common_genes": {
+      "format": "uint",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "conflict_assessment": {
+      "type": "string"
+    },
+    "dataset_id": {
+      "type": "string"
+    },
+    "limitations": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "measurement_sha256": {
+      "type": "string"
+    },
+    "missing_modalities": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "ood_assessment": {
+      "type": "string"
+    },
+    "overlap_fraction": {
+      "format": "double",
+      "type": "number"
+    },
+    "pipeline_version": {
+      "type": "string"
+    },
+    "probability_kind": {
+      "type": "string"
+    },
+    "reasons": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "reference_genes": {
+      "format": "uint",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "reference_release_id": {
+      "type": "string"
+    },
+    "reference_sha256": {
+      "type": "string"
+    },
+    "sample_id": {
+      "type": "string"
+    },
+    "schema_version": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "similarities": {
+      "items": {
+        "$ref": "#/$defs/ReferenceSimilarity"
+      },
+      "type": "array"
+    },
+    "source_sha256": {
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/ComparisonStatus"
+    },
+    "synthetic": {
+      "type": "boolean"
+    },
+    "used_gene_ids": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "pipeline_version",
+    "dataset_id",
+    "sample_id",
+    "source_sha256",
+    "measurement_sha256",
+    "reference_release_id",
+    "reference_sha256",
+    "synthetic",
+    "status",
+    "reasons",
+    "common_genes",
+    "reference_genes",
+    "overlap_fraction",
+    "used_gene_ids",
+    "similarities",
+    "missing_modalities",
+    "conflict_assessment",
+    "ood_assessment",
+    "probability_kind",
+    "limitations"
+  ],
+  "title": "EvidencePackage",
+  "type": "object"
+}

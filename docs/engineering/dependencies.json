@@ -1,7 +1,7 @@
 {
   "inventory_version": 1,
   "scope": "Cargo metadata: workspace, build, development and platform-conditional dependencies; not a shipped-binary SBOM",
-  "cargo_lock_sha256": "e577de12bdbb2de2e4de3f8a0a030b1ed12fd77704f1002a0e6637ff60f329b1",
+  "cargo_lock_sha256": "23dd4e5b4d524e7cfc8ed522e3b2970879a4350cf02fa0d0c390a50be0d8dc0c",
   "packages": [
     {
       "name": "ahash",
@@ -698,35 +698,35 @@
     },
     {
       "name": "josh-app",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "source": "workspace",
       "declared_license": null,
       "has_license_file": false
     },
     {
       "name": "josh-core",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "source": "workspace",
       "declared_license": null,
       "has_license_file": false
     },
     {
       "name": "josh-features",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "source": "workspace",
       "declared_license": null,
       "has_license_file": false
     },
     {
       "name": "josh-ingest",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "source": "workspace",
       "declared_license": null,
       "has_license_file": false
     },
     {
       "name": "josh-jev",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "source": "workspace",
       "declared_license": null,
       "has_license_file": false

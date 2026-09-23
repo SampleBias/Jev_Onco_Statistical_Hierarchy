@@ -12,7 +12,10 @@ use serde::Serialize;
 pub mod contracts;
 pub mod data;
 pub mod errors;
+pub mod guide;
+pub mod reference;
 pub mod tui;
+pub mod ui;
 pub mod workbench;
 pub mod workflows;
 

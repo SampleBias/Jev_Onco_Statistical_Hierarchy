@@ -395,3 +395,26 @@ fn missing_timeline_dates_are_not_plotted_at_zero() {
     assert!(timeline.contains("unknown"));
     assert!(!timeline.contains("+0"));
 }
+
+#[test]
+fn shared_guide_works_in_legacy_views_and_over_confirmation_without_sending() {
+    let mut app = App::new(None).unwrap();
+    for tab in '1'..='8' {
+        press(&mut app, KeyCode::Char(tab));
+        press(&mut app, KeyCode::Char('g'));
+        assert!(screen(&mut app, 110, 40).contains("USER GUIDE"));
+        press(&mut app, KeyCode::Esc);
+        assert!(!screen(&mut app, 110, 40).contains("USER GUIDE"));
+    }
+    press(&mut app, KeyCode::Char('c'));
+    press(&mut app, KeyCode::Char('g'));
+    assert!(screen(&mut app, 110, 40).contains("USER GUIDE"));
+    press(&mut app, KeyCode::Esc);
+    press(&mut app, KeyCode::Esc);
+    press(&mut app, KeyCode::Char('o'));
+    type_text(&mut app, "gene.json");
+    press(&mut app, KeyCode::F(1));
+    assert!(screen(&mut app, 110, 40).contains("USER GUIDE"));
+    press(&mut app, KeyCode::Esc);
+    assert!(screen(&mut app, 110, 40).contains("gene.json"));
+}

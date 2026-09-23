@@ -21,3 +21,7 @@ Run `cargo run -p josh-app --example export_contracts --locked` to refresh them,
 Sample/dataset/measurement contracts are distinct from legacy Case schemas. The new
 dataset CLI/TUI is local; these schemas do not imply new HTTP routes. Relational and
 artifact checks are documented in the [expression guide](../docs/data/EXPRESSION_GUIDE.md).
+
+Reference releases and numerical molecular evidence are versioned by
+`reference.schema.json` and `molecular-evidence.schema.json`. They describe local
+research comparisons and do not declare classifier probabilities or validation.

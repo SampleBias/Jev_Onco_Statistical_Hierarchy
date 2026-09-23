@@ -30,6 +30,7 @@ enum Dialog {
 }
 
 pub struct App {
+    guide: crate::guide::Guide,
     case: Case,
     path: Option<PathBuf>,
     result: Option<ResultRecord>,
@@ -64,6 +65,7 @@ impl App {
             None => workflows::clinical_example_case(),
         };
         Ok(Self {
+            guide: crate::guide::Guide::default(),
             case,
             path,
             result: None,
@@ -262,6 +264,15 @@ impl App {
     /// Returns true on exit. A live request starts only after the confirmation key.
     pub fn key(&mut self, key: KeyEvent) -> bool {
         if key.kind != KeyEventKind::Press {
+            return false;
+        }
+        if self.guide.key(
+            key,
+            matches!(
+                self.dialog,
+                Dialog::Open | Dialog::OpenBatch | Dialog::Save | Dialog::Review
+            ),
+        ) {
             return false;
         }
         if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
@@ -533,6 +544,10 @@ impl App {
     }
 
     pub fn draw(&mut self, frame: &mut Frame) {
+        if self.guide.open {
+            self.guide.draw(frame);
+            return;
+        }
         let area = frame.area();
         frame.render_widget(
             Block::default().style(Style::default().bg(theme::BACKGROUND).fg(theme::TEXT)),
@@ -656,7 +671,7 @@ impl App {
             })),
             status,
         );
-        frame.render_widget(Paragraph::new("o Open  b Batch  [/] Case  d Demo  c Jev  s Save  q Quit\n6/v Visuals  7 Guidance  8 Review  ←/→ charts  ? Help").style(Style::default().fg(theme::MUTED)), footer);
+        frame.render_widget(Paragraph::new("o Open  b Batch  [/] Case  d Demo  c Jev  s Save  q Quit\n6/v Visuals  7 Guidance  8 Review  ←/→ charts  g Guide").style(Style::default().fg(theme::MUTED)), footer);
         if self.dialog != Dialog::None {
             let popup = Rect {
                 x: area.x + 2,

@@ -1,0 +1,223 @@
+{
+  "$defs": {
+    "Compatibility": {
+      "additionalProperties": false,
+      "properties": {
+        "gene_map_sha256": {
+          "type": "string"
+        },
+        "organism": {
+          "type": "string"
+        },
+        "platform": {
+          "type": "string"
+        },
+        "reference_genome": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "transform": {
+          "$ref": "#/$defs/Transform"
+        },
+        "units": {
+          "$ref": "#/$defs/ExpressionUnit"
+        }
+      },
+      "required": [
+        "organism",
+        "units",
+        "transform",
+        "platform",
+        "gene_map_sha256"
+      ],
+      "type": "object"
+    },
+    "ExpressionUnit": {
+      "enum": [
+        "unknown",
+        "counts",
+        "tpm",
+        "fpkm",
+        "normalized",
+        "microarray_intensity",
+        "log2",
+        "z_score"
+      ],
+      "type": "string"
+    },
+    "GeneIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "hgnc_id": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "hgnc_id",
+        "symbol"
+      ],
+      "type": "object"
+    },
+    "ReferenceClass": {
+      "additionalProperties": false,
+      "properties": {
+        "cancer_type": {
+          "type": "string"
+        },
+        "class_id": {
+          "type": "string"
+        },
+        "mean_expression": {
+          "items": {
+            "format": "double",
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "samples": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "class_id",
+        "cancer_type",
+        "samples",
+        "mean_expression"
+      ],
+      "type": "object"
+    },
+    "ReferenceMember": {
+      "additionalProperties": false,
+      "properties": {
+        "class_id": {
+          "type": "string"
+        },
+        "measurement_sha256": {
+          "type": "string"
+        },
+        "patient_group_id": {
+          "type": "string"
+        },
+        "sample_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "sample_id",
+        "patient_group_id",
+        "class_id",
+        "measurement_sha256"
+      ],
+      "type": "object"
+    },
+    "Transform": {
+      "enum": [
+        "identity",
+        "log2_one_plus"
+      ],
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "citation": {
+      "type": "string"
+    },
+    "classes": {
+      "items": {
+        "$ref": "#/$defs/ReferenceClass"
+      },
+      "type": "array"
+    },
+    "compatibility": {
+      "$ref": "#/$defs/Compatibility"
+    },
+    "created_at_unix_seconds": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "genes": {
+      "items": {
+        "$ref": "#/$defs/GeneIdentity"
+      },
+      "type": "array"
+    },
+    "limitations": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "members": {
+      "items": {
+        "$ref": "#/$defs/ReferenceMember"
+      },
+      "type": "array"
+    },
+    "minimum_genes": {
+      "format": "uint",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "minimum_overlap": {
+      "format": "double",
+      "type": "number"
+    },
+    "pipeline_version": {
+      "type": "string"
+    },
+    "release_id": {
+      "type": "string"
+    },
+    "schema_version": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "source_dataset_id": {
+      "type": "string"
+    },
+    "source_input_sha256": {
+      "type": "string"
+    },
+    "source_labels_sha256": {
+      "type": "string"
+    },
+    "source_manifest_sha256": {
+      "type": "string"
+    },
+    "synthetic": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schema_version",
+    "pipeline_version",
+    "release_id",
+    "citation",
+    "created_at_unix_seconds",
+    "synthetic",
+    "source_dataset_id",
+    "source_manifest_sha256",
+    "source_input_sha256",
+    "source_labels_sha256",
+    "compatibility",
+    "minimum_genes",
+    "minimum_overlap",
+    "genes",
+    "members",
+    "classes",
+    "limitations"
+  ],
+  "title": "ReferenceRelease",
+  "type": "object"
+}

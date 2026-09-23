@@ -1,9 +1,10 @@
-# Expression datasets — JOSH 0.5.0
+# Expression datasets — JOSH 0.6.0
 
 This is the first implemented slice of the data-first redesign: independent samples,
 expression CSV/TSV import, gene mapping, QC, provenance, exploration and local
-reproduction. It does not yet compare cancer references or run Jev on expression
-features. Existing summarized-case Jev commands remain available separately.
+reproduction. The [reference guide](REFERENCE_GUIDE.md) covers the subsequent
+local comparison and offline Jev request preview. Molecular live Jev inference is
+pending. Existing summarized-case Jev commands remain available separately.
 
 ## Try the sample workbench
 
@@ -13,7 +14,8 @@ cargo build --workspace --locked
 ```
 
 The default view contains two invented expression profiles and six real gene-ID
-mappings. It is labeled SYNTHETIC DATA and supplies no cancer labels or predictions.
+mappings. Its provenance is labeled Synthetic in the sample metadata and exports; it supplies
+no cancer labels or predictions. The title displays the application name.
 Use `josh tui --legacy` for the original clinical/case interface; `--case` and
 `--batch` continue to open that interface.
 
@@ -188,8 +190,9 @@ Import/open/detection run off the rendering thread. Cancellation is cooperative 
 the boundary before bundle writing or view replacement; it does not interrupt every
 parser operation. Once writing begins, it finishes rather than leaving a deliberately
 aborted export. A failed load preserves the current dataset. The Analyze view shows
-which stages are available; reference comparison and molecular Jev inference are
-explicitly not implemented. Projects is a local-workspace view, not yet a catalog.
+which stages are available. `r` opens a reference, `a` compares the current sample
+and `e` exports an offline molecular Jev request. Live molecular inference remains
+pending. Press `g` for the searchable guide (`F1`/`Ctrl+g` in editors). Projects is a local-workspace view, not yet a catalog.
 
 ## Legacy compatibility and current limits
 
@@ -210,7 +213,7 @@ paste. These are bounded in-memory operations, not a constant-memory streaming
 matrix engine. Larger cohorts need further chunking/storage work.
 
 Pending Phase 1 work: sample-annotation joins, richer transforms/feature selection,
-reference cohorts/comparisons, reference percentiles, gene-family enrichment,
+curated/validated cancer reference cohorts, reference percentiles, gene-family enrichment,
 complete analysis manifests, molecular Jev inference and evaluation. VCF/MAF,
 structured IHC, cohort inference and PDF reports belong to Phase 2. No local API
 route for these new dataset operations has been added yet.

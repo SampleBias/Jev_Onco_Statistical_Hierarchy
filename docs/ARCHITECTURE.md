@@ -1,6 +1,6 @@
 # Architecture and contracts
 
-## Data workbench foundation — 0.5.0
+## Data workbench foundation — 0.6.0
 
 The sample-first path is now implemented independently of the legacy Case pipeline:
 source CSV/TSV → `josh-ingest::expression` → Sample/Assay/artifacts →
@@ -10,9 +10,18 @@ source CSV/TSV → `josh-ingest::expression` → Sample/Assay/artifacts →
 `josh-core::sample` defines the new contracts. `josh-ingest::dataset` persists and
 verifies source/derived artifacts and can reproduce mappings/values/QC. Legacy Case
 import retains the original bytes as annotations. A dictionary maps genes; it is not
-a cancer reference. Reference comparison, molecular evidence packages and molecular
-Jev analysis are still pending. See the [expression guide](data/EXPRESSION_GUIDE.md)
+a cancer reference. `josh-core::reference` defines reference/evidence contracts;
+`josh-features::reference` implements numerical comparison/validation; shared
+`josh-app::reference` services curate bundles and prepare offline typed Jev requests.
+Real cancer reference curation and live molecular Jev analysis remain pending. See the [expression guide](data/EXPRESSION_GUIDE.md)
 and [active phase](redesign/01-samples-expression-and-reference.md).
+
+The Ratatui workbench uses a navy/teal palette, observed-data histograms, quality
+cards and fixed-scale signed correlation bars. The shared guide embeds Markdown
+manuals, supports bounded regex search, and preserves editor state. Design references:
+[Ratatui Demo 2](https://ratatui.rs/examples/apps/demo2/),
+[Table Demo](https://ratatui.rs/examples/apps/table/) and
+[Sparkline](https://ratatui.rs/examples/widgets/sparkline/).
 
 The remaining sections describe the retained case-classifier architecture and
 historical future-module proposals; the active roadmap prioritizes Ratatui.
