@@ -80,25 +80,10 @@ enum Command {
         #[command(subcommand)]
         command: Box<josh_app::data::DatasetCommand>,
     },
-    /// Open the sample/data workbench; legacy cases remain available explicitly.
+    /// Open the unified workspace; optionally load any supported file or saved run.
     Tui {
-        #[arg(short, long, conflicts_with = "batch")]
-        case: Option<PathBuf>,
-        /// Open a verified import bundle and browse cases with [ and ].
-        #[arg(long, conflicts_with = "case")]
-        batch: Option<PathBuf>,
-        /// Open a molecular dataset bundle.
-        #[arg(long, conflicts_with_all = ["case", "batch", "legacy"])]
-        dataset: Option<PathBuf>,
-        /// Open typed molecular observations for Jev analysis.
-        #[arg(long, conflicts_with_all = ["case", "batch", "dataset", "legacy", "explanation"])]
-        molecular: Option<PathBuf>,
-        /// Open a saved explanation, including its circular and scatter charts.
-        #[arg(long, conflicts_with_all = ["case", "batch", "dataset", "legacy", "molecular"])]
-        explanation: Option<PathBuf>,
-        /// Open the original case and clinical-review interface.
-        #[arg(long)]
-        legacy: bool,
+        /// Molecular/clinical JSON, table, dataset bundle, case bundle or saved analysis.
+        input: Option<PathBuf>,
     },
     /// Print an editable synthetic case template; use --output to save it.
     Example {
@@ -187,25 +172,11 @@ async fn run(args: Args) -> Result<bool, AppError> {
             rejected_records = result.blocked;
             result.value
         }
-        Command::Tui {
-            case,
-            batch,
-            dataset,
-            molecular,
-            explanation,
-            legacy,
-        } => {
+        Command::Tui { input } => {
             if args.output.is_some() {
                 return Err(ErrorEnvelope::new(ErrorCode::InvalidArguments).into());
             }
-            return if molecular.is_some() || explanation.is_some() {
-                josh_app::molecular_tui::run(molecular, explanation).await
-            } else if legacy || case.is_some() || batch.is_some() {
-                josh_app::tui::run(case, batch).await
-            } else {
-                josh_app::workbench::run(dataset).await
-            }
-            .map(|()| false);
+            return josh_app::terminal::run(input).await.map(|()| false);
         }
         Command::Serve { port } => {
             if args.output.is_some() {
@@ -327,7 +298,7 @@ async fn run(args: Args) -> Result<bool, AppError> {
             )?;
             rejected_records = report.rejected_records > 0;
             human = Some(format!(
-                "{}\n\nBundle directory: {}\nOpen this directory with josh tui --batch.",
+                "{}\n\nBundle directory: {}\nOpen this directory with josh tui PATH or the shared Load action.",
                 workflows::import_report_text(&report),
                 workflows::display_text(&out_dir.display().to_string())
             ));

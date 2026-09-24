@@ -1,154 +1,189 @@
-# CLI and terminal workbench
+# CLI and terminal reference
 
-The `josh` binary supports scripts and an interactive Rust TUI. Shared services
-handle validation, Jev requests and archived results. Version 0.7.0 adds molecular
-inference and Rust Shapley graphics; legacy case and NICE review remain available.
+JOSH 0.8.0 has one terminal entry point: `josh tui [INPUT]`. Run `./scripts/start`
+from the repository to build and launch it. For the main Load → Analyze → Results
+→ Markdown workflow, see [Quickstart](QUICKSTART.md) and [User Guide](USER_GUIDE.md).
 
-## Molecular explanations — 0.7.0
+## Shared terminal controls
 
-Press m from the workbench, then d for the offline analytical graphics demo. Open
-features or an archive with o; Tab cycles chart views, arrows select evidence,
-t changes the target class using cached responses, and s exports SVG/CSV/JSON.
-The native circular chart and signed scatter share the exact explanation data.
-Small terminals use a table with signed bars. g opens the searchable guide.
-
-`josh tui --explanation FILE` replays an archive offline. c starts an explicitly
-synthetic live inference after a run-directory dialog; e presents the explanation
-budget before starting. x requests cancellation; uncertain calls require explicit
-CLI resumption. Details: [molecular guide](data/MOLECULAR_GUIDE.md).
-
-## Data workbench — 0.6.0
-
-`josh tui` now opens the sample-first expression workbench. Use `josh dataset --help`
-for detection, import, inspection, gene exploration, exports and local reproduction.
-The [expression guide](data/EXPRESSION_GUIDE.md) documents all new commands and keys.
-Use `josh reference --help` for reference curation, comparison and offline Jev request
-preparation. Press `g` to open the complete searchable [user guide](USER_GUIDE.md);
-`F1` or `Ctrl+g` opens it inside forms. The guide has regex search, match navigation
-and full context. See the [reference guide](data/REFERENCE_GUIDE.md).
-No API key is needed for these local workflows.
-
-The remainder of this page documents the compatible **legacy case interface**.
-Launch it with `josh tui --legacy`, `--case FILE` or `--batch DIRECTORY`.
-
-## Legacy start
-
-```bash
-cargo build --locked --bin josh
-./target/debug/josh doctor --format text
-./target/debug/josh tui --legacy
-```
-
-The TUI opens a bundled synthetic case even when launched outside the checkout. To load your own canonical case:
-
-```bash
-./target/debug/josh tui --case fixtures/synthetic-case.json
-```
-
-A terminal of at least 48 columns by 12 rows is required; 100 by 35 or larger is recommended. Piped/noninteractive execution reports a clear error. The terminal is restored on normal exit, Ctrl-C, recoverable errors and Rust panic; forcibly killing the process cannot run cleanup.
-
-## Workbench controls
-
-| Key | Action |
+| Key | Action outside text editors |
 | --- | --- |
-| `1`, `2`, `3`, `4` | Evidence, Request, Results, Help |
-| `5` | Import quality report |
-| `6`, `v` | Visuals: score bars, IHC matrix, pathway, timeline, evidence counts |
-| `7` | Source-linked NICE guidance; up/down selects a rule |
-| `8` | Clinical context and review history |
-| `←`/`→` | On Visuals: change chart; on Guidance: scroll selected rule details |
-| `a` | On Guidance: record a reasoned review; **8 then s** saves the complete case |
-| `Tab`, `Shift-Tab` | Next/previous view |
-| `↑`/`↓`, `k`/`j` | Scroll |
-| `PgUp`, `PgDn`, `Home` | Page or return to top |
-| `o` | Enter a case JSON path and load it |
-| `b` | Open an import bundle directory and verify its report/sidecars |
-| `[`, `]` | Previous/next imported case; verify its fingerprint and clear previous results |
-| `r` | Reload the current file and clear the previous result |
-| `d` | Run an offline mock; no API request |
-| `c` | Review confirmation for one live synthetic Jev call |
-| `s` | Export Request, Results, Import, Visuals or Guidance; on Review, save the complete case |
-| `?` | Legacy Help view |
-| `g`, `F1`, `Ctrl+g` | Shared searchable user guide (`F1`/`Ctrl+g` while editing) |
-| `Esc` | Close a dialog |
-| `q`, `Ctrl-C` | Quit; asks before discarding unsaved reviews |
+| F2 / F3 / F4 | Analysis / Data / Clinical; preserve section state and jobs |
+| l / o | Shared Load dialog for supported files/bundles |
+| g | Searchable guide; F1/Ctrl+g also works inside editors |
+| Esc | Close a dialog; it does not stop a job or leave a section |
+| q / Ctrl+C | Quit the workspace; check recorded unsaved reviews and finish in-flight work |
 
-The Evidence view shows the specimen and individual observations. Request shows the actual provider payload with local case identifiers omitted. Results preserves the complete distribution, model version, review flags and request fingerprint. Mock scores are explicitly labeled and never presented as a cancer prediction.
+Help captures its own keys; q/Esc closes help before returning to the application.
+Close the shared Load dialog or quit confirmation before switching sections.
+Paths are literal; there is no shell or environment expansion. In the shared
+loader, type paths containing spaces without surrounding shell quotes. CLI shell
+arguments do need normal quoting. The launcher uses the repository as its working
+directory; a directly launched binary uses the current working directory.
 
-The legacy TUI example uses schema 3 and invented clinical context. The coordinated
-navy/teal/cyan/blue/violet views are best at 120×40 or larger. Unknown/not-tested
-results remain distinct. No model score assigns a clinical stage.
-See the [clinical review guide](CLINICAL_REVIEW_GUIDE.md) for schema migration,
-rule coverage, review persistence and clinical limitations. On Guidance,
-PgUp/PgDn scroll the selected rule's details instead of changing selection.
+The TUI needs interactive stdin/stdout. A large terminal, such as 120×40, gives
+room for all panels; small layouts omit detail or ask for more space. Normal exit,
+Ctrl+C, recoverable errors and Rust panic restore the terminal. A forcibly killed
+process cannot run cleanup.
 
-Use a normal editor to change case JSON, then reload. Path dialogs accept literal relative or absolute paths; they do not expand `~`, environment variables or shell commands. A failed load preserves the current case. While a live request is pending, navigation works and case changes/new runs are disabled. Quitting cancels local waiting; the provider may already have received the request and incurred a charge.
+## Analysis and Data controls
 
-Imported bundle cases are fingerprint-checked. Make a standalone copy before editing one; modifying a bundle case in place causes its next load to fail. Open an import with `josh tui --batch DIRECTORY` or press `b` in the workbench. The Import view supports `s` to export the complete report.
+Analysis (F2): l loads, a/c opens the confirmed one-call analysis dialog, v shows
+Results, s exports Markdown by default, d runs the offline analytical demo, and e
+shows the optional explanation budget. Tab/Right and Left change result/chart
+views; t changes the explained class offline. x cancels future evaluations and
+waits for any dispatched request. Inference-only reports need no explanation.
+SVG/CSV charts require a completed explanation. See the
+[Molecular Guide](data/MOLECULAR_GUIDE.md) for formats and resumption.
 
-## CLI commands
+Data (F3): 1–7 selects Samples, Datasets, Analyze, Explore, Models, Reference and
+Projects. i imports expression, p pastes a table, / searches genes, and [/] changes
+samples. r loads a reference, a compares locally, and e exports an offline request.
+s exports comparison evidence on Analyze when present, otherwise the manifest.
+m attaches a usable comparison to Analysis, replacing its previous input/result.
+See the [Expression Guide](data/EXPRESSION_GUIDE.md) and
+[Reference Guide](data/REFERENCE_GUIDE.md). These Data operations make no provider call.
+
+## Clinical controls
+
+Press F4, or load canonical case JSON/a case import bundle with shared Load:
+
+```bash
+./scripts/start tui fixtures/synthetic-case.json
+```
+
+Clinical starts with a bundled schema 3 synthetic case when no clinical input is
+loaded. This remains available outside the repository. Its pages and controls are:
+
+| Key | Action in Clinical |
+| --- | --- |
+| 1 / 2 / 3 / 4 | Evidence / Request / Results / Help |
+| 5 | Import quality report |
+| 6 / v | Visuals: scores, IHC, pathway, timeline, evidence counts |
+| 7 | Source-linked NICE guidance; Up/Down selects a rule |
+| 8 | Clinical context and review history |
+| Left/Right | On Visuals: change chart; on Guidance: scroll rule details |
+| a | On Guidance: record a reasoned review; 8 then s saves the complete case |
+| Tab / Shift+Tab | Next/previous Clinical page |
+| Up/Down / j/k | Scroll; on Guidance, select a rule |
+| PageUp/PageDown / Home | Page or return to top; Guidance pages scroll rule details |
+| b | Load a case import bundle and verify report/sidecars |
+| [ / ] | Previous/next imported case; clear its previous result |
+| r | Reload the current case file and clear its previous result |
+| d | Offline uniform mock; always labeled, no API request |
+| c | Confirm one synthetic live Jev call with y |
+| s | Export Request, Results, Import, Visuals or Guidance; on Review, save the case |
+| ? | Clinical shortcut/help page |
+
+Clinical exports are JSON even if you enter another filename extension. Its case
+results use ResultRecord, distinct from molecular InferenceRun. Request exports
+omit local case identifiers and credentials; case/review exports retain clinical
+context. No score assigns a stage. Guidance is a documented subset of local review
+rules, not a complete guideline or a validated decision system. See the
+[Clinical Review Guide](CLINICAL_REVIEW_GUIDE.md) for coverage and persistence.
+
+Edit a standalone case JSON in your editor, then reload. A failed load preserves
+the current case. Imported bundle cases are fingerprint-checked: make a standalone
+copy before editing one. Save recorded reviews with 8 then s before replacing the
+case. Quitting asks before discarding recorded unsaved reviews, even from another
+section. Clinical results must be explicitly exported; they have no automatic run
+archive. While a live call is pending, navigation works, case changes/new runs are
+blocked, and quitting waits for completion. A dispatched call may be billed.
+
+## Molecular CLI commands
 
 | Command | Purpose |
 | --- | --- |
-| `josh example` | Print a complete synthetic case template |
-| `josh example --clinical` | Print the schema 3 synthetic clinical template |
-| `josh guidance CASE` | Evaluate local NICE review rules without a provider call |
-| `josh doctor` | Report local readiness and key presence without exposing credentials or contacting Jev |
-| `josh taxonomy` | List all development taxonomy outcomes |
-| `josh schema KIND` | Print `case`, `jev-request`, `jev-response`, `result`, `error` JSON Schema or `openapi` |
-| `josh validate CASE` | Validate JSON and report case ID/finding count |
-| `josh import INPUT --input-format FORMAT --source-id ID --out-dir NEW_DIR` | Import JSON/JSONL/CSV/TSV locally with quality reports; migrate schema 1 |
-| `josh batch DIRECTORY` | Inspect an import bundle and verify report/sidecar integrity |
-| `josh prepare CASE` | Print the exact request without sending it |
-| `josh demo [CASE]` | Offline mock; defaults to bundled example |
-| `josh classify CASE` | Send one synthetic case to Jev |
-| `josh replay CASE RESPONSE` | Interpret an unverified local provider fixture |
-| `josh tui [--case CASE] [--batch DIRECTORY]` | Open a standalone case or an import bundle; flags are mutually exclusive |
-| `josh serve [--port 3000]` | Run offline loopback HTTP endpoints |
+| josh molecular example / taxonomy | Print synthetic feature input / default experimental taxonomy |
+| josh molecular import INPUT --input-format FORMAT --sample ID --patient-group ID --source-id ID --assay NAME | Import one molecular sample; --synthetic only for invented data |
+| josh molecular check FEATURES | Report local readiness and blockers; no provider call |
+| josh molecular prepare FEATURES | Validate and preview the exact request offline |
+| josh molecular run FEATURES --out-dir NEW_DIR | One synthetic Jev request; archive and Markdown report |
+| josh molecular demo --out-dir NEW_DIR | Offline analytical inference/explanation fixture |
+| josh molecular plan RUN_DIR | Estimate explanation budget without sending |
+| josh molecular explain RUN_DIR | Run/resume a budgeted explanation; may send billed requests |
+| josh molecular inspect ARCHIVE_JSON | Verify and summarize an explanation or checkpoint |
+| josh molecular export RUN_OR_ARCHIVE --output NEW.md | Verified Markdown report, also supports inference with features.json sidecar |
 
-`--help` works on each command; `--version` reports the package version. JSON is the default output for scripts. `--format text` displays a readable summary/table for validation, taxonomy, results and diagnostics. Templates and request previews remain JSON in either mode. Diagnostics go to stderr and do not contaminate stdout. Successful commands exit 0, application errors exit 1, and invalid CLI arguments exit 2.
+Use `josh molecular --help` for merge, expression/signature attachment, experimental
+SBS processing, cohort, evaluation, repeatability and stability commands.
+`josh dataset --help` lists expression operations; `josh reference --help` lists
+reference build/inspect/compare/prepare. Their guides include worked examples.
 
-Import additionally exits 3 when records are rejected, while preserving the report and any accepted cases. `--output` is not accepted for import; its report is already written inside the new bundle. The [import guide](data/IMPORT_GUIDE.md) covers columns, status normalization, patient groups, labels and limits. `josh schema` also supports `import-report`, `labels` and `splits`.
+## Case and utility CLI commands
 
-`josh schema guidance` exports the guidance-report contract. `guidance CASE`
-supports JSON/text and protected `--output`; `POST /v1/guidance` is its offline API
-equivalent. Guidance and case exports contain local clinical context, unlike provider
-request previews.
+| Command | Purpose |
+| --- | --- |
+| josh tui [INPUT] | Open the one workspace and optionally load a supported input |
+| josh doctor | Local key/model status; no authentication or provider request |
+| josh example [--clinical] | Synthetic case template; --clinical includes schema 3 context |
+| josh taxonomy | Clinical development outcomes; molecular taxonomy is a separate command |
+| josh schema KIND | Print a generated contract; --help lists kinds, including openapi |
+| josh validate CASE | Validate a canonical case |
+| josh import INPUT --input-format FORMAT --source-id ID --out-dir NEW_DIR | Local case JSON/JSONL/CSV/TSV import and quality reports |
+| josh batch DIRECTORY | Verify a case import bundle |
+| josh prepare CASE | Exact case request preview; no send |
+| josh demo [CASE] | Offline uniform mock; defaults to the bundled case |
+| josh classify CASE | One synthetic case request to Jev |
+| josh replay CASE RESPONSE | Interpret an unverified local provider response fixture |
+| josh guidance CASE | Evaluate local clinical review rules offline |
+| josh serve [--port 3000] | Offline loopback HTTP endpoints for summarized cases |
 
-In 0.2.0, JSON-mode failures use a stable envelope on stderr, for example `{"error":{"code":"invalid_json","message":"input does not match the JSON schema"}}`. Scripts should inspect `error.code`; readable wording may change. Invalid arguments use `invalid_arguments` and never echo submitted values. Help/version remain readable text. See [contracts and compatibility](engineering/foundation.md).
+## Output formats, files and stdin
 
-To inspect import requirements before writing an importer, run `./target/debug/josh schema case`. To inspect the offline routes, run `./target/debug/josh schema openapi`. Result exports now include both case revision and provider request fingerprints, and explicitly mark unverified replay scores.
-
-## Files, pipes and exports
+--help works on every command; --version reports the package version. Most commands
+produce JSON by default; --format text uses a readable summary where available.
+Templates, schemas and request previews remain JSON. Explicit exports use their
+own selected format: molecular export defaults to Markdown, with --kind
+markdown/json/csv/svg. CLI --kind svg/csv/json expects a completed explanation
+JSON file. Filename extensions do not select CLI output formats.
 
 ```bash
-./target/debug/josh example --output /tmp/josh-example.json
-./target/debug/josh validate /tmp/josh-example.json --format text
+./target/debug/josh molecular demo --out-dir /tmp/josh-guide-demo --format text
+./target/debug/josh molecular export /tmp/josh-guide-demo --output /tmp/josh-guide-report.md
+./target/debug/josh molecular export /tmp/josh-guide-demo/explanation.json \
+  --kind svg --output /tmp/josh-guide-chart.svg
 ./target/debug/josh example | ./target/debug/josh prepare -
-./target/debug/josh demo --format text
-./target/debug/josh demo --output /tmp/josh-demo-result.json
 ```
 
-Use `-` as a case path to read stdin. Replay can read one of its inputs from stdin, not both. TUI reserves stdin for keyboard controls.
+Choose new destinations on each run. --output creates a new file and refuses to
+overwrite. TUI exports do likewise. Parent folders must exist; exports use owner-only
+permissions on Unix. Case import, dataset import/migrate-case, tui and serve reject
+--output; imports use --out-dir instead. Keep original run/dataset bundles, not just
+rendered reports. Working data and results belong in the ignored data/ or results/
+directories rather than source control.
 
-`--output` creates a new file and refuses to overwrite any existing file. TUI exports have the same behavior and always use JSON. Parent folders must already exist. On Unix, newly created exports have owner-only permissions. Exports may contain submitted evidence; store them in a suitable location. Avoid committing working case files or results; root `data/` and `results/` folders are ignored.
+Case-path commands accept - for stdin. Replay allows one stdin input, not both.
+Case import and dataset detect/import also accept stdin; gene dictionaries require
+files. Molecular commands use file paths rather than stdin. The TUI reserves stdin
+for keyboard input.
 
-## Live Jev
+Application JSON errors appear on stderr as an error envelope with code and message,
+for example {"error":{"code":"invalid_json","message":"input does not match the JSON schema"}}.
+Scripts should inspect error.code; wording may change. Help/version remain text.
 
-Set `TYPESAFE_API_KEY` in the launching process environment using your normal secret-management method. A `.env` file is not automatically loaded. Never pass keys as CLI arguments. Then use `josh classify CASE` or `c` in the legacy TUI. TUI asks `y` before sending. The CLI classify command is itself the explicit send action.
+| Exit | Meaning |
+| --- | --- |
+| 0 | Command completed; inspect result status/QC/readiness for its domain outcome |
+| 1 | Application error |
+| 2 | Invalid CLI arguments |
+| 3 | Case import rejected records, expression import blocked QC, or reference comparison/preparation failed gates |
 
-Live inference accepts declared synthetic cases only. That declaration does not
-detect identifiers or verify provenance. Missing keys and unsuitable cases fail
-locally. The adapter is pinned to `jev-1.13.0`; the 0.7.0 synthetic inference,
-explanation and repeatability checks are recorded in the
-[validation report](reports/0.7.0-molecular-validation.md).
+`molecular check` can exit 0 with ready:false. An abstained inference is a completed
+result, not a CLI failure. Case imports with rejected rows retain accepted cases and
+reports; blocked-QC expression imports retain data for inspection. See the
+[Import Guide](data/IMPORT_GUIDE.md) and [compatibility rules](engineering/foundation.md).
 
-## Development checks
+## Live Jev and verification
 
-```bash
-cargo fmt --all -- --check
-cargo clippy --workspace --all-targets --locked -- -D warnings
-cargo test --workspace --locked
-```
+Set TYPESAFE_API_KEY in the launching process environment; .env is not loaded and
+keys must not be CLI arguments. Analysis sends after its run-directory confirmation;
+Clinical sends after c then y. CLI run/classify/explain are themselves explicit
+send actions. The pinned model is jev-1.13.0; real-data eligibility remains open.
+Local readiness checks do not authenticate the key. Requests are not automatically
+retried. See the [0.7.0 validation report](reports/0.7.0-molecular-validation.md) for
+the limited synthetic live check and its observed variation.
 
-CLI integration tests cover pipes, standalone use, exports, key masking and exit behavior. TUI tests render through Ratatui's test backend and exercise navigation, reload invalidation, export and live-request guards. These tests verify the application workflow, not diagnostic accuracy.
+Development checks are `cargo fmt --all -- --check`,
+`cargo clippy --workspace --all-targets --locked -- -D warnings`, and
+`cargo test --workspace --locked`. These verify software behavior, not cancer accuracy.

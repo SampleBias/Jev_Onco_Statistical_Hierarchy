@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Build with the repository's pinned toolchain and launch the guided workflow.
+set -euo pipefail
+project_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cd -- "$project_root"
+for prerequisite in cargo rustc cc; do
+  if ! command -v "$prerequisite" >/dev/null 2>&1; then
+    printf 'Missing prerequisite: %s. Install Rust/Cargo and a system C compiler; see docs/QUICKSTART.md.\n' "$prerequisite" >&2
+    exit 1
+  fi
+done
+if [ "$#" -eq 0 ]; then
+  set -- tui
+fi
+exec cargo run --locked --bin josh -- "$@"

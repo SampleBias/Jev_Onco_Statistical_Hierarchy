@@ -1,4 +1,4 @@
-# Expression reference guide — 0.6.0
+# Expression reference guide
 
 ## What is implemented
 
@@ -96,17 +96,21 @@ model/prompt version, complete comparison evidence and `sends_to_provider:false`
 are exported. Query identifiers, patient IDs, file paths and labels are excluded
 from the provider state. No key is read and no network call is made.
 
-The [Jev API](https://docs.typesafe.ai/api) defines typed Choice/Noul answers. This
-milestone prepares that request contract; it does not interpret a live molecular
-response or assign calibrated CUP probabilities. Model version remains pinned.
+Reference preparation produces the typed Choice/Noul request offline. For synthetic
+live inference, attach a usable comparison to Analysis with Data's m key. Molecular
+response handling and archives are available; calibrated CUP probabilities remain
+unavailable. See the [Molecular Guide](MOLECULAR_GUIDE.md).
 
 ## TUI workflow
 
-r opens reference JSON, a compares the selected sample, and Analyze shows signed
+In Data (F3), r opens reference JSON, a compares the selected sample, and Analyze shows signed
 correlations, sample counts, overlap, gate failures and scientific limitations.
 s on Analyze exports the complete evidence package; e exports the offline request
 with evidence. Open g to search this guide; F1/Ctrl+g work inside forms. Loading a
 new dataset/reference or switching samples invalidates the previous comparison.
+The shared Analysis result remains intact until you explicitly attach another
+usable comparison with m or replace its input. Comparison and request export do
+not call Jev.
 
 ## Reproducibility and interpretation
 
@@ -128,4 +132,6 @@ establish tumor origin, cancer-specific discrimination, clinical utility or conf
 No real cancer cohort or validated cancer reference is bundled with this release.
 Synthetic fixture classes are named Demonstration A/B and cannot support biological
 claims. The roadmap still requires reference curation, group-separated held-out
-experiments, provider transport tests, live synthetic validation and calibration.
+experiments, representative provider repeatability studies and calibration. Local
+transport tests and a limited live synthetic check have been completed; see the
+[0.7.0 report](../reports/0.7.0-molecular-validation.md).

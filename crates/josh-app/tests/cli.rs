@@ -155,6 +155,30 @@ fn help_version_and_noninteractive_tui_have_clear_behavior() {
     let tui = cli().arg("tui").stdin(Stdio::null()).output().unwrap();
     assert_eq!(tui.status.code(), Some(1));
     assert!(String::from_utf8_lossy(&tui.stderr).contains("interactive terminal"));
+    let help = cli().args(["tui", "--help"]).output().unwrap();
+    let help = String::from_utf8_lossy(&help.stdout);
+    assert!(help.contains("[INPUT]"));
+    for removed in [
+        "--legacy",
+        "--workbench",
+        "--molecular",
+        "--explanation",
+        "--case",
+        "--batch",
+        "--dataset",
+    ] {
+        assert!(
+            !help.contains(removed),
+            "separate TUI mode still advertised: {removed}"
+        );
+    }
+    let with_input = cli()
+        .args(["tui", "fixtures/clinical-case.json"])
+        .stdin(Stdio::null())
+        .output()
+        .unwrap();
+    assert_eq!(with_input.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&with_input.stderr).contains("interactive terminal"));
 }
 
 #[test]

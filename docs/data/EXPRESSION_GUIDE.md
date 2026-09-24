@@ -1,23 +1,24 @@
-# Expression datasets — JOSH 0.6.0
+# Expression datasets
 
-This is the first implemented slice of the data-first redesign: independent samples,
+The Data section (F3) provides independent samples,
 expression CSV/TSV import, gene mapping, QC, provenance, exploration and local
 reproduction. The [reference guide](REFERENCE_GUIDE.md) covers the subsequent
-local comparison and offline Jev request preview. Molecular live Jev inference is
-pending. Existing summarized-case Jev commands remain available separately.
+local comparison and offline Jev request preview. Compatible comparisons can be attached to Analysis with m for molecular Jev inference.
+Clinical evidence is available in the same workspace through F4.
 
 ## Try the sample workbench
 
 ```bash
 cargo build --workspace --locked
 ./target/debug/josh tui
+# Press F3 for Data.
 ```
 
-The default view contains two invented expression profiles and six real gene-ID
+The Data section contains two invented expression profiles and six real gene-ID
 mappings. Its provenance is labeled Synthetic in the sample metadata and exports; it supplies
 no cancer labels or predictions. The title displays the application name.
-Use `josh tui --legacy` for the original clinical/case interface; `--case` and
-`--batch` continue to open that interface.
+Use F4 for Clinical. The shared Load action recognizes cases and bundles;
+`josh tui PATH` opens any supported input in this same application.
 
 ## Import an expression matrix
 
@@ -30,7 +31,7 @@ mkdir -p results
   --gene-map-release hgnc-six-gene-fixture-2026-09-22 \
   --platform invented-demonstration --synthetic \
   --out-dir results/expression-demo --format text
-./target/debug/josh tui --dataset results/expression-demo
+./target/debug/josh tui results/expression-demo
 ```
 
 The destination and its parents are ordinary local paths; the parent must exist and
@@ -117,8 +118,9 @@ QC records measured/missing/invalid/zero values, mapping counts, duplicate recor
 raw range and issue codes. Mapping rate is unambiguously mapped records divided by
 all source records, including missing measurements; it is not sequencing alignment
 rate. Per-record issue details are capped at 1,000 per sample; summary counts remain
-complete. Reference compatibility always reads `not_assessed_no_reference` in this
-milestone, including samples whose import QC passes.
+complete. Import QC records reference compatibility as `not_assessed_no_reference`;
+subsequent reference comparison has its own evidence and gates. Import QC is not
+updated to represent that separate comparison.
 
 ## Inspect, export and reproduce
 
@@ -170,29 +172,36 @@ import/migration because their output is the new bundle directory.
 | `[` / `]` | Previous/next sample |
 | `↑` / `↓`, `j` / `k`, `PgUp` / `PgDn`, `Home` | Scroll |
 | `/` | Search a gene in Explore; empty search restores all rows |
-| `o` | Open an existing dataset bundle |
+| `l` / `o` | Shared Load action; expression bundles open in Data |
 | `i` | Configure a local expression-file import |
 | `p` | Bracketed-paste a CSV/TSV table, then Enter for import settings |
-| `s` | Export the current dataset manifest to a new JSON file |
+| `s` | Export comparison evidence on Analyze when present; otherwise the dataset manifest, as JSON |
+| `r` / `a` / `e` | Load reference / compare locally / export offline request |
+| `m` | Attach a usable comparison to Analysis, replacing its previous input/result |
 | `x` | Request cancellation before replacing a view or starting bundle writing |
 | `?` | Help |
 | `q` / `Ctrl-C` | Quit; a pending job finishes/cancels at its safe boundary |
 
 In import settings, Tab/Shift-Tab or arrows select fields. Ctrl-D previews detection;
-Ctrl-S submits. Set Sample ID for a two-column table; leave it empty for wide data.
+Ctrl-S or Ctrl+Enter submits. Set Sample ID for a two-column table; leave it empty for wide data.
 Dictionary path and release must be supplied together. Fields are editable after
 preview. Units default to unknown. Use file paths in the TUI; `-` is reserved for
 CLI stdin because TUI stdin carries keyboard events. Paths are literal, with no
 shell or environment expansion. Dropped file paths can be pasted into a path field;
 this is not a browser upload API.
 
+The form imports with a deidentified_research declaration and has no synthetic
+toggle. For invented data intended for live inference, use the CLI with --synthetic,
+then load the bundle. The CLI also exposes genome, study and other metadata absent
+from the form.
+
 Import/open/detection run off the rendering thread. Cancellation is cooperative at
 the boundary before bundle writing or view replacement; it does not interrupt every
 parser operation. Once writing begins, it finishes rather than leaving a deliberately
 aborted export. A failed load preserves the current dataset. The Analyze view shows
 which stages are available. `r` opens a reference, `a` compares the current sample
-and `e` exports an offline molecular Jev request. Live molecular inference remains
-pending. Press `g` for the searchable guide (`F1`/`Ctrl+g` in editors). Projects is a local-workspace view, not yet a catalog.
+and `e` exports an offline molecular Jev request. `m` attaches a usable comparison
+to Analysis (F2), where a separate confirmed synthetic Jev inference is available. Press `g` for the searchable guide (`F1`/`Ctrl+g` in editors). Projects is a local-workspace view, not yet a catalog.
 
 ## Legacy compatibility and current limits
 
@@ -212,8 +221,9 @@ per derived artifact, 64 KiB per derived JSONL record, 32 MiB manifest, and 1 Mi
 paste. These are bounded in-memory operations, not a constant-memory streaming
 matrix engine. Larger cohorts need further chunking/storage work.
 
-Pending Phase 1 work: sample-annotation joins, richer transforms/feature selection,
-curated/validated cancer reference cohorts, reference percentiles, gene-family enrichment,
-complete analysis manifests, molecular Jev inference and evaluation. VCF/MAF,
-structured IHC, cohort inference and PDF reports belong to Phase 2. No local API
-route for these new dataset operations has been added yet.
+Remaining expression work includes sample-annotation joins, richer transforms/feature
+selection, curated/validated cancer references, reference percentiles and gene-family
+enrichment. Molecular inference archives, supported VCF/MAF and structured IHC imports,
+synthetic cohort inference and evaluation tooling are available through the
+[Molecular Guide](MOLECULAR_GUIDE.md). PDF reports and dataset HTTP routes are not
+implemented. See [Build Status](../BUILD_STATUS.md) for current and historical scope.

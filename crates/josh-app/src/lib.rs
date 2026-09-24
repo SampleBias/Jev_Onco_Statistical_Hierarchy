@@ -9,6 +9,7 @@ use josh_core::{Case, MAX_CASE_BYTES, Source, interpret, mock_response, prepare}
 use schemars::JsonSchema;
 use serde::Serialize;
 
+pub mod analysis;
 pub mod cohort;
 pub mod contracts;
 pub mod data;
@@ -19,7 +20,9 @@ pub mod molecular_charts;
 pub mod molecular_research;
 pub mod molecular_tui;
 pub mod reference;
+pub mod report;
 pub mod signature_workflow;
+pub mod terminal;
 pub mod tui;
 pub mod ui;
 pub mod workbench;

@@ -1,4 +1,53 @@
-# Build status — 2026-09-23
+# Build status — 2026-09-24
+
+## 0.8.0 — guided Jev analysis and Markdown reports
+
+The single terminal application presents Load → Analyze → Results → Export actions,
+with mouse and keyboard operation. Direct molecular JSON and saved runs open
+locally; canonical tables and annotated MAF/VCF subsets use editable import
+settings. Local checks explain missing credentials, unavailable observations and
+the synthetic-only provider boundary. The launcher `./scripts/start` checks build
+prerequisites and starts the pinned Rust application.
+
+One-request inference automatically archives inputs, the exact request, validated
+inference, an attempt-status record and `report.md`. Inference-only runs reopen
+offline and display readable rankings, abstention reasons and separate evidence
+checks. Optional bounded explanations add `explanation-report.md` while retaining
+the original report. Markdown exports verify run consistency and contain evidence,
+missingness, full rankings, explanation details when present, usage and provenance.
+Failed imports preserve prior data; replacing Analysis input invalidates its previous
+result, while loading Data/Clinical records preserves Analysis;
+exports protect existing files. Provider failures never substitute demo results or
+trigger automatic retries. Interrupted attempts retain an explicit uncertain state.
+
+One event loop now owns the Analysis, Data/reference and Clinical sections, shared
+Load/help navigation, pending jobs and application-wide unsaved-review checks.
+There are no nested molecular applications or alternate terminal runners.
+F2/F3/F4 switch sections without dropping data, forms or results; compatible
+expression comparisons attach to the existing Analysis section.
+
+Migration: `josh tui [PATH]` is the only terminal entry. The former per-interface
+flags were removed; Load detects molecular/clinical JSON, expression/molecular
+tables and saved bundles. `molecular export` defaults to Markdown; use `--kind svg`
+for the former default. JSON contracts are unchanged.
+See [quickstart](QUICKSTART.md) for credentials, complete steps and supported inputs.
+
+Verification: **182 workspace tests passed**, including shared import → injected
+provider → archive → reload → Markdown tests, table-form errors, stale-result
+invalidation, failed/uncertain attempts, credential redaction, tampering and Markdown
+escaping, cross-section form/result retention, hidden-job completion, automatic
+file routing and unsaved clinical review protection across sections.
+Formatting, clippy with warnings denied, schema drift, locked workspace
+build and the 278-package dependency inventory passed. A real PTY smoke check passed
+one terminal initialization, F2/F3/F4 navigation, mouse Load, expression import form
+retention, saved results, Markdown export, resize, guide and terminal/mouse
+restoration. The two HTTP transport tests required localhost
+socket access outside the filesystem/network sandbox; they used local mock servers.
+
+No live provider request or real cancer data was used for this phase. Configured-key
+checks do not authenticate credentials. Live use still requires TYPESAFE_API_KEY and
+synthetic inputs; real-data eligibility, external cohort validation and calibration
+remain open. The earlier 0.7.0 live check below is a separate historical result.
 
 ## 0.7.0 — molecular Jev inference and native Shapley graphics
 

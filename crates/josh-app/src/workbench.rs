@@ -3,13 +3,7 @@ use crate::{
     data,
     workflows::{self, AppError},
 };
-use crossterm::{
-    event::{
-        self, DisableBracketedPaste, EnableBracketedPaste, Event, KeyCode, KeyEvent, KeyEventKind,
-        KeyModifiers,
-    },
-    execute,
-};
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use josh_core::sample::*;
 use josh_ingest::{dataset, expression};
 use ratatui::{
@@ -19,13 +13,11 @@ use ratatui::{
     widgets::{Block, Cell, Clear, Paragraph, Row, Table, Tabs, Wrap},
 };
 use std::{
-    io::IsTerminal,
     path::{Path, PathBuf},
     sync::{
         Arc,
         atomic::{AtomicU8, Ordering},
     },
-    time::Duration,
 };
 
 const TABS: [&str; 7] = [
@@ -142,7 +134,6 @@ struct Pending {
 }
 
 pub struct Workbench {
-    molecular: Option<Box<crate::molecular_tui::App>>,
     guide: crate::guide::Guide,
     tick: usize,
     reference: Option<(josh_core::reference::ReferenceRelease, String)>,
@@ -209,10 +200,57 @@ fn load(root: PathBuf) -> Result<Loaded, AppError> {
 
 impl Workbench {
     pub fn new() -> Result<Self, AppError> {
-        let mut app = Self { molecular: None, guide: crate::guide::Guide::default(), tick: 0, reference: None, comparison: None, loaded: demo()?, sample: 0, tab: 0, scroll: 0, query: String::new(), visible: vec![], dialog: Dialog::None,
-            status: "Synthetic expression example. i Import file · p Paste data · o Open dataset · ? Help".into(), pending: None, quit_after_job: false };
+        let mut app = Self {
+            guide: crate::guide::Guide::default(),
+            tick: 0,
+            reference: None,
+            comparison: None,
+            loaded: demo()?,
+            sample: 0,
+            tab: 0,
+            scroll: 0,
+            query: String::new(),
+            visible: vec![],
+            dialog: Dialog::None,
+            status:
+                "Synthetic expression example. i Import file · p Paste data · l/o Load · ? Help"
+                    .into(),
+            pending: None,
+            quit_after_job: false,
+        };
         app.filter();
         Ok(app)
+    }
+    pub(crate) fn editing(&self) -> bool {
+        !matches!(self.dialog, Dialog::None)
+    }
+    pub(crate) fn busy(&self) -> bool {
+        self.pending.is_some()
+    }
+    pub(crate) fn cancel_job(&mut self) {
+        self.cancel();
+    }
+    pub(crate) fn open_dataset(&mut self, path: PathBuf) {
+        self.open(path);
+    }
+    pub(crate) fn import_path(&mut self, path: &Path) {
+        let mut form = ImportForm::new(None);
+        form.values[0] = path.display().to_string();
+        self.dialog = Dialog::Import(form);
+    }
+    pub(crate) fn analysis_input(&self) -> Result<crate::molecular_tui::App, AppError> {
+        let e = self
+            .comparison
+            .as_ref()
+            .ok_or("Compare the selected sample with a reference first (r, then a).")?;
+        let sample = &self.loaded.manifest.samples[self.sample];
+        crate::molecular_tui::App::from_expression(
+            e,
+            sample
+                .patient_group_id
+                .as_deref()
+                .unwrap_or(&sample.sample_id),
+        )
     }
     fn open_reference(&mut self, path: PathBuf) {
         let state = Arc::new(AtomicU8::new(0));
@@ -259,7 +297,7 @@ impl Workbench {
     fn analysis_text(&self) -> String {
         match &self.comparison {
             Some(e) => format!("{}\n\ns Export evidence · e Export exact Jev request preview\nm Open molecular inference and explanations for this sample\n\nLIMITATIONS\n{}",crate::reference::summary(e),e.limitations.join("\n")),
-            None => "ANALYSIS PIPELINE\n\n● Import sample + preserve source\n● Parse expression + map identifiers\n● Record transform + QC\n○ Compare compatible reference [r then a]\n○ Prepare structured Jev request [e after comparison]\n○ Molecular Jev inference and explanations [m]\n\nCompare a reference first to carry this expression sample into molecular inference. Without a comparison, m opens the invented genomic tutorial.\nNo clinical profile is required. Explore without an API key.\nReference correlations remain numerical evidence, not cancer probabilities.".into(),
+            None => "ANALYSIS PIPELINE\n\n● Import sample + preserve source\n● Parse expression + map identifiers\n● Record transform + QC\n○ Compare compatible reference [r then a]\n○ Prepare structured Jev request [e after comparison]\n○ Molecular Jev inference and explanations [m]\n\nCompare a reference first to carry this expression sample into molecular inference. After comparison, m uses this sample in the shared Analysis section.\nNo clinical profile is required. Explore without an API key.\nReference correlations remain numerical evidence, not cancer probabilities.".into(),
         }
     }
     fn filter(&mut self) {
@@ -402,9 +440,6 @@ impl Workbench {
         }
     }
     pub async fn poll(&mut self) {
-        if let Some(molecular) = &mut self.molecular {
-            molecular.poll().await;
-        }
         self.tick = self.tick.wrapping_add(1);
         if self
             .pending
@@ -457,38 +492,10 @@ impl Workbench {
         }
     }
     pub fn key(&mut self, key: KeyEvent) -> bool {
-        if let Some(molecular) = &mut self.molecular {
-            if molecular.key(key) {
-                self.molecular = None;
-            }
-            return false;
-        }
         if key.kind != KeyEventKind::Press {
             return false;
         }
         if self.guide.key(key, !matches!(self.dialog, Dialog::None)) {
-            return false;
-        }
-        if key.code == KeyCode::Char('m')
-            && matches!(self.dialog, Dialog::None)
-            && self.pending.is_none()
-        {
-            let opened = if let Some(e) = &self.comparison {
-                let sample = &self.loaded.manifest.samples[self.sample];
-                crate::molecular_tui::App::from_expression(
-                    e,
-                    sample
-                        .patient_group_id
-                        .as_deref()
-                        .unwrap_or(&sample.sample_id),
-                )
-            } else {
-                crate::molecular_tui::App::new(None, None)
-            };
-            match opened {
-                Ok(app) => self.molecular = Some(Box::new(app)),
-                Err(_) => self.status = "Unable to open molecular analysis".into(),
-            }
             return false;
         }
         if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
@@ -654,10 +661,6 @@ impl Workbench {
         false
     }
     pub fn paste(&mut self, text: String) {
-        if let Some(molecular) = &mut self.molecular {
-            molecular.paste(&text);
-            return;
-        }
         if self.guide.open {
             self.guide.paste(&text);
             return;
@@ -670,16 +673,14 @@ impl Workbench {
         }
     }
     pub fn draw(&mut self, frame: &mut Frame) {
-        if let Some(molecular) = &mut self.molecular {
-            molecular.draw(frame);
-            return;
-        }
+        self.draw_area(frame, frame.area(), false);
+    }
+    pub(crate) fn draw_area(&mut self, frame: &mut Frame, area: Rect, embedded: bool) {
         use crate::ui;
         use ratatui::{
             style::Modifier,
             text::{Line, Span},
         };
-        let area = frame.area();
         frame.render_widget(
             Block::default().style(Style::default().bg(ui::BG).fg(ui::TEXT)),
             area,
@@ -700,11 +701,19 @@ impl Workbench {
         frame.render_widget(
             Paragraph::new(vec![
                 Line::from(Span::styled(
-                    " Jev Onco Statistical Hierarchy",
+                    if embedded {
+                        " Expression data"
+                    } else {
+                        " Jev Onco Statistical Hierarchy"
+                    },
                     Style::default().fg(ui::ACCENT).add_modifier(Modifier::BOLD),
                 )),
                 Line::from(Span::styled(
-                    " Molecular Data Workbench",
+                    if embedded {
+                        " Reference comparison and preparation"
+                    } else {
+                        " Molecular Data Workbench"
+                    },
                     Style::default().fg(ui::TEXT),
                 )),
                 Line::from(Span::styled(
@@ -794,7 +803,7 @@ impl Workbench {
                     ),
                     5 => self.reference_text(),
                     _ => format!(
-                        "LOCAL WORKSPACE\n\nOpen dataset: {}\n\nDataset bundles preserve source files, gene dictionaries, measurements, QC and provenance.\n\nOpen a dataset with o; import with i or paste with p.\nA multi-dataset project catalog is planned.\n\nLegacy case access: josh tui --legacy or --case FILE.\nUser guide: g (F1/Ctrl+g inside forms).",
+                        "LOCAL WORKSPACE\n\nOpen dataset: {}\n\nDataset bundles preserve source files, gene dictionaries, measurements, QC and provenance.\n\nOpen a dataset with o; import with i or paste with p.\nA multi-dataset project catalog is planned.\n\nClinical evidence and review: F4 in this workspace.\nUser guide: g (F1/Ctrl+g inside forms).",
                         self.loaded
                             .root
                             .as_ref()
@@ -1076,7 +1085,7 @@ impl Workbench {
                 c.reference_genome.as_deref().unwrap_or("unknown")
             ));
         }
-        lines.push(format!("\nPROVENANCE\nSource: {}\nSource hash: {}\nMeasurements: {}\nMeasurement hash: {}\nGene dictionary: {}\n\nMissing modalities: variants, structured IHC, copy number, methylation.\nReference compatibility: not assessed.\nNo molecular prediction has been run.",self.loaded.manifest.source_name,self.loaded.manifest.source.artifact.sha256,a.artifact.path,a.artifact.sha256,self.loaded.manifest.gene_map.as_ref().map(|m|m.release.as_str()).unwrap_or("not supplied")));
+        lines.push(format!("\nPROVENANCE\nSource: {}\nSource hash: {}\nMeasurements: {}\nMeasurement hash: {}\nGene dictionary: {}\n\nThis section shows the selected dataset assay.\nReference comparison: Data > Analyze.\nMolecular inputs and results: F2 Analysis.",self.loaded.manifest.source_name,self.loaded.manifest.source.artifact.sha256,a.artifact.path,a.artifact.sha256,self.loaded.manifest.gene_map.as_ref().map(|m|m.release.as_str()).unwrap_or("not supplied")));
         lines.join("\n")
     }
     fn draw_features(&mut self, frame: &mut Frame, area: Rect) {
@@ -1253,49 +1262,11 @@ fn clean_multiline(s: &str) -> String {
         })
         .collect()
 }
-struct Restore;
-impl Drop for Restore {
-    fn drop(&mut self) {
-        let _ = execute!(std::io::stdout(), DisableBracketedPaste);
-        ratatui::restore();
-    }
-}
-pub async fn run(root: Option<PathBuf>) -> Result<(), AppError> {
-    if !std::io::stdin().is_terminal() || !std::io::stdout().is_terminal() {
-        return Err(josh_core::errors::ErrorEnvelope::new(
-            josh_core::errors::ErrorCode::TerminalRequired,
-        )
-        .into());
-    }
-    let mut app = Workbench::new()?;
-    if let Some(root) = root {
-        app.open(root);
-    }
-    let _restore = Restore;
-    let mut terminal = ratatui::try_init()?;
-    execute!(std::io::stdout(), EnableBracketedPaste)?;
-    loop {
-        app.poll().await;
-        if app.quit_after_job && app.pending.is_none() {
-            break;
-        }
-        terminal.draw(|f| app.draw(f))?;
-        if event::poll(Duration::from_millis(80))? {
-            match event::read()? {
-                Event::Key(key) if app.key(key) => break,
-                Event::Paste(text) => app.paste(text),
-                _ => {}
-            }
-        }
-        tokio::task::yield_now().await;
-    }
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use ratatui::{Terminal, backend::TestBackend};
+    use std::time::Duration;
     fn key(c: char) -> KeyEvent {
         KeyEvent::new(KeyCode::Char(c), KeyModifiers::NONE)
     }
@@ -1463,6 +1434,16 @@ mod tests {
         assert!(matches!(
             app.comparison.as_ref().unwrap().status,
             ComparisonStatus::Compared
+        ));
+        let analysis = app.analysis_input().unwrap();
+        assert_eq!(
+            analysis.features.sample_id,
+            app.loaded.manifest.samples[app.sample].sample_id
+        );
+        assert_eq!(analysis.features.features.len(), 1);
+        assert!(matches!(
+            analysis.features.features[0].value,
+            Some(josh_core::molecular::FeatureValue::Vector { .. })
         ));
         let mut terminal = Terminal::new(TestBackend::new(120, 40)).unwrap();
         terminal.draw(|f| app.draw(f)).unwrap();

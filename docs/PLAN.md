@@ -1,5 +1,13 @@
 # Developer delivery plan
 
+## Guided Jev workflow — 2026-09-24
+
+The next engineering phase connects prerequisites, direct molecular loading, one-call
+Jev analysis, readable results, archive reopening and Markdown reporting. The Rust
+terminal app has one entry point and shared Analysis, Data/reference and Clinical sections. See the
+[quickstart](QUICKSTART.md) for the complete user workflow and migration notes.
+Real-data provider eligibility, cancer cohort evaluation and calibration remain open.
+
 ## Approved molecular explanations — 2026-09-23
 
 The user approved the [OncoNPC-inspired Jev plan](redesign/04-onconpc-jev-explanations.md).

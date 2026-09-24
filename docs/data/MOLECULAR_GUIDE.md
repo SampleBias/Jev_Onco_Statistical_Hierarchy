@@ -1,26 +1,35 @@
 # Molecular inference and explanations
 
-JOSH 0.7.0 implements molecular inference, model-agnostic Shapley explanations and
+JOSH implements molecular inference, model-agnostic Shapley explanations and
 linked Ratatui charts in Rust. Jev remains the hosted origin classifier. The
 experimental taxonomy has 22 detailed classes plus insufficient/other outcomes.
-All probabilities are raw Jev outputs; no CUP calibration is installed.
+Live result probabilities are raw Jev outputs; analytical demos are explicitly
+marked mock. No CUP calibration is installed.
 
 ## Try the graphics offline
 
 ```bash
 cargo run --locked --bin josh -- tui
-# m opens molecular analysis; d computes the analytical demo.
+# d computes the analytical demo; Tab opens charts.
 ./target/debug/josh molecular demo --out-dir /tmp/josh-demo --format text
-./target/debug/josh tui --explanation /tmp/josh-demo/explanation.json
+./target/debug/josh tui /tmp/josh-demo/explanation.json
 ./target/debug/josh molecular export /tmp/josh-demo/explanation.json \
   --kind svg --output /tmp/josh-figure.svg
 ./target/debug/josh molecular export /tmp/josh-demo/explanation.json \
   --kind csv --output /tmp/josh-contributions.csv
 ```
 
+For the guided Load/Analyze/Results/Markdown workflow, see [quickstart](../QUICKSTART.md).
+`molecular check FEATURES` checks local prerequisites. Each live run automatically
+saves `report.md`; a completed explanation adds `explanation-report.md`.
+`molecular export RUN_DIRECTORY --output NEW.md` exports offline and defaults to
+Markdown. Use explicit --kind svg/csv/json with a completed explanation JSON file for chart/data
+formats. The TUI chooses its export format by extension; the CLI uses --kind.
+Inference JSON needs its matching features.json sidecar to reopen or export Markdown.
+
 Choose new destinations. Demo measurements and coefficients are invented software
 fixtures, not a replication of the paper's patient or a substitute cancer model.
-The analytical score is not expected to equal the image's 0.98.
+Analytical scores are determined by the bundled demo function, not a trained model.
 
 The donut displays magnitude; the scatter and table display sign. Category totals
 use absolute contributions from the same attribution game. The waterfall shows
@@ -43,7 +52,7 @@ measured value. Identifiers and source records remain outside the Jev state.
 ```bash
 ./target/debug/josh molecular example --output /tmp/molecular-features.json
 ./target/debug/josh molecular prepare /tmp/molecular-features.json
-./target/debug/josh tui --molecular /tmp/molecular-features.json
+./target/debug/josh tui /tmp/molecular-features.json
 ```
 
 Canonical CSV/TSV requires `sample_id,id,name,modality,value,units,status` columns.
@@ -85,7 +94,8 @@ the input file alongside the exported feature set.
 Join same-sample feature sets with `molecular merge`. Attach existing compatible
 expression evidence with `molecular attach-expression FEATURES EVIDENCE`. Duplicate
 feature IDs fail. After expression comparison in the workbench, m carries the
-sample and exact reference classes into the molecular interface.
+sample and exact reference classes into the shared Analysis section (F2), replacing
+its previous input/result. Switching with F2 alone preserves the current analysis.
 
 ## Jev runs and explanation budgets
 
@@ -134,8 +144,9 @@ Archives bind to the responses actually observed, not a guarantee of future
 provider determinism. The [validation report](../reports/0.7.0-molecular-validation.md)
 records the small live synthetic repeatability check and its observed variation.
 
-`features.json`, `inference.json`, `checkpoint.json`, and final `explanation.json`
-form the run archive. `molecular inspect` checks fingerprints, schema semantics
+A completed live inference saves `features.json`, `request.json`, `inference.json`,
+`run-status.json` and `report.md`. Explanation adds `checkpoint.json`, then final
+`explanation.json` and `explanation-report.md`. Retain the whole run directory. `molecular inspect` checks fingerprints, schema semantics
 and recomputes contributions from cached responses. Hashes do not authenticate a
 provider response. Schema versions, model, prompt, taxonomy, background and group
 definitions all participate in reproducibility. JSON uses float-roundtrip parsing.

@@ -18,6 +18,36 @@ fn full_offline_demo_exports_reconciled_figures_and_protects_existing_files() {
     assert_eq!(a["inference"]["status"], "abstained");
     assert_eq!(a["result"]["evaluations"], 128);
     assert!(a["result"]["additivity_residual"].as_f64().unwrap().abs() < 1e-10);
+    let report = std::fs::read_to_string(root.join("explanation-report.md")).unwrap();
+    assert!(report.contains("ANALYTICAL DEMO"));
+    assert!(report.contains("percentage points"));
+    assert!(report.contains("Provenance"));
+    let export = tmp.path().join("report.md");
+    let markdown = cli(&[
+        "molecular",
+        "export",
+        root.to_str().unwrap(),
+        "--output",
+        export.to_str().unwrap(),
+    ]);
+    assert!(
+        markdown.status.success(),
+        "{}",
+        String::from_utf8_lossy(&markdown.stderr)
+    );
+    assert_eq!(std::fs::read_to_string(&export).unwrap(), report);
+    assert!(
+        !cli(&[
+            "molecular",
+            "export",
+            root.to_str().unwrap(),
+            "--output",
+            export.to_str().unwrap()
+        ])
+        .status
+        .success()
+    );
+    assert_eq!(std::fs::read_to_string(&export).unwrap(), report);
     let archive = root.join("explanation.json");
     let svg = tmp.path().join("figure.svg");
     let o = cli(&[
@@ -122,6 +152,8 @@ async fn terminal_charts_resize_select_and_do_not_invoke_provider() {
     }
     assert!(!app.busy());
     assert!(app.archive.as_ref().unwrap().result.is_some());
+    // The guided workflow lands on readable results; Tab opens the first chart.
+    app.key(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE));
     for (w, h) in [(140, 45), (120, 40), (80, 24), (60, 20), (20, 8), (1, 1)] {
         let mut t = Terminal::new(TestBackend::new(w, h)).unwrap();
         t.draw(|f| app.draw(f)).unwrap();

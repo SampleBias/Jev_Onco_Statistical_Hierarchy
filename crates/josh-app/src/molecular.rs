@@ -26,12 +26,19 @@ pub enum Method {
 }
 #[derive(Clone, Copy, ValueEnum)]
 pub enum ExportFormat {
+    Markdown,
     Json,
     Csv,
     Svg,
 }
 #[derive(Subcommand)]
 pub enum Command {
+    /// Check data and local Jev prerequisites without contacting the provider.
+    Check {
+        features: PathBuf,
+        #[arg(long)]
+        taxonomy: Option<PathBuf>,
+    },
     /// Measure hosted full/baseline variation on a synthetic run; makes new billed calls.
     Repeatability {
         run_dir: PathBuf,
@@ -157,10 +164,10 @@ pub enum Command {
     },
     /// Verify and summarize a complete archive or a resumable checkpoint.
     Inspect { archive: PathBuf },
-    /// Export validated explanation data or a standalone figure; use --output.
+    /// Export a Markdown report from a run directory/inference/explanation, or chart data.
     Export {
         archive: PathBuf,
-        #[arg(long, value_enum, default_value = "svg")]
+        #[arg(long, value_enum, default_value = "markdown")]
         kind: ExportFormat,
     },
 }
@@ -236,9 +243,14 @@ pub fn write_new(path: &Path, value: &impl serde::Serialize) -> Result<(), AppEr
     Ok(())
 }
 pub fn save_run(root: &Path, features: &FeatureSet, run: &InferenceRun) -> Result<(), AppError> {
+    run.verify(features)?;
     fs::create_dir(root)?;
     write_new(&root.join("features.json"), features)?;
     write_new(&root.join("inference.json"), run)?;
+    workflows::save_new(
+        &root.join("report.md"),
+        &crate::report::markdown(features, run, None)?,
+    )?;
     Ok(())
 }
 fn checkpoint(root: &Path, archive: &Archive) -> Result<(), josh_explain::Error> {
@@ -490,17 +502,64 @@ pub async fn infer_and_save(
     features: &FeatureSet,
     taxonomy: &TaxonomyDefinition,
 ) -> Result<InferenceRun, AppError> {
-    let request = prepare(features, taxonomy)?;
+    prepare(features, taxonomy)?;
     let mut evaluator = LiveEvaluator::new(features.data_class.clone())?;
+    infer_with_evaluator(root, features, taxonomy, &mut evaluator).await
+}
+
+/// Shared one-attempt archive workflow; an injected transport allows deterministic tests.
+pub async fn infer_with_evaluator(
+    root: &Path,
+    features: &FeatureSet,
+    taxonomy: &TaxonomyDefinition,
+    evaluator: &mut impl Evaluator,
+) -> Result<InferenceRun, AppError> {
+    let request = prepare(features, taxonomy)?;
+    if features.data_class != DataClass::Synthetic {
+        return Err(josh_jev::Error::DataPolicy.into());
+    }
+    crate::analysis::check_destination(root)?;
     fs::create_dir(root)?;
     write_new(&root.join("features.json"), features)?;
     write_new(&root.join("request.json"), &request)?;
+    run_status(
+        root,
+        "in_flight",
+        "One request started. If interrupted, completion and billing may be uncertain; no automatic retry.",
+    )?;
     // A failed or interrupted request leaves its exact input on disk. Rerunning
     // requires a new directory, so an ambiguous timeout cannot silently resubmit.
-    let response = evaluator.evaluate(&request).await?;
+    let response = match evaluator.evaluate(&request).await {
+        Ok(response) => response,
+        Err(error) => {
+            run_status(root, "failed_or_uncertain", &error.to_string())?;
+            return Err(error.into());
+        }
+    };
     let run = interpret(features, taxonomy, response, Source::Jev)?;
     write_new(&root.join("inference.json"), &run)?;
+    workflows::save_new(
+        &root.join("report.md"),
+        &crate::report::markdown(features, &run, None)?,
+    )?;
+    run_status(
+        root,
+        "complete",
+        "Inference and Markdown report saved. No explanation requested.",
+    )?;
     Ok(run)
+}
+
+fn run_status(root: &Path, status: &str, detail: &str) -> Result<(), AppError> {
+    let mut file = tempfile::NamedTempFile::new_in(root)?;
+    serde_json::to_writer(
+        file.as_file_mut(),
+        &serde_json::json!({"status": status, "detail": detail, "automatic_retry": false}),
+    )?;
+    file.as_file_mut().sync_all()?;
+    file.persist(root.join("run-status.json"))
+        .map_err(|e| e.error)?;
+    Ok(())
 }
 pub(crate) struct RunLock(PathBuf);
 impl RunLock {
@@ -524,7 +583,7 @@ pub async fn explain(
     progress: &Progress,
 ) -> Result<Archive, AppError> {
     // Reserve the final filename before making calls; never overwrite an export.
-    if root.join("explanation.json").exists() {
+    if root.join("explanation.json").exists() || root.join("explanation-report.md").exists() {
         return Err(
             std::io::Error::new(std::io::ErrorKind::AlreadyExists, "explanation exists").into(),
         );
@@ -555,6 +614,11 @@ pub async fn explain(
         .into());
     }
     write_new(&root.join("explanation.json"), &archive)?;
+    // Keep the original inference report immutable; the explained report is distinct.
+    workflows::save_new(
+        &root.join("explanation-report.md"),
+        &crate::report::markdown(&archive.features, &archive.inference, Some(&archive))?,
+    )?;
     Ok(archive)
 }
 pub fn summary(a: &Archive) -> String {
@@ -587,6 +651,13 @@ pub async fn execute(command: Command) -> Result<Output, AppError> {
     let mut raw = None;
     let mut text = String::new();
     let value = match command {
+        Command::Check { features, taxonomy } => {
+            let f = load_features(&features)?;
+            let t = load_taxonomy(taxonomy.as_deref())?;
+            let check = crate::analysis::readiness(&f, &t);
+            text = check.text();
+            serde_json::to_value(check)?
+        }
         Command::Repeatability {
             run_dir,
             out_dir,
@@ -835,11 +906,19 @@ pub async fn execute(command: Command) -> Result<Output, AppError> {
             serde_json::to_value(a)?
         }
         Command::Export { archive, kind } => {
+            if matches!(kind, ExportFormat::Markdown) {
+                return Ok(Output {
+                    value: serde_json::Value::Null,
+                    text: String::new(),
+                    raw: Some(crate::analysis::export_markdown(&archive)?),
+                });
+            }
             let a = load_archive(&archive)?;
             if a.result.is_none() {
                 return Err(josh_core::ValidationError("explanation is incomplete").into());
             }
             raw = Some(match kind {
+                ExportFormat::Markdown => unreachable!("handled above"),
                 ExportFormat::Json => workflows::pretty(&a)?,
                 ExportFormat::Csv => crate::molecular_charts::csv(&a)?,
                 ExportFormat::Svg => crate::molecular_charts::svg(&a)?,

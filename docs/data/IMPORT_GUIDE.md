@@ -11,7 +11,7 @@ mkdir -p results
   --input-format csv --source-id synthetic-v1 \
   --out-dir results/import-001 --format text
 ./target/debug/josh batch results/import-001 --format text
-./target/debug/josh tui --batch results/import-001
+./target/debug/josh tui results/import-001
 ```
 
 The output directory must be new, even if an existing directory is empty. Choose `import-002` for another run. Its parent must exist. Both `results/` and `data/` at the repository root are ignored by Git. New bundle directories use mode 0700 and files use 0600 on Unix.

@@ -25,17 +25,17 @@ with `status: ready`.
 ## 1. Open the graphics
 
 ```bash
-./target/debug/josh tui --explanation results/basic-demo/charts/explanation.json
+./target/debug/josh tui results/basic-demo/charts/explanation.json
 ```
 
 Use a terminal of about 140×45 cells to see the circular chart and signed scatter
 side by side. Smaller terminals use tabs or a table with signed bars.
 
-- Up/Down selects a feature and its original measurement.
+- v opens Results; on chart views, Up/Down selects a feature and its measurement.
 - Tab changes views; the third view is the waterfall.
 - t changes the explained class using cached distributions.
 - g opens the searchable guide.
-- s saves a **new** `.svg`, `.csv` or `.json` file.
+- s saves a **new** Markdown `.md` report, or `.svg`, `.csv` or `.json` export.
 - q exits.
 
 Expect **ANALYTICAL DEMO / NO CANCER PREDICTION**, target NSCLC, raw score **0.405**,
@@ -47,12 +47,12 @@ These charts use the application's fixed `INVENTED-01` analytical fixture. Its
 seven measurements match the complete input example, but it has a distinct sample
 ID and fixture provenance. Opening or editing a molecular input does **not** make
 these demo charts a prediction for that input. Pressing d in a molecular screen
-loads the fixed demo, rather than classifying the open sample.
+loads the fixed demo. It replaces the current Analysis input/result.
 
 ## 2. Inspect clean molecular input
 
 ```bash
-./target/debug/josh tui --molecular results/basic-demo/molecular/complete.json
+./target/debug/josh tui results/basic-demo/molecular/complete.json
 ./target/debug/josh molecular prepare results/basic-demo/molecular/complete.json
 ```
 
@@ -77,7 +77,7 @@ No patient names, credentials or inferred cancer labels are included.
 ## 3. Check zero, negative, unknown and not-tested values
 
 ```bash
-./target/debug/josh tui --molecular results/basic-demo/molecular/missing.json
+./target/debug/josh tui results/basic-demo/molecular/missing.json
 ./target/debug/josh molecular prepare results/basic-demo/molecular/missing.json
 ```
 
@@ -93,13 +93,13 @@ Expect `DEMO-MOL-02`, six features and **three observed groups**:
 | Recorded sex | Unknown, `value: null` |
 
 This is valid partial input. Missing values must stay missing; they must not become
-neutral CNA calls or negative assay results. c and e in the TUI are live Jev
+neutral CNA calls or negative assay results. a/c and e in Analysis are live Jev
 actions and are not required for this offline walkthrough.
 
 ## 4. Explore expression data
 
 ```bash
-./target/debug/josh tui --dataset results/basic-demo/expression
+./target/debug/josh tui results/basic-demo/expression
 ./target/debug/josh dataset verify results/basic-demo/expression --reproduce
 ./target/debug/josh dataset explore results/basic-demo/expression \
   --sample DEMO-EXPR-01 --gene TP53
@@ -115,6 +115,7 @@ attached, so reference compatibility remains unassessed.
 
 ```bash
 ./target/debug/josh molecular inspect results/basic-demo/charts/explanation.json --format text
+./target/debug/josh molecular export results/basic-demo/charts --output results/basic-demo/my-report.md
 ./target/debug/josh molecular export results/basic-demo/charts/explanation.json \
   --kind svg --output results/basic-demo/my-chart.svg
 ./target/debug/josh molecular export results/basic-demo/charts/explanation.json \
@@ -122,7 +123,7 @@ attached, so reference compatibility remains unassessed.
 ```
 
 The generated `charts/explanation.svg` and `charts/contributions.csv` are already
-available. New exports should show the same data. Repeating an export to the same
+available. The run also has `charts/report.md` and `charts/explanation-report.md`. New exports should show the same data. Repeating an export to the same
 filename must fail while preserving that file.
 
 ## Files in the generated pack

@@ -1,4 +1,4 @@
-//! Offline, searchable guide shared by both terminal interfaces.
+//! Offline, searchable guide for the unified terminal workspace.
 use crate::ui;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{
@@ -12,6 +12,8 @@ use regex::{Regex, RegexBuilder};
 
 const MANUAL: &str = concat!(
     include_str!("../../../docs/USER_GUIDE.md"),
+    "\n\n",
+    include_str!("../../../docs/data/MOLECULAR_GUIDE.md"),
     "\n\n",
     include_str!("../../../docs/data/EXPRESSION_GUIDE.md"),
     "\n\n",

@@ -1,5 +1,5 @@
 use crate::workflows::{self, AppError};
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use josh_core::errors::{ErrorCode, ErrorEnvelope};
 use josh_core::{Case, DataClass, ResultRecord, prepare};
 use ratatui::{
@@ -8,15 +8,15 @@ use ratatui::{
     style::Style,
     widgets::{Block, Clear, Paragraph, Tabs, Wrap},
 };
-use std::{io::IsTerminal, path::PathBuf, time::Duration};
+use std::path::PathBuf;
 
 mod guidance_view;
 mod theme;
 mod visuals;
 const TAB_COUNT: usize = 8;
-const CLINICAL_HELP: &str = "NEW VIEWS\n\n6 / v  Visualizations: left/right changes Scores, IHC, Pathway, Timeline, Evidence\n7      NICE guidance: up/down selects a rule; a records a review\n8      Clinical context and review history; s saves the complete case\nOn Guidance, s exports the source-linked report. On Visuals, s exports its data.\nClinical assertions are edited in standalone JSON and reloaded; absent facts stay unknown.\nReview entries need reviewer | YYYY-MM-DD | action | reason.\nActions: acknowledged, deferred, not_applicable, departed.\nSave unsaved reviews before loading another case; quitting asks before discarding them.\n\n";
+const CLINICAL_HELP: &str = "CLINICAL VIEWS\n\n6 / v  Visualizations: left/right changes Scores, IHC, Pathway, Timeline, Evidence\n7      NICE guidance: up/down selects a rule; a records a review\n8      Clinical context and review history; s saves the complete case\nOn Guidance, s exports the source-linked report. On Visuals, s exports its data.\nClinical assertions are edited in standalone JSON and reloaded; absent facts stay unknown.\nReview entries need reviewer | YYYY-MM-DD | action | reason.\nActions: acknowledged, deferred, not_applicable, departed.\nSave unsaved reviews before loading another case; quitting asks before discarding them.\n\n";
 
-const HELP: &str = "GETTING STARTED\n\nThe workbench opens a bundled synthetic case by default.\nPress o to load case JSON, or r to reload the current file.\nReview Evidence, then inspect the exact payload in Request.\n\nKEYS\n\n1 / 2 / 3 / 4 / 5  Evidence / Request / Results / Help / Import\nTab / Shift-Tab  Next / previous tab\nUp / Down, j/k   Scroll\nPgUp / PgDn     Scroll one page\nHome            Back to top\no               Open case JSON\nb               Open an import bundle directory\n[ / ]           Previous / next case in the bundle\n5               Import quality report\nr               Reload case and clear previous results\nd               Offline demo; always labeled MOCK\nc               Confirm sending the synthetic case to Jev\ns               Save Request or Results as JSON to a NEW file\nq / Ctrl-C      Quit and restore the terminal\nEsc             Close a dialog\n\nLIVE CLASSIFICATION\n\nSet TYPESAFE_API_KEY before launching. Keys are never shown.\nA live call sends evidence to api.typesafe.ai and may incur charges.\nOnly declared synthetic cases are accepted in this first build.\nDuring a request, case changes and additional runs are disabled.\nQuitting cancels local waiting; Jev may already have received the request.\n\nREADING RESULTS\n\nRaw probabilities and provider confidence are different quantities.\nNo clinical calibration is established. All results require review.\nThe demo uses a uniform distribution and does not classify cancer.\nAll 14 outcomes remain visible; scrolling never changes probability mass.\n\nEXPORTS\n\nOn Request, s exports the payload without credentials.\nOn Results, s exports the complete result with provenance.\nOn Import, s exports the complete quality report.\nExisting files are protected. Parent folders must already exist.\nEdit standalone case JSON in your editor, then reload.\nImported bundle cases are fingerprint-checked; make a standalone copy before editing.";
+const HELP: &str = "GETTING STARTED\n\nThe Clinical section starts with a bundled synthetic case.\nPress l/o for shared Load, or r to reload the current case file.\nReview Evidence, then inspect the exact payload in Request.\n\nKEYS\n\n1 / 2 / 3 / 4 / 5  Evidence / Request / Results / Help / Import\nTab / Shift-Tab  Next / previous tab\nUp / Down, j/k   Scroll\nPgUp / PgDn     Scroll one page\nHome            Back to top\nl / o           Shared Load action\nb               Open an import bundle directory\n[ / ]           Previous / next case in the bundle\n5               Import quality report\nr               Reload case and clear previous results\nd               Offline demo; always labeled MOCK\nc               Confirm sending the synthetic case to Jev\ns               Save Request or Results as JSON to a NEW file\nq / Ctrl-C      Quit and restore the terminal\nEsc             Close a dialog\n\nLIVE CLASSIFICATION\n\nSet TYPESAFE_API_KEY before launching. Keys are never shown.\nA live call sends evidence to api.typesafe.ai and may incur charges.\nOnly declared synthetic cases are accepted for live requests.\nDuring a request, case changes and additional runs are disabled.\nQuitting waits for the in-flight call to finish. A sent call may be billed.\n\nREADING RESULTS\n\nRaw probabilities and provider confidence are different quantities.\nNo clinical calibration is established. All results require review.\nThe demo uses a uniform distribution and does not classify cancer.\nAll 14 outcomes remain visible; scrolling never changes probability mass.\n\nEXPORTS\n\nOn Request, s exports the payload without credentials.\nOn Results, s exports the complete result with provenance.\nClinical results are not automatically archived; export before quitting.\nOn Import, s exports the complete quality report.\nExisting files are protected. Parent folders must already exist.\nEdit standalone case JSON in your editor, then reload.\nImported bundle cases are fingerprint-checked; make a standalone copy before editing.";
 
 #[derive(Debug, PartialEq, Eq)]
 enum Dialog {
@@ -84,6 +84,25 @@ impl App {
         })
     }
 
+    pub(crate) fn editing(&self) -> bool {
+        self.dialog != Dialog::None
+    }
+    pub(crate) fn busy(&self) -> bool {
+        self.pending.is_some()
+    }
+    pub(crate) fn unsaved_reviews(&self) -> bool {
+        self.dirty_reviews
+    }
+    pub(crate) fn paste(&mut self, text: &str) {
+        if matches!(
+            self.dialog,
+            Dialog::Open | Dialog::OpenBatch | Dialog::Save | Dialog::Review
+        ) && !text.chars().any(char::is_control)
+            && self.input.len() + text.len() <= 4096
+        {
+            self.input.push_str(text);
+        }
+    }
     pub fn from_batch(root: PathBuf) -> Result<Self, AppError> {
         let mut app = Self::new(None)?;
         app.load_batch(root)?;
@@ -493,7 +512,7 @@ impl App {
         false
     }
 
-    async fn poll_result(&mut self) {
+    pub(crate) async fn poll_result(&mut self) {
         if self.pending.as_ref().is_some_and(|task| task.is_finished()) {
             let task = self.pending.take().expect("finished task exists");
             match task.await {
@@ -544,11 +563,13 @@ impl App {
     }
 
     pub fn draw(&mut self, frame: &mut Frame) {
+        self.draw_area(frame, frame.area(), false);
+    }
+    pub(crate) fn draw_area(&mut self, frame: &mut Frame, area: Rect, embedded: bool) {
         if self.guide.open {
             self.guide.draw(frame);
             return;
         }
-        let area = frame.area();
         frame.render_widget(
             Block::default().style(Style::default().bg(theme::BACKGROUND).fg(theme::TEXT)),
             area,
@@ -583,7 +604,12 @@ impl App {
         };
         frame.render_widget(
             Paragraph::new(format!(
-                "JEV ONCO STATISTICAL HIERARCHY (JOSH)  /  Research workbench\n{}  |  {connection}",
+                "{}\n{}  |  {connection}",
+                if embedded {
+                    "Clinical evidence and review"
+                } else {
+                    "JEV ONCO STATISTICAL HIERARCHY (JOSH)  /  Research workbench"
+                },
                 josh_core::MODEL
             ))
             .style(Style::default().fg(theme::CYAN)),
@@ -732,37 +758,6 @@ impl Drop for App {
             task.abort();
         }
     }
-}
-
-struct RestoreTerminal;
-impl Drop for RestoreTerminal {
-    fn drop(&mut self) {
-        ratatui::restore();
-    }
-}
-
-pub async fn run(path: Option<PathBuf>, batch: Option<PathBuf>) -> Result<(), AppError> {
-    if !std::io::stdin().is_terminal() || !std::io::stdout().is_terminal() {
-        return Err(ErrorEnvelope::new(ErrorCode::TerminalRequired).into());
-    }
-    let mut app = match batch {
-        Some(root) => App::from_batch(root)?,
-        None => App::new(path)?,
-    };
-    let _restore = RestoreTerminal;
-    let mut terminal = ratatui::try_init()?;
-    loop {
-        app.poll_result().await;
-        terminal.draw(|frame| app.draw(frame))?;
-        if event::poll(Duration::from_millis(80))?
-            && let Event::Key(key) = event::read()?
-            && app.key(key)
-        {
-            break;
-        }
-        tokio::task::yield_now().await;
-    }
-    Ok(())
 }
 
 #[cfg(test)]

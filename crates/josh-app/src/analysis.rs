@@ -1,0 +1,219 @@
+//! Shared guided-workflow prerequisites, imports, archive loading and reports.
+use crate::{
+    molecular, report,
+    workflows::{self, AppError},
+};
+use josh_core::{DataClass, molecular::*};
+use josh_explain::Archive;
+use serde::Serialize;
+use std::path::{Path, PathBuf};
+
+fn invalid(message: &'static str) -> AppError {
+    josh_core::ValidationError(message).into()
+}
+
+pub struct Loaded {
+    pub features: FeatureSet,
+    pub inference: Option<InferenceRun>,
+    pub archive: Option<Archive>,
+    pub root: Option<PathBuf>,
+}
+
+/// A directory can contain inference alone or an optional complete/incomplete explanation.
+pub fn load(path: &Path) -> Result<Loaded, AppError> {
+    if path == Path::new("-") {
+        return Err(invalid(
+            "choose a file or run directory, not terminal stdin",
+        ));
+    }
+    if path.is_dir() {
+        let features = molecular::load_features(&path.join("features.json"))?;
+        let inference: InferenceRun = workflows::read_json(&path.join("inference.json"), 2 * 1024 * 1024)
+            .map_err(|_| invalid("no valid completed inference in this directory; inspect run-status.json before starting a new request"))?;
+        inference.verify(&features)?;
+        let archive_path = ["explanation.json", "checkpoint.json"]
+            .iter()
+            .map(|f| path.join(f))
+            .find(|p| p.exists());
+        let archive = archive_path
+            .as_deref()
+            .map(molecular::load_archive)
+            .transpose()?;
+        if let Some(a) = &archive
+            && (hash(&a.features)? != hash(&features)? || hash(&a.inference)? != hash(&inference)?)
+        {
+            return Err(invalid(
+                "run directory contains mismatched inference and explanation",
+            ));
+        }
+        return Ok(Loaded {
+            features,
+            inference: Some(inference),
+            archive,
+            root: Some(path.into()),
+        });
+    }
+    let value: serde_json::Value = workflows::read_json(path, 64 * 1024 * 1024)?;
+    if value.get("inference").is_some() {
+        let a = molecular::load_archive(path)?;
+        Ok(Loaded {
+            features: a.features.clone(),
+            inference: Some(a.inference.clone()),
+            archive: Some(a),
+            root: path.parent().map(Path::to_path_buf),
+        })
+    } else if value.get("request_sha256").is_some() {
+        let root = path
+            .parent()
+            .ok_or_else(|| invalid("inference requires its features.json sidecar"))?;
+        let f = molecular::load_features(&root.join("features.json"))?;
+        let r: InferenceRun = workflows::read_json(path, 2 * 1024 * 1024)?;
+        r.verify(&f)?;
+        Ok(Loaded {
+            features: f,
+            inference: Some(r),
+            archive: None,
+            root: Some(root.into()),
+        })
+    } else {
+        Ok(Loaded {
+            features: molecular::load_features(path)?,
+            inference: None,
+            archive: None,
+            root: None,
+        })
+    }
+}
+
+pub fn export_markdown(path: &Path) -> Result<String, AppError> {
+    let loaded = load(path)?;
+    report::markdown(
+        &loaded.features,
+        loaded
+            .inference
+            .as_ref()
+            .ok_or_else(|| invalid("analyze the loaded data before exporting a report"))?,
+        loaded.archive.as_ref(),
+    )
+}
+
+pub fn table_format(path: &Path) -> Option<josh_ingest::molecular::Format> {
+    use josh_ingest::molecular::Format;
+    match path.extension()?.to_str()?.to_ascii_lowercase().as_str() {
+        "csv" => Some(Format::Csv),
+        "tsv" => Some(Format::Tsv),
+        "maf" => Some(Format::Maf),
+        "vcf" => Some(Format::Vcf),
+        _ => None,
+    }
+}
+
+pub fn import_table(
+    path: &Path,
+    options: &josh_ingest::molecular::Options,
+) -> Result<FeatureSet, AppError> {
+    let format =
+        table_format(path).ok_or_else(|| invalid("supported tables: .csv, .tsv, .maf or .vcf"))?;
+    Ok(josh_ingest::molecular::import(std::fs::File::open(path)?, format, options)?.features)
+}
+
+#[derive(Serialize)]
+pub struct Readiness {
+    pub ready: bool,
+    pub sends_to_provider: bool,
+    pub model: &'static str,
+    pub key_configured: bool,
+    pub features: usize,
+    pub observed: usize,
+    pub unavailable: usize,
+    pub request_bytes: Option<usize>,
+    pub blockers: Vec<String>,
+}
+impl Readiness {
+    pub fn text(&self) -> String {
+        let mut s = format!(
+            "{}\n{} observed / {} unavailable observations\nJev {} · credential {}\nOne request per analysis; explanations are optional.\n",
+            if self.ready {
+                "Ready to analyze"
+            } else {
+                "Setup needed"
+            },
+            self.observed,
+            self.unavailable,
+            self.model,
+            if self.key_configured {
+                "configured (not authenticated yet)"
+            } else {
+                "missing"
+            }
+        );
+        for b in &self.blockers {
+            s.push_str(&format!("\n- {b}"));
+        }
+        s
+    }
+}
+pub fn readiness(f: &FeatureSet, t: &TaxonomyDefinition) -> Readiness {
+    let observed = f
+        .features
+        .iter()
+        .filter(|f| f.status == MeasurementStatus::Observed)
+        .count();
+    let key_configured = workflows::key_configured();
+    let mut blockers = vec![];
+    let request_bytes = match prepare(f, t) {
+        Ok(r) => serde_json::to_vec(&r).ok().map(|v| v.len()),
+        Err(e) => {
+            blockers.push(e.to_string());
+            None
+        }
+    };
+    if f.data_class != DataClass::Synthetic {
+        blockers.push("Live Jev currently accepts synthetic data only. Real research data can be inspected locally; provider eligibility is still required.".into());
+    }
+    if !key_configured {
+        blockers.push("Set TYPESAFE_API_KEY in the launching shell or secret manager, then restart JOSH. A .env file is not loaded automatically. The offline demo needs no key.".into());
+    }
+    Readiness {
+        ready: blockers.is_empty(),
+        sends_to_provider: false,
+        model: josh_core::MODEL,
+        key_configured,
+        features: f.features.len(),
+        observed,
+        unavailable: f.features.len() - observed,
+        request_bytes,
+        blockers,
+    }
+}
+
+/// New destinations only; the actual write still uses create_new/create_dir to avoid races.
+pub fn check_destination(path: &Path) -> Result<(), AppError> {
+    if path.as_os_str().is_empty() || path.exists() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            "choose a new run directory; existing runs are protected",
+        )
+        .into());
+    }
+    let parent = path
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    if !parent.is_dir() {
+        return Err(invalid(
+            "the parent folder does not exist; create it or choose an existing parent",
+        ));
+    }
+    // An empty temporary file checks real writability without changing a run.
+    tempfile::NamedTempFile::new_in(parent)?;
+    Ok(())
+}
+
+pub fn suggested_run_path() -> PathBuf {
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    PathBuf::from(format!("josh-run-{stamp}"))
+}

@@ -1,238 +1,278 @@
 # Jev Onco Statistical Hierarchy — User Guide
 
-## Welcome and scope
+## Start and scope
 
-JOSH is a Rust molecular research workbench with a Ratatui interface. Start with a
-sample and its molecular measurements. Patient forms are not required. Jev is the
-origin classifier; Rust handles files, gene identifiers, QC and reference comparison.
+JOSH 0.8.0 is one Rust terminal workspace for molecular research: load data,
+analyze with Jev, inspect results and export Markdown. Clinical cases and expression
+data have their own sections within the same session. Jev is the hosted origin
+classifier; Rust handles import, QC, comparison, archives and explanations.
 
-The current release imports expression and genomic evidence, compares compatible
-references, runs synthetic molecular Jev inference and computes Shapley
-explanations. Calibrated cancer probabilities and a validated out-of-distribution
-detector remain unavailable. The legacy summarized-case workflow remains accessible.
+Run `./scripts/start` from the repository, or `josh tui` if installed on PATH.
+The launcher checks Cargo, Rust and a C compiler, then builds with pinned Rust 1.98.1.
+First builds need registry access; the launcher does not install prerequisites.
+See [Quickstart](QUICKSTART.md) for setup. Examples using `josh` can also be run
+as `./target/debug/josh` after building.
 
-## Molecular explanations and terminal graphics
+Local workflows need no key. Live requests accept declared synthetic data only.
+Cancer-specific accuracy, calibration and validated out-of-distribution detection
+are unavailable. The synthetic declaration does not verify data provenance.
 
-Press m in the data workbench. After a successful expression comparison, the
-selected sample and reference taxonomy carry into molecular inference. Without
-a comparison, m opens the invented genomic tutorial. Press d for analytical demo
-charts: they are explicitly labeled and do not call Jev.
+## Guided analysis: load, analyze, results, Markdown
 
-The outer circular ring groups feature categories; inner sectors show absolute
-attribution magnitude. The scatter shows signed contributions in percentage points.
-Without a compatible background transform, its X axis is explicitly feature rank.
-Raw units are shown in the inspector. A large negative contribution opposes the
-selected class even though its circular sector is large.
+In Analysis (F2), use the action buttons or these keys:
 
-- Up/Down: select a feature/group and inspect original measurements and provenance.
-- Tab/Left/Right: circular/scatter and waterfall views; narrow terminals use tables.
-- t: explain another target class from cached distributions, without network calls.
-- o: open molecular feature JSON or a saved explanation archive.
-- c: run Jev after entering a new run-directory path; requires a configured key.
-- e: explain the archived live result, with visible evaluation/token/time budgets.
-- x: cancel further evaluations; an in-flight request may already have been billed.
-- s: save a new .svg, .csv or .json file; existing files are protected.
-- q/Esc: return to the data workbench, or quit a standalone molecular view.
+1. l loads molecular feature JSON, a canonical molecular CSV/TSV, supported annotated
+   MAF/VCF, or a saved run. Molecular tables open metadata settings: enter the exact
+   sample ID, patient group, source ID, fallback assay and optional reference build.
+   Tab/Shift+Tab selects fields, Ctrl+u clears, Enter imports. The initial data class
+   is deidentified_research; use synthetic only for invented records.
+2. Review observed/unavailable measurements and setup status. a opens a new run-directory
+   dialog. Enter confirms one potentially billed synthetic Jev request. Its parent
+   directory must exist; an existing run directory cannot be reused for a new inference.
+3. v shows readable rankings, abstention reasons and separate evidence checks.
+   Successful inference automatically saves features.json, request.json,
+   inference.json, run-status.json and report.md in the chosen directory.
+4. s exports another report to a new .md or .markdown file. No explanation is needed
+   to read or export results. Up/Down and PageUp/PageDown scroll Results.
 
-Request values are raw model outputs. The baseline, signed sum and final value
-reconcile numerically; sampling uncertainty is not a clinical confidence interval.
-Full CLI examples, input formats and research limits are in docs/data/MOLECULAR_GUIDE.md.
+Use d in Analysis for the offline analytical demo. It replaces the current analysis
+with the bundled invented sample and scores; it never predicts arbitrary loaded data.
+Wait for completion, inspect Results, then s exports Markdown without a key.
 
-The startup example contains invented measurements. Its provenance remains marked
-Synthetic in the Sample/Dataset metadata and exports. The application title is
-independent of the loaded dataset. A gene dictionary is not a cancer reference.
+Failed molecular imports preserve the current sample and keep settings editable.
+Replacing the Analysis input clears its previous result. Loading Data or Clinical
+records leaves Analysis intact. Existing exports and run folders are protected.
+After a failed call, inspect run-status.json before trying again: ambiguous requests
+are never automatically retried or replaced by demo results.
+
+## Shared loading and workspace navigation
+
+F2 Analysis, F3 Data and F4 Clinical select sections; clicking the persistent tabs
+does the same. Section forms, results and jobs survive a switch. Close the shared
+Load dialog or quit confirmation before switching. l/o opens Load from navigation;
+`josh tui PATH` uses the same loader at startup.
+
+| Input | Destination |
+| --- | --- |
+| Molecular FeatureSet JSON | Analysis input |
+| Canonical molecular CSV/TSV or supported annotated .maf/.vcf | Analysis import settings |
+| Run directory containing features.json and inference.json | Verified Analysis results, with explanation/checkpoint if present |
+| Inference JSON beside features.json; self-contained explanation/checkpoint JSON | Verified Analysis results |
+| Expression CSV/TSV | Data import settings |
+| Dataset bundle directory or its dataset.json | Data |
+| Canonical case JSON; case import bundle or its manifest.json | Clinical |
+
+CSV/TSV routing uses headers: case_id requires CLI case import first; modality or id
+selects molecular import; other headers select expression import. If your expression
+gene column is named id, use F3 then i to choose expression import explicitly.
+Reference releases use F3 then r; they are not shared-loader inputs. Case
+CSV/TSV/JSONL must pass through `josh import` before loading the output bundle.
+
+Paths in the shared loader are literal relative or absolute paths: do not add shell
+quotes, ~ or environment variables. Quote paths containing spaces only in shell
+commands. The launcher resolves relative paths from the repository; a directly
+launched binary uses its working directory. The TUI reserves stdin for keys.
+
+Loading is blocked while any section has a running job. Failed loads preserve
+previous data. Changing Data's dataset, sample or reference clears its comparison.
+Analysis changes only when you load a new Analysis input, press d there, or attach
+a usable comparison with Data's m key. Clinical cases retain a separate identity;
+switching sections never joins them to molecular samples.
+
+F1/Ctrl+g opens shared help inside forms; g does so from navigation. q quits from
+navigation, and Ctrl+C requests quit outside help. Recorded unsaved clinical reviews
+are checked even from another section: return to F4, then 8 and s to save the case,
+or confirm discarding them. Quit requests cancellation at safe boundaries and waits
+for in-flight work. Export results you want to keep before quitting: section state
+is not a persistent project, and clinical calls are not automatically archived.
+Esc closes dialogs; it does not stop a job or leave a section.
+
+## Molecular explanations and exports
+
+In Data (F3), m attaches a usable expression comparison and its reference taxonomy
+to Analysis, replacing the previous Analysis input/result. Without one, it reports
+what is missing and preserves Analysis. F2 alone only switches sections.
+
+In Analysis, e offers masked-evidence Shapley explanations for an archived live run.
+The dialog shows ceilings of 512 evaluations, 1,000,000 input tokens and 600 seconds.
+These are additional provider calls and may be billed. Oversized plans require
+explicit CLI configuration. x cancels future evaluations; a dispatched request
+cannot be unsent. Successful calls are checkpointed. Completion adds
+explanation-report.md and explanation.json; the original report.md stays intact.
+Use the molecular CLI for explicit resumption of interrupted explanations.
+
+Analysis chart controls:
+
+- Tab/Right cycles Results, circular/scatter and waterfall views; Left goes back.
+- Up/Down on charts selects a feature/group and shows measurements and provenance.
+- t changes the explained target offline using cached distributions.
+- s exports the currently selected result/target to a new file.
+
+The outer ring groups categories; inner sectors show absolute contribution size.
+The scatter shows signed contributions in percentage points. Its X axis is feature
+rank unless a compatible background supports a reference percentile. Raw values and
+units stay in the inspector. A large negative contribution opposes the selected
+class even when its circular sector is large. Narrow terminals use tables/bars.
+Baseline plus signed contributions reconciles with the full raw score; sampling
+uncertainty is not a clinical confidence interval.
+
+| Export | Requirement and contents |
+| --- | --- |
+| .md / .markdown in Analysis | Verified inference; all rankings, reasons, evidence, measurements/missingness, usage and provenance; explanation contributions when available |
+| .svg / .csv in Analysis | Completed explanation; charts or contribution table |
+| .json in Analysis | Loaded explanation archive, otherwise the inference record |
+| CLI molecular export | Defaults to Markdown regardless of filename; accepts run directories, inference with sidecar, or explanation/checkpoint JSON |
+| CLI molecular export --kind svg/csv/json | Requires a completed explanation JSON file |
+
+Markdown supports inference alone and incomplete explanation checkpoints. An
+inference-only JSON export needs its matching features.json beside it to reopen;
+keep the original run directory. Self-contained explanation archives include the
+features. Hash and request/response checks detect inconsistency, not authenticity
+or scientific validity. Full formats, budgets and examples are in the
+[Molecular Guide](data/MOLECULAR_GUIDE.md), also included in searchable help.
 
 ## Open and search this guide
 
-Press g from any navigation screen, including while a local job is running.
-Press F1 or Ctrl+g from any screen or text editor. Printable g remains available in
-paths, sample names and search terms while editing. Forms keep their contents when
-you open the guide. Closing the guide returns you to that exact form or screen.
+Press g from navigation, or F1/Ctrl+g inside a form. Opening help preserves form
+contents and never submits a request. Jobs can finish while you read. Printable g
+remains ordinary text in paths and editors.
 
-- g, Esc or q: close the guide. These keys do not quit the underlying application.
-- /: edit a grep-style regular expression; Enter applies it. Search is case insensitive.
-- Ctrl+u: clear the search editor; Esc cancels editing without closing the guide.
-- n / N: next / previous match, wrapping at the ends. Matches are highlighted.
-- Enter: switch between matching lines and full context at the selected match.
-- t: contents, showing section headings. Select with n/N and Enter to read a section.
-- c: clear the filter and return to the full guide.
-- Up/Down or j/k: scroll; PageUp/PageDown: one visible page; Home/End: beginning/end.
+- g, Esc or q outside the search editor closes help and returns to the application.
+- / edits a case-insensitive regular expression; Enter applies it.
+- Ctrl+u clears the search editor; Esc cancels editing without closing help.
+- n/N selects next/previous matches, wrapping at the ends.
+- Enter switches between matching lines and full context at the selected match.
+- t lists section headings; n/N selects a heading and Enter opens its context.
+- c clears the filter; Up/Down or j/k scrolls; PageUp/PageDown pages; Home/End jumps.
 
-Search examples: gene.*map, TPM|FPKM, ^## , provenance, missing, Jev, reference.
-Escape regex punctuation to search literally, for example log2\(.
-An invalid pattern is shown as an error; the previous search is preserved. A search
-with no matches shows an empty-results message. This guide is compiled into the
-binary and works without internet access or an API key. Searches never run a shell.
+Try gene.*map, TPM|FPKM, provenance, missing or Jev. Escape regex punctuation for
+literal searches, such as log2\(. Invalid patterns show an error and preserve the
+previous search. The user, molecular, expression, reference and terminal guides
+are compiled into the binary. Rebuild after editing them. Help needs no internet
+or key, and searches never execute shell commands.
 
-## First five minutes
+## Data views and keyboard
 
-1. Launch `josh tui`. The built-in expression example opens locally.
-2. On Samples, inspect measured genes, mapping coverage, QC and provenance.
-3. Press 4 for Explore. Press /, type TP53 and Enter to filter original/canonical IDs.
-4. Use [ and ] to move between samples. Each sample keeps its own data and QC.
-5. Press i to import a file, p to paste a table or o to open an existing bundle.
-6. Use g to search this guide whenever you need a command or explanation.
+Press F3. Its bundled example has two invented expression profiles and six gene
+mappings, with synthetic provenance. A gene dictionary is not a cancer reference.
 
-Launch an existing molecular dataset: `josh tui --dataset results/my-dataset`.
-Quote paths containing spaces. In the local repository use `./target/debug/josh`
-in place of `josh` if the binary has not been installed on PATH.
+| Key/view | Purpose |
+| --- | --- |
+| 1 Samples | Measurements, QC, histogram and provenance |
+| 2 Datasets | Manifest, configuration, notices and dictionary |
+| 3 Analyze | Reference comparison, gates and evidence |
+| 4 Explore | Original/canonical genes, raw/transformed values and source locators |
+| 5 Models | Jev model and inference capabilities |
+| 6 Reference | Release, classes, compatibility and limitations |
+| 7 Projects | Current workspace summary; no persistent project catalog |
 
-## Main navigation and keyboard
+Tab/Shift+Tab changes views. Up/Down, j/k, PageUp/PageDown and Home scroll.
+[/] selects samples. / searches original IDs, canonical symbols and HGNC IDs;
+an empty search restores all rows. Rows are sorted by raw expression.
 
-1 Samples: quality cards, observed expression histogram, sample and source metadata.
-2 Datasets: dataset summary, detection settings, notices and data dictionary.
-3 Analyze: pipeline status, reference comparison, gates and evidence export.
-4 Explore: original/canonical genes, raw/transformed values and source record:column.
-5 Models: pinned Jev version and current inference capabilities.
-6 Reference: loaded release, source, classes, processing compatibility and limitations.
-7 Projects: current local workspace. A project catalog is not implemented yet.
+- i configures an expression-file import; p opens the paste editor; l/o uses shared Load.
+- r opens reference JSON; a compares the selected sample locally.
+- s exports comparison evidence on Analyze when present, otherwise the dataset manifest.
+- e exports an offline molecular Jev request with evidence; it sends nothing.
+- m attaches a usable comparison to Analysis for a separate, confirmed Jev run.
+- x requests local job cancellation; ? shows a shortcut reminder.
 
-Tab / Shift+Tab move between views. Number keys select a view directly.
-Up/Down, j/k, PageUp/PageDown and Home scroll content. [ / ] select a sample.
-i imports; p opens the paste editor; o opens an existing dataset directory.
-r opens a reference JSON; a compares the selected sample with that reference.
-s exports the current analysis evidence on Analyze; elsewhere it exports the dataset
-manifest. e exports the complete offline molecular Jev request plus its evidence.
-x requests cancellation of a local job. q or Ctrl+C quits and restores the terminal.
-? shows a shortcut reminder. g opens the complete guide. F1/Ctrl+g work inside forms.
+Data's sample-changing actions stay locked during its jobs. Cancellation waits for
+a safe processing boundary. A bundle write already started finishes before exit.
 
-Jobs run in the background. Opening help never submits a form, runs analysis or
-sends data. A pending job may finish while you read. Sample-changing actions stay
-locked during a job. If a bundle write has started it completes before exit; an
-abandoned partial directory is never reported as a valid dataset.
+## Expression import, QC and provenance
 
-## Import files and paste data
+Expression input is UTF-8 CSV/TSV with a header: two columns for one sample, long
+form with sample_id, or a wide gene-by-sample matrix. Declare units from the source;
+JOSH does not infer them from value ranges. A transposed matrix needs conversion.
 
-Accepted expression inputs are UTF-8 CSV/TSV with a header: two columns for one
-sample, long form with sample_id, or a wide gene-by-sample matrix. Units are declared,
-never guessed from value ranges. See the complete Expression Guide later in this
-manual for configuration, CLI commands and size limits.
+In Data's import form, Tab/Shift+Tab or Up/Down selects fields. Set the source, a NEW
+output directory and dataset ID, then units, layout, column names and transform.
+Supply Sample ID for two-column data; leave it empty for wide matrices. HGNC path
+and release must be supplied together. Platform identifies the processing family.
+Ctrl+D previews detection; Ctrl+S or Ctrl+Enter imports. Backspace deletes text;
+Esc closes the form. These controls differ from the molecular import form.
 
-Press i. Tab/Shift+Tab or Up/Down changes the active field. Fill source path, a NEW
-output directory and dataset ID. Set units, layout, column names and transform as
-needed. For two columns supply a Sample ID; for a wide matrix leave it empty.
-The HGNC TSV path and its release label must either both be supplied or both omitted.
-The platform field should identify the actual assay/processing family, not a disease.
-Press Ctrl+D to preview detection. Correct fields if needed. Ctrl+S imports.
-Esc closes a form. Backspace deletes the last character. Paste paths using your
-terminal's paste shortcut. F1 opens help without losing any fields.
+The expression form declares imported data deidentified_research and has no synthetic
+toggle. For invented expression data intended for live Jev, use the dataset CLI
+with --synthetic and load the resulting bundle. Use the CLI for metadata absent
+from the form, including genome and study.
 
-Press p to paste a complete CSV/TSV table using bracketed paste. Include its header.
-Enter continues to the import settings; it does not insert a new row. Paste newlines
-from your clipboard. The paste limit is 1 MiB; use a file for larger matrices.
-TUI paths cannot be '-' because the terminal owns stdin. The CLI accepts stdin.
+p accepts bracketed-paste CSV/TSV including its header. Paste multiline text from
+the clipboard; Enter continues to settings. The paste limit is 1 MiB; use files for
+larger inputs. Dataset CLI input supports stdin; TUI inputs require file paths.
 
-Imports preserve raw bytes, mapping assets, original IDs/values, transformations and
-QC. Existing output directories are protected. A blocked-QC import is still archived
-for inspection. It is not approved for analysis just because it was saved.
+Imports retain source bytes, dictionary, original identifiers/values, transformations
+and QC. Blank/NA values are missing; zero remains measured zero. Invalid values and
+duplicate mapped genes block QC instead of being silently dropped or summed.
+Ambiguous mappings retain candidates. Mapping rate counts unambiguously mapped
+records divided by all records, including those with missing expression.
+The histogram counts observed raw measurements; it is not prediction confidence.
 
-## Interpret the dashboard and QC
+Blocked-QC imports are archived for inspection but cannot enter reference comparison.
+A pass means import checks passed, not scientific validation. Use `josh dataset export`
+for complete measurement records; TUI manifest export does not contain those records.
+`josh dataset verify DIRECTORY --reproduce` recomputes records and QC from archived
+source, dictionary and settings. Keep the original bundle for reproducibility.
+See the [Expression Guide](data/EXPRESSION_GUIDE.md) for formats, commands and limits.
 
-Measured counts include valid parsed values; missing values are distinct from zero.
-The mapping gauge is the fraction of ALL source records unambiguously mapped, including
-records whose expression value is missing. It is not prediction confidence.
-The histogram shows 16 equal-width bins over observed raw expression values; its
-height represents counts of measured genes. Its endpoints show the raw range.
-No plot animates or fabricates measurements. The spinner indicates an actual job.
+## Reference comparison and interpretation
 
-Pass means these import checks passed. Warning means information needs attention.
-Blocked means invalid values, duplicates or other fatal QC issues must be resolved
-before reference comparison. A pass is not scientific validation or clinical suitability.
-Unmapped/ambiguous identifiers remain inspectable; no arbitrary candidate is selected.
+Build with `josh reference build` using independently curated known-origin labels.
+In Data, r loads the release and a compares the current sample. The initial comparison
+family requires human TPM → log2(x+1), matching platform/genome declarations and
+an exact pinned gene dictionary. Other scales remain importable and explorable.
+Matching metadata does not remove batch effects.
 
-## Explore and inspect provenance
+Pearson r is signed similarity in [-1,1], not a percentage or cancer probability.
+Negative values remain visible; constant profiles have undefined correlation.
+Compatibility, overlap, QC and identity gates can block comparison/request preparation.
+No validated OOD threshold or diagnosis is derived from correlation. The
+[Reference Guide](data/REFERENCE_GUIDE.md) documents curation and interpretation.
 
-Press 4 or / to open gene exploration. Search matches original IDs, canonical symbols
-and HGNC IDs, case-insensitively. Clear the search and press Enter to show all genes.
-Rows are sorted by raw expression. Source record:column uses a parsed table-record
-ordinal including the header, not necessarily a physical line number in quoted CSV.
-Raw and transformed values are shown separately. Missing values show a dash.
+## Credentials, CLI conventions and troubleshooting
 
-The Sample and Dataset screens show source file hashes, mapping release, processing
-configuration and import metadata. Export a sample to inspect every original value.
-`josh dataset verify DIRECTORY --reproduce` checks that stored derived records and QC
-can be rebuilt from archived input and mapping data. Hashes detect accidental changes;
-they are not a signature or proof of correct source labels.
+Set TYPESAFE_API_KEY in the shell that will launch JOSH. In Bash, to avoid recording
+the key in command history:
 
-## Reference comparison and Jev request preview
-
-Build a reference from labeled known-origin data with `josh reference build`.
-Open it with r. Press a to compare the current sample. The Reference Guide below
-contains the complete annotation format and worked CLI example.
-
-The first comparison family accepts explicitly matched TPM → log2(x+1), human gene
-mapping, platform, genome declaration and pinned dictionary. Other data can still be
-imported and explored. Matching text metadata does not remove batch effects.
-
-Read Pearson r as a signed similarity in [-1, 1], not a percentage. Negative values
-are retained. Constants have undefined correlation. Gates can return incompatible,
-insufficient_data or undefined_similarity instead of a ranked usable comparison.
-No validated OOD cutoff or automatic diagnosis is inferred from correlation.
-
-On Analyze, s archives evidence. e saves an OFFLINE typed Jev request to a new JSON
-file. The request uses Choice and independent Noul questions, with unknown and
-other_origin options. Query IDs, paths and patient identifiers are excluded from the
-provider state. Nothing is sent by comparison, export or request preparation.
-
-## Export, reproduce and CLI conventions
-
-Global --format json (default) produces machine-readable output; --format text gives
-a summary. --output NEW_FILE protects existing files. Parent directories must exist.
-
-- `josh dataset --help`: detect, import, inspect, explore, verify, migrate-case, export.
-- `josh reference --help`: build, inspect, compare, prepare.
-- `josh schema sample`: canonical sample JSON Schema.
-- `josh schema dataset`: dataset manifest JSON Schema.
-- `josh schema reference`: reference release JSON Schema.
-- `josh schema molecular-evidence`: comparison evidence JSON Schema.
-- `josh doctor`: local key/setup status, without printing credentials or making a call.
-
-Exit 0 means success, 1 a command error, 2 invalid CLI arguments and 3 blocked QC or
-comparison gates. JSON errors carry a code and safe message. Full molecular exports
-are JSON; measurement export also supports CSV/TSV. PDF reports remain planned.
-
-Keep original dataset bundles, labels, gene dictionary, reference JSON and output
-artifacts. Reuse the same binary/pipeline and pinned reference for a reproducible
-comparison. A provider response cannot be reproduced locally until it has been
-archived; this milestone has no live molecular result to replay.
-
-## Jev credentials and legacy workflow
-
-Offline import, exploration, comparison and help need no key. For the existing
-synthetic-case live command set TYPESAFE_API_KEY in the launching shell. To avoid
-putting a key into shell history in Bash:
-
+```bash
 read -r -s -p 'TypeSafe API key: ' TYPESAFE_API_KEY
 export TYPESAFE_API_KEY
 printf '\n'
+```
 
-`josh doctor` reports whether the variable is present without displaying it. A new
-terminal may not inherit a variable set in another shell. Do not commit keys.
+.env is not loaded automatically. Restart JOSH after changing its launching
+environment. `josh doctor` reports key presence without printing it or contacting
+Jev. `josh molecular check FILE` also reports input blockers; ready does not mean
+that credentials have been authenticated.
 
-`josh tui --legacy`, --case FILE and --batch DIRECTORY open the legacy interface.
-Its numbered Help view documents the summarized-case workflow, demo, request preview,
-NICE review and visualization pages. g/F1/Ctrl+g also open this shared guide.
-The legacy c key confirms a synthetic live Jev call; it sends evidence and may incur
-charges. Molecular a/e operations are separate and remain offline. The Terminal Guide
-included below documents every legacy shortcut and export behavior.
+Most CLI commands default to JSON; --format text gives summaries where supported.
+Explicit exports use their selected format; molecular export defaults to Markdown.
+--output NEW_FILE protects existing files, and parent folders must already exist.
+Exit 0 means command success, 1 an application error, 2 invalid arguments. Case
+import uses 3 for rejected records, expression import for blocked QC, and reference
+comparison/preparation for gate failures. A readiness check can exit 0 with
+ready:false: inspect its blockers. See [Terminal Guide](TERMINAL_GUIDE.md) for details.
 
-## Troubleshooting and limitations
+Clinical (F4) starts with a bundled synthetic case. c opens live-call confirmation;
+y sends it. On Guidance, a records a review; 8 then s saves the complete case.
+Clinical shortcuts and export formats are documented in the Terminal Guide.
 
-No genes mapped: check namespace and use the complete HGNC dictionary for real input.
-The six-gene fixture is only for demonstration. Ambiguous aliases are not guessed.
-Unknown units: provide the actual source scale; ranges cannot establish units.
-Blocked duplicates: resolve source duplication under a reviewed assay-specific policy;
-JOSH does not silently sum duplicate genes.
-Incompatible reference: inspect units, transform, platform, genome and dictionary hash.
-Insufficient overlap: inspect missing/mapped genes and the reference's frozen thresholds.
-Query overlap: use an independent source/sample; do not test a reference against itself.
-Constant profile: no correlation can be calculated; inspect source values and processing.
-No reference loaded: press r and select a reference JSON; a dataset directory is different.
-Output exists: choose a new name. Imports and exports never silently overwrite files.
-Search has no matches: press / and change regex, or c to clear; t lists sections.
-Small terminal: enlarge for dashboard panels; every view and guide has a compact fallback.
+| Symptom | Check |
+| --- | --- |
+| Missing key | Export it in the launching shell, restart JOSH, run doctor |
+| Research data blocks live analysis | Synthetic-only eligibility is enforced; local inspection remains available |
+| No genes mapped | Check namespace and dictionary; the six-gene fixture is only a demo |
+| Reference incompatible | Check units, transform, platform, genome and dictionary hash |
+| Insufficient overlap / constant profile | Inspect missing/mapped values, QC and frozen reference thresholds |
+| Reference won't load through l | Use F3 then r for reference JSON |
+| Output exists | Choose a new filename/directory |
+| Interrupted inference | Inspect run-status.json and request.json; no automatic retry |
+| Help search has no matches | Change the regex with /, clear with c, or list contents with t |
+| Small terminal | Enlarge for full panels; compact views omit detail |
 
-Not implemented: real validated cancer reference distribution, cohort inference,
-multimodal VCF/MAF/IHC integration, repository accession downloads, methylation/CNV,
-live molecular Jev classification, clinical calibration, validated OOD, PDF exports,
-and a persistent project catalog. The phase documents track these open deliverables.
+Not implemented: curated validated cancer references, repository accession downloads,
+methylation processing, clinical calibration, validated OOD, PDF reports and a persistent
+project catalog. Typed molecular import, synthetic inference, explanations and cohort
+metric tooling are available. The [build status](BUILD_STATUS.md) separates current
+capabilities from historical milestones and scientific work still required.

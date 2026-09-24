@@ -1,151 +1,163 @@
 # Jev Onco Statistical Hierarchy (JOSH)
 
-A Rust molecular-data workbench for cancer-of-unknown-primary research, using **Ratatui** and a CLI. JOSH is moving toward Sample → Data → Features → Reference comparison → Jev inference → Evidence and uncertainty.
+A Rust molecular-data workbench for cancer-of-unknown-primary research, with a
+Ratatui terminal application and a CLI. Version **0.8.0** provides one workspace
+for **Load data → Analyze with Jev → View results → Export Markdown**.
 
-**Current status (0.7.0):** Molecular inputs now connect to Jev inference and native Rust Shapley explanations. Ratatui includes linked circular, scatter, signed-bar and waterfall views, with JSON/CSV/SVG exports. Press `m` in the workbench, then `d` for an explicitly analytical demonstration. Expression comparison, the existing clinical interface and the searchable guide remain available. See the [molecular guide](docs/data/MOLECULAR_GUIDE.md) for import, inference, explanation budgets, signatures and cohort commands.
+Jev is the hosted origin classifier. Live requests currently accept declared
+**synthetic data only**. Local imports, reference comparison, saved-run review and
+exports work without a key. No cancer-specific accuracy or clinical calibration
+has been established; bundled analytical demos use invented measurements and scores.
 
-Jev remains the sole origin classifier, with synthetic-only live requests. No cancer-specific accuracy or calibration has been established. XGBoost and original model weights remain excluded. The user-approved September 23 scope adds Rust model-agnostic explanations of Jev outputs; the analytical demo is a software fixture, not a cancer classifier.
+## Start here
+
+From the repository:
 
 ```bash
-cargo run --locked --bin josh -- tui
-# Press m, then d. Arrows select evidence, Tab switches views, t changes target.
-# Or create a reproducible offline demonstration:
-cargo run --locked --bin josh -- molecular demo --out-dir /tmp/josh-demo --format text
-cargo run --locked --bin josh -- tui --explanation /tmp/josh-demo/explanation.json
-cargo run --locked --bin josh -- molecular export /tmp/josh-demo/explanation.json \
-  --kind svg --output /tmp/josh-explanation.svg
+./scripts/start
 ```
 
-Use new output paths. Demo coefficients and measurements are invented. Explanations
-describe model-output changes, not causal effects or calibrated cancer probabilities.
+The launcher checks for Cargo, Rust and a system C compiler, builds the binary,
+then opens JOSH. The repository pins Rust **1.98.1**; a first build needs registry
+access. The launcher does not install prerequisites. No Python, Node, local GPU,
+database or model download is required. See the [quickstart](docs/QUICKSTART.md)
+for setup and the complete walkthrough.
 
-For a clean, ready-to-open input pack and a five-step offline walkthrough, see the
-[basic data demo](fixtures/basic-demo/README.md). Generate it with
-`cargo run --locked -p josh-app --example prepare_demo -- --out-dir results/basic-demo`.
-It includes molecular tables, explicit missing values, expression data and saved
-analytical charts; no Jev key is needed.
+In **Analysis (F2)**:
 
-## Read first
+1. **Load (`l`)** a molecular feature file, supported table or saved run. Tables
+   open import settings; review the sample, assay and data declaration.
+2. **Analyze (`a`)** opens a new run-directory dialog. Enter confirms one
+   potentially billed synthetic Jev request. Set `TYPESAFE_API_KEY` in the launching
+   shell first; `.env` files are not loaded automatically.
+3. **Results (`v`)** shows raw rankings, abstention reasons and evidence checks.
+   Successful inference saves its archive and `report.md` automatically.
+4. **Export (`s`)** saves another Markdown report to a new `.md` file.
+   An explanation is optional; `e` shows a budget before additional provider calls.
 
-- [Data-first redesign gap assessment](docs/assessment/DATA_FIRST_GAP_ASSESSMENT.md) — current code versus the design team's molecular workbench specification; proposed changes and three developer phases, retaining Rust, Jev and Ratatui
-- [Developer roadmap and phase index](docs/PLAN.md)
-- [CLI and TUI user guide](docs/TERMINAL_GUIDE.md)
-- [Visualizations, NICE rule coverage and clinical review guide](docs/CLINICAL_REVIEW_GUIDE.md)
-- [Batch import formats and migration guide](docs/data/IMPORT_GUIDE.md)
-- [Open_Nexus source audit and existing ML inventory](docs/assessment/OPEN_NEXUS.md)
-- [Jev capabilities and suitability assessment](docs/assessment/JEV.md)
-- [Architecture and data contracts](docs/ARCHITECTURE.md)
-- [Build status and verified limitations](docs/BUILD_STATUS.md)
-- [Intended use and open review decisions](docs/product/intended-use.md)
-- [Foundation handoff and compatibility rules](docs/engineering/foundation.md)
-- [Generated JSON Schemas and OpenAPI](contracts/README.md)
-- [Evidence and official sources](docs/SOURCES.md)
+To try the complete review/export flow offline, press **d** in Analysis. It replaces
+the current analysis with the bundled analytical demo. For importable molecular
+tables and expression data, use the [basic data demo](fixtures/basic-demo/README.md):
 
-## Run
+```bash
+cargo run --locked -p josh-app --example prepare_demo -- --out-dir results/basic-demo
+```
 
-Use the pinned Rust 1.98.1 toolchain with Cargo, rustfmt, clippy, and a system C compiler on Linux. Cargo needs registry access on a fresh machine; after dependencies are cached, the following also work with `--offline`.
+## One terminal workspace
+
+| Section | Purpose |
+| --- | --- |
+| **F2 Analysis** | Molecular inputs, Jev inference, saved results, explanations and Markdown reports |
+| **F3 Data** | Expression import, gene mapping, QC, exploration and local reference comparison |
+| **F4 Clinical** | Summarized cases, clinical context, source-linked NICE review and case exports |
+
+Switching sections preserves their data, forms, results and jobs. Use the shared
+**l/o** loader or `josh tui PATH` for supported files and bundles; **F1** opens help
+even inside a form, and **g** opens it from navigation. **q** quits from navigation,
+checks for unsaved clinical reviews and waits for in-flight work to finish.
+
+The [user guide](docs/USER_GUIDE.md) documents input routing and section-specific
+keys. For example, **a** sends a confirmed Jev analysis in Analysis, performs local
+reference comparison in Data, and records a review on Clinical's Guidance page.
+In Data, **r** loads reference JSON and **m** attaches a usable comparison to
+Analysis. Clinical cases retain their own identity; switching sections does not
+join them to molecular samples.
+
+## CLI workflows
+
+After building, use `./target/debug/josh` from the checkout, or `josh` if installed
+on PATH. The launcher also accepts CLI arguments:
+
+```bash
+./scripts/start doctor --format text
+./scripts/start molecular check fixtures/molecular/synthetic-features.json --format text
+./scripts/start molecular prepare fixtures/molecular/synthetic-features.json
+```
+
+These commands run locally. Readiness reports key presence and input eligibility;
+it does not authenticate credentials. `prepare` shows the request without sending it.
+
+For a live synthetic analysis, after configuring the key:
+
+```bash
+mkdir -p results
+./scripts/start molecular run fixtures/molecular/synthetic-features.json --out-dir results/run-001
+./scripts/start tui results/run-001
+./scripts/start molecular export results/run-001 --output results/run-001-report.md
+```
+
+Choose new destinations. Reopening and exporting are offline. Keep the run folder:
+an inference JSON file needs its `features.json` sidecar to reopen. Requests use
+`jev-1.13.0` at `https://api.typesafe.ai/v1/systemone`; ambiguous failures are never
+retried automatically. See the [molecular guide](docs/data/MOLECULAR_GUIDE.md) for
+formats, budgeted explanations, resumption, cohort tooling and evaluation.
+
+Expression datasets use `josh dataset`; references use `josh reference`.
+Summarized cases use `josh validate`, `prepare`, `demo`, `classify` and `guidance`.
+Case CSV/TSV/JSONL must first pass through `josh import`; load its output bundle in
+the TUI. Each command has `--help`. The [terminal guide](docs/TERMINAL_GUIDE.md)
+documents output formats, stdin support and exit codes.
+
+## Read and interpret results
+
+Molecular Analysis uses an `InferenceRun`; Clinical uses a separate `ResultRecord`.
+Their JSON fields and taxonomies differ:
+
+| Workflow | Scores and provenance |
+| --- | --- |
+| Molecular | `response.answers.primary_site.probabilities`; `feature_sha256`, `request_sha256`, frozen `taxonomy`, full request/response |
+| Clinical | `rankings[].raw_probability`; `rankings[].calibrated_probability` is `null`; `case_revision_sha256`, `request_sha256` |
+| Both | `source` distinguishes Jev, mock and replay; `status` is `abstained` or `review_required`; calibration remains unvalidated |
+
+Provider confidence is distinct from a class score. Neither is a calibrated cancer
+probability. Provenance hashes detect inconsistency; they do not authenticate a
+provider response or establish scientific validity.
+
+The default molecular taxonomy has 22 detailed classes plus `insufficient_evidence`
+and `other_origin`; expression comparisons carry their reference taxonomy.
+Clinical's development taxonomy has 12 broad groups plus the two unresolved
+outcomes. These are research contracts, not validated cancer classifiers.
+
+## Documentation
+
+- [Quickstart](docs/QUICKSTART.md) — prerequisites and Load → Analyze → Results → Markdown
+- [User guide](docs/USER_GUIDE.md) — shared navigation, inputs, keys, reports and troubleshooting
+- [Terminal and CLI reference](docs/TERMINAL_GUIDE.md) — commands, clinical controls and output conventions
+- [Molecular formats and explanations](docs/data/MOLECULAR_GUIDE.md)
+- [Expression import](docs/data/EXPRESSION_GUIDE.md) and [reference comparison](docs/data/REFERENCE_GUIDE.md)
+- [Clinical review](docs/CLINICAL_REVIEW_GUIDE.md) and [case batch import](docs/data/IMPORT_GUIDE.md)
+- [Build status](docs/BUILD_STATUS.md) and [0.7.0 molecular validation report](docs/reports/0.7.0-molecular-validation.md)
+- [Architecture](docs/ARCHITECTURE.md), [generated contracts](contracts/README.md) and [compatibility rules](docs/engineering/foundation.md)
+- [Intended use](docs/product/intended-use.md), [sources](docs/SOURCES.md) and [roadmap](docs/PLAN.md)
+
+The in-app guide is compiled into the binary and searches the user, molecular,
+expression, reference and terminal guides offline. Rebuild after changing those files.
+Earlier [gap assessments](docs/assessment/DATA_FIRST_GAP_ASSESSMENT.md) and phase
+plans describe their dated baselines; use the build status for delivered capabilities.
+
+## Local API and development checks
+
+`josh serve --port 3000` exposes loopback-only `/health`, `/v1/demo`, `/v1/prepare`
+and `/v1/guidance`. The POST routes accept summarized cases, with a 16 KiB request
+limit. There is no live classification or molecular-analysis HTTP route, persistence
+or authentication. See `josh schema openapi` for this local developer API.
 
 ```bash
 cargo build --workspace --locked
-cargo run --locked --bin josh -- tui
-cargo run --locked --bin josh -- doctor --format text
-cargo run --locked --bin josh -- validate fixtures/synthetic-case.json
-cargo run --locked --bin josh -- prepare fixtures/synthetic-case.json
-cargo run --locked --bin josh -- demo fixtures/synthetic-case.json
-```
-
-`prepare` prints the exact request without sending it. `demo` always abstains and returns `source: mock`. The example is invented and has no ground-truth origin. Do not interpret its distribution as medical evidence.
-
-The TUI opens two invented expression samples. Its primary views are Samples, Datasets, Analyze, Explore, Models, Reference and Projects. Press `i` to import, `p` to paste a table, `o` to open a dataset, `[`/`]` to change samples and `/` to search genes. No provider request occurs in these data workflows.
-
-```bash
-mkdir -p results
-./target/debug/josh dataset import fixtures/expression/synthetic-expression.tsv \
-  --dataset-id expression-demo --units tpm --transform log2-one-plus \
-  --gene-map fixtures/expression/hgnc-subset.tsv --gene-map-release fixture-v1 \
-  --platform invented-demonstration --synthetic --out-dir results/expression-demo
-./target/debug/josh tui --dataset results/expression-demo
-./target/debug/josh dataset verify results/expression-demo --reproduce
-```
-
-The original case/clinical interface is available with `josh tui --legacy`, `--case FILE` or `--batch DIRECTORY`. Its source-linked NICE guidance, clinical review records and score/IHC charts remain compatible. See the [clinical review guide](docs/CLINICAL_REVIEW_GUIDE.md).
-
-The CLI supports `--format text`, `--output NEW_FILE`, stdin via `-`, `--help`, and `--version`. `josh example` prints a case template; `josh demo` works with no input file. Exports never overwrite an existing file. See the [terminal guide](docs/TERMINAL_GUIDE.md) for all commands and keys.
-
-```bash
-./target/debug/josh example --clinical --output /tmp/josh-clinical.json
-./target/debug/josh guidance /tmp/josh-clinical.json --format text
-```
-
-Guidance runs offline without a key. It preserves unknowns, records contextual investigation
-and MDT prompts, and reflects NICE's withdrawn 2023 gene-expression restrictions.
-It is a documented subset, not a complete guideline or a clinically validated decision system.
-
-To try batch evidence import and browse its three synthetic cases:
-
-```bash
-mkdir -p results
-./target/debug/josh import fixtures/import/synthetic-findings.csv \
-  --input-format csv --source-id synthetic-v1 --out-dir results/import-001 --format text
-./target/debug/josh tui --batch results/import-001
-```
-
-Use `[`/`]` to browse cases and `5` for quality. Import runs locally, preserves labels in a separate file and reports rejected records. Choose a new output directory for each run; exit code 3 means some or all records were rejected. See the [import guide](docs/data/IMPORT_GUIDE.md) for all formats and limits.
-
-For a live request, provide a TypeSafe key through the process environment or your secret manager, then run:
-
-```bash
-cargo run --locked --bin josh -- classify fixtures/synthetic-case.json
-```
-
-This requires `TYPESAFE_API_KEY` and sends the synthetic findings to `https://api.typesafe.ai/v1/systemone`. The pinned model is `jev-1.13.0`. No live provider call has been verified in this workspace. A `.env` file is **not** automatically loaded. Do not put keys in JSON, source code, browser code, or command arguments.
-
-## Local API
-
-```bash
-cargo run --locked --bin josh -- serve --port 3000
-curl http://127.0.0.1:3000/health
-curl --fail-with-body http://127.0.0.1:3000/v1/demo \
-  -H 'Content-Type: application/json' \
-  --data-binary @fixtures/synthetic-case.json
-```
-
-`POST /v1/prepare` accepts the same case and returns a request preview; `POST /v1/guidance` returns the local clinical review report. The server binds to loopback, has a 16 KiB request limit, and exposes no live classification route. It has no persistence or authentication yet; it is a local developer service.
-
-## Result semantics
-
-| Field | Meaning |
-| --- | --- |
-| `rankings[].raw_probability` | Jev's distribution over the supplied options, or an explicitly marked simulation |
-| `rankings[].calibrated_probability` | Always `null` until a separately validated calibration artifact exists |
-| `provider_confidence` | Provider's distribution-concentration statistic, distinct from class probability |
-| `status` | `abstained` or `review_required`; never an autonomous diagnosis |
-| `calibration_status` | Currently `not_validated_for_cup` |
-| `source` | `jev`, `mock`, or `replay` |
-| `case_revision_sha256` / `request_sha256` | Versioned fingerprints of the full case and provider request; these do not authenticate replayed responses |
-
-The prototype taxonomy is illustrative: 12 broad origin groups plus `other_origin` and `insufficient_evidence`. It mixes broad sites and one lineage category and needs specialist review before cohort evaluation. It is not OncoNPC's validated label set.
-
-## Quality checks
-
-```bash
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo test --workspace --locked
 ```
 
-Tests cover input limits, label leakage through undeclared fields, provider contracts, probability bounds, model pinning, abstention, mock labeling, request fingerprints, and preflight restrictions. They establish software behavior, not diagnostic performance.
+Cargo also supports `--offline` once dependencies are cached. Tests verify software
+contracts and workflows, not diagnostic performance. Remaining scientific work
+includes curated cancer references, real-data provider eligibility, independent
+cohort evaluation, representative repeatability studies, calibration and validated
+out-of-distribution detection. A limited live synthetic check was recorded for
+0.7.0; it is not a cancer-validation study.
 
-## Scientific work still required
-
-[Approved molecular/explanation plan](docs/redesign/04-onconpc-jev-explanations.md)
-builds on expression import and compatible reference comparison. The software now
-supports molecular inference, exact/sampled attribution, experimental SBS96/NNLS
-processing and frozen cohort metrics. Real cancer reference curation, an authenticated
-live Jev check, provider-variation measurements, external cohort evaluation and
-calibration remain separate prerequisites for scientific claims. Local software
-tests and synthetic demonstrations do not establish clinical performance.
-
-[Phase 2](docs/redesign/02-multimodal-and-cohorts.md) adds variants, structured IHC and cohorts; [Phase 3](docs/redesign/03-modalities-and-connectors.md) adds secondary modalities and repository connectors. The [assessment](docs/assessment/DATA_FIRST_GAP_ASSESSMENT.md) records the 0.4.0 baseline and all requirement gaps.
-
-The upstream repository was inspected at commit `ee8069cdaaf997721cb071dffe1cb243651a5f56`. Its source was not copied into this implementation. Its GPL-2.0 license and the provenance of any future reused data-processing code or datasets must remain tracked; no distribution license has been selected for this new scaffold yet.
+The upstream repository was inspected at commit
+`ee8069cdaaf997721cb071dffe1cb243651a5f56`; its source was not copied into this
+implementation. See the [source audit](docs/assessment/OPEN_NEXUS.md). Its GPL-2.0
+license and the provenance of future reused code or datasets must remain tracked;
+no distribution license has been selected for this scaffold.

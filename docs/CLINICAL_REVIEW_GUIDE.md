@@ -1,6 +1,7 @@
 # CUP visualizations and NICE review
 
-Implementation: application 0.4.0, case schema 3, ruleset `cg104-review-v0.1`.
+Current application: 0.8.0. Clinical functionality introduced in 0.4.0; case schema 3
+and ruleset `cg104-review-v0.1` are unchanged.
 Source checked 2026-09-22. Clinical signoff and diagnostic outcome validation are **pending**.
 This is a local research review aid, not a medical-device validation, complete guideline
 implementation, automated diagnosis, treatment protocol or clinical approval.
@@ -9,14 +10,17 @@ implementation, automated diagnosis, treatment protocol or clinical approval.
 
 ```bash
 cargo run --locked --bin josh -- tui
+# Press F4 for Clinical; l loads a case or bundle in the same workspace.
 ./target/debug/josh example --clinical --output /tmp/josh-clinical-example.json
 ./target/debug/josh guidance /tmp/josh-clinical-example.json --format text
 ./target/debug/josh guidance /tmp/josh-clinical-example.json --output /tmp/josh-guidance.json
 ```
 
-The default TUI case is deliberately invented, including its investigations, dates and
+The initial Clinical demonstration case is deliberately invented, including its investigations, dates and
 reviewer. It has no reference diagnosis. The legacy `josh example` command remains schema 1.
 No API key is needed for the visualizations, guidance, review entries or offline demo.
+These controls apply in Clinical (F4). F2/F3 returns to Analysis/Data without losing
+the case. The shared g/F1 guide documents navigation across the workspace.
 
 | View | Controls and meaning |
 | --- | --- |
@@ -142,8 +146,9 @@ Adding another review does not invalidate the first. Changing evidence, clinical
 context or the ruleset makes old reviews stale. This is local traceability, not a
 signed, tamper-proof audit system.
 
-Review changes clear any displayed model result. Unsaved reviews block case changes
-and trigger a quit/discard confirmation. Press **8 then s** to save a new complete
+Review changes clear the displayed Clinical model result; the molecular Analysis
+result is independent. Recorded unsaved reviews block case changes and trigger a
+quit/discard confirmation even when another section is active. Press **8 then s** to save a new complete
 case; this becomes the reload path. Existing files are never overwritten and Unix
 exports are owner-readable/writable. Guidance/visual exports do not mark the editable
 case as saved. They contain local clinical context and must be handled accordingly.
