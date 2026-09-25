@@ -1,0 +1,15 @@
+sample_id	id	name	modality	value	units	status	gene	chromosome	position	reference	alternate	consequence	somatic	catalogue	method	mutation_count	reference_build	assay	coverage	group	depends_on
+SYNTH-003	tp53	TP53 p.Arg273His	mutation			observed	TP53	17	7673802	C	T	missense_variant; p.Arg273His	true				GRCh38	synthetic-WGS-v1	simulated tumor depth 180x; alternate 68/180; normal 0/42	tp53	
+SYNTH-003	myc-cna	MYC copy number	copy_number	0	discrete_call	observed	MYC										GRCh38	synthetic-CNA-v1	simulated segmented DNA coverage; reviewed gene-level call	myc-cna	
+SYNTH-003	cdkn2a-cna	CDKN2A copy number	copy_number			unknown	CDKN2A										GRCh38	synthetic-CNA-v1	simulated noisy segmentation; no reliable call	cdkn2a-cna	
+SYNTH-003	kras	KRAS	mutation			unknown	KRAS										GRCh38	synthetic-WGS-v1	simulated coverage failure; absence cannot be assessed	kras	
+SYNTH-003	sbs4	SBS4	signature			not_tested												synthetic-signature-assay-v1	insufficient interpretable sequence context; not fitted	sbs4	
+SYNTH-003	age	Age at sampling	demographic	61	years	observed												synthetic-record-v1	invented exact age	demographics	
+SYNTH-003	sex	Recorded sex at birth	demographic			unknown												synthetic-record-v1	not recorded	sex	
+SYNTH-003	ck7	CK7	ihc	positive; patchy cytoplasmic staining in 25% of tumor cells		observed												synthetic-IHC-v1	simulated viable tumor; internal stain control adequate	keratins	
+SYNTH-003	ck20	CK20	ihc	positive; weak focal staining in 5% of tumor cells		observed												synthetic-IHC-v1	simulated viable tumor; internal stain control adequate	keratins	
+SYNTH-003	ttf1	TTF-1	ihc			unknown												synthetic-IHC-v1	simulated equivocal staining; repeat unavailable	ttf1	
+SYNTH-003	napsina	Napsin A	ihc			not_tested												synthetic-IHC-v1	not performed	napsina	
+SYNTH-003	cdx2	CDX2	ihc			unknown												synthetic-IHC-v1	simulated failed internal control; uninterpretable	cdx2	
+SYNTH-003	satb2	SATB2	ihc			not_tested												synthetic-IHC-v1	not performed	satb2	
+SYNTH-003	morphology	Biopsy morphology	histology	poorly differentiated carcinoma; limited viable tissue		observed												synthetic-H-and-E-v1	simulated core biopsy; enough tumor to establish carcinoma, limited tissue for further workup	morphology	

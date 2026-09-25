@@ -1,5 +1,28 @@
 # Developer delivery plan
 
+## Sample-centered UX delivery — 2026-09-25
+
+User approved single-sample analysis first, cohort research second. The current
+implementation replaces four top-level applications with one Data / Results
+workbench, explicit sample-session ownership and a secondary Studies workspace.
+Import staging preserves previous inputs on failure/cancel; history preserves
+prior samples; changed expression bindings invalidate current analysis. Existing
+visualizations and CLI/API compatibility remain. Legacy guideline administration
+and its independent classifier are retired from the main TUI, not deleted from
+historical data/contracts. See the current [User Guide](USER_GUIDE.md).
+
+
+## Research direction — 2026-09-25
+
+The corrected published OncoNPC study is the primary research guide; its preprint
+is version history. Preserve Rust, the terminal, Jev inference and all existing
+visualizations. The [research guide](references/ONCONPC_GUIDE.md) defines priorities
+and consolidation candidates; the [current audit](assessment/ONCONPC_PARITY.md)
+separates implemented tooling from missing methods and unmeasured performance.
+The next scientific milestone is a frozen, eligible Jev benchmark, followed by
+calibration, independent CUP validation and reviewed outcome/actionability evidence.
+The following delivery plans describe their dated implementation phases.
+
 ## Guided Jev workflow — 2026-09-24
 
 The next engineering phase connects prerequisites, direct molecular loading, one-call

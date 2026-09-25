@@ -44,6 +44,33 @@ impl App {
     pub fn editing(&self) -> bool {
         self.export_path.is_some()
     }
+    pub(crate) fn views(&self) -> Vec<(usize, &'static str)> {
+        TABS.into_iter().enumerate().collect()
+    }
+    pub(crate) fn select_view(&mut self, page: usize) {
+        self.page = page.min(TABS.len() - 1);
+        self.scroll = 0;
+    }
+    pub(crate) fn status(&self) -> String {
+        self.status.clone()
+    }
+    pub(crate) fn context(&self) -> String {
+        self.loaded
+            .as_ref()
+            .map(|(d, _)| {
+                if d.data_class == DataClass::Synthetic {
+                    "SYNTHETIC DEMONSTRATION · invented cohort, no clinical performance".into()
+                } else {
+                    "FROZEN COHORT · offline research statistics, not clinical validation".into()
+                }
+            })
+            .unwrap_or(
+                "Browse a cohort-study JSON, or choose Offline demo. No provider calls.".into(),
+            )
+    }
+    pub(crate) fn editor(&self) -> Option<crate::editor::Editor> {
+        self.export_path.as_ref().map(|p|crate::editor::Editor::new("Export cohort","Save a figure (.svg), Markdown report (.md) or reopenable archive (.json). Existing files are protected.","Export",&self.status).field("New output file",p))
+    }
     pub fn cancel_job(&mut self) {
         if self.busy() {
             self.discard_pending = true;
@@ -247,15 +274,18 @@ impl App {
         }
     }
     pub fn draw_area(&mut self, frame: &mut Frame, area: Rect) {
+        self.draw_workspace(frame, area, false);
+    }
+    pub(crate) fn draw_workspace(&mut self, frame: &mut Frame, area: Rect, embedded: bool) {
         frame.render_widget(
             Block::default().style(Style::default().bg(ui::BG).fg(ui::TEXT)),
             area,
         );
         let [heading, tabs, body, status] = Layout::vertical([
-            Constraint::Length(2),
-            Constraint::Length(3),
+            Constraint::Length(if embedded { 0 } else { 2 }),
+            Constraint::Length(if embedded { 0 } else { 3 }),
             Constraint::Min(1),
-            Constraint::Length(2),
+            Constraint::Length(if embedded { 0 } else { 2 }),
         ])
         .areas(area);
         let (subtitle, color) = self
@@ -387,7 +417,7 @@ impl App {
             );
         }
         frame.render_widget(Paragraph::new(format!("{}{}\n1–6 views · d demo · l load · s export · n normalize · i CI · w IPTW · F1 help",if self.busy(){"● COMPUTING  "}else{""},workflows::display_text(&self.status))).style(Style::default().fg(if self.busy(){ui::GOLD}else{ui::MUTED})),status);
-        if let Some(path) = &self.export_path {
+        if !embedded && let Some(path) = &self.export_path {
             let width = area.width.saturating_sub(4).min(90);
             let height = area.height.min(9);
             let rect = Rect::new(

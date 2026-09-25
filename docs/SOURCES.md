@@ -1,6 +1,12 @@
 # Source register
 
-## OncoNPC prediction and cohort figures — checked 2026-09-24
+## OncoNPC prediction and cohort figures — checked 2026-09-25
+
+Primary research direction: the corrected published study below. It was already
+registered before the September 25 request. The preprint is an earlier version of
+the same study. The new [research guide](references/ONCONPC_GUIDE.md) and
+[current objective audit](assessment/ONCONPC_PARITY.md) are also searchable inside
+the terminal through F1, then / and `OncoNPC`.
 
 - Moon I, LoPiccolo J, Baca SC, Sholl LM, Kehl KL, Hassett MJ, Liu D, Schrag D,
   Gusev A. *Utilizing Electronic Health Records (EHR) and Tumor Panel Sequencing
@@ -14,18 +20,23 @@
   response prediction in cancer of unknown primary.* Nature Medicine.
   2023;29:2057–2067. DOI:
   [10.1038/s41591-023-02482-6](https://doi.org/10.1038/s41591-023-02482-6).
-  This is the subsequent peer-reviewed publication.
+  [Full text](https://pmc.ncbi.nlm.nih.gov/articles/PMC11484892/) and
+  [user-supplied ResearchGate reference](https://www.researchgate.net/publication/372960217_Machine_learning_for_genetics-based_classification_and_treatment_response_prediction_in_cancer_of_unknown_primary).
+  This is the subsequent peer-reviewed publication and primary guide.
 - [Publisher correction](https://www.nature.com/articles/s41591-023-02693-x),
   published online November 15, 2023; Nature Medicine 30:607 (2024).
   Consult it when defining cancer groups or using supplementary data.
 
-The supplied screenshot motivates three cohort views: a confusion heatmap,
-survival by predicted cancer type, and survival by treatment concordance. These
-are research targets, not current JOSH results. The preprint screenshot uses ten
+The September 24 screenshot motivated three implemented cohort views: a confusion
+heatmap, survival by predicted cancer type, and treatment concordance. They derive
+from a loaded study, with invented demonstration data available. The September 25
+image is the single-sample feature ring and scatter from Extended Data Figure 4;
+Analysis now has a dedicated OncoNPC view (p). The preprint screenshot uses ten
 broad groups; the published article reports thirteen. Freeze the chosen version
 and mapping before comparisons. OncoNPC's XGBoost results cannot be attributed to Jev.
 
-The exact version-1 results and methods were checked against indexed medRxiv text;
+The published full article was retrieved from PubMed Central on September 25;
+the publisher correction was checked separately. The exact version-1 results and methods were checked against indexed medRxiv text;
 direct medRxiv retrieval returned 403/cache errors. Publication metadata and the
 correction were checked against PubMed and the publisher. No patient data or model
 weights were downloaded. See the [implementation and evidence assessment](assessment/ONCONPC_PARITY.md).

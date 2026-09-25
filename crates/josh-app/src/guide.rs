@@ -1,6 +1,6 @@
 //! Offline, searchable guide for the unified terminal workspace.
 use crate::ui;
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Margin, Rect},
@@ -21,6 +21,12 @@ const MANUAL: &str = concat!(
     "\n\n",
     include_str!("../../../docs/data/COHORT_GUIDE.md"),
     "\n\n",
+    include_str!("../../../docs/references/ONCONPC_GUIDE.md"),
+    "\n\n",
+    include_str!("../../../docs/assessment/ONCONPC_PARITY.md"),
+    "\n\n",
+    include_str!("../../../docs/SOURCES.md"),
+    "\n\n",
     include_str!("../../../docs/TERMINAL_GUIDE.md")
 );
 
@@ -38,6 +44,8 @@ pub struct Guide {
     filtered: bool,
     error: Option<String>,
     jump: Option<usize>,
+    controls: Vec<(Rect, KeyCode)>,
+    focus: Option<usize>,
 }
 impl Guide {
     /// Text editors keep printable g; F1/Ctrl+g are unconditional shortcuts.
@@ -53,6 +61,27 @@ impl Guide {
         }
         if global || (control && key.code == KeyCode::Char('c')) {
             self.open = false;
+            return true;
+        }
+        if matches!(key.code, KeyCode::Tab | KeyCode::BackTab) {
+            let backwards =
+                key.code == KeyCode::BackTab || key.modifiers.contains(KeyModifiers::SHIFT);
+            self.focus = Some(match self.focus {
+                Some(i) => (i + if backwards { 4 } else { 1 }) % 5,
+                None => {
+                    if backwards {
+                        4
+                    } else {
+                        0
+                    }
+                }
+            });
+            return true;
+        }
+        if key.code == KeyCode::Enter
+            && let Some(i) = self.focus
+        {
+            self.activate(i);
             return true;
         }
         if let Some(draft) = &mut self.draft {
@@ -105,6 +134,44 @@ impl Guide {
             && !text.chars().any(char::is_control)
         {
             draft.push_str(text);
+        }
+    }
+    fn activate(&mut self, index: usize) {
+        self.focus = None;
+        match index {
+            0 => {
+                if let Some(draft) = self.draft.take() {
+                    self.search(draft);
+                } else {
+                    self.draft = Some(self.query.clone());
+                }
+            }
+            1 => {
+                self.draft = None;
+                self.search("^## ".into());
+            }
+            2 => self.next(false),
+            3 => {
+                self.draft = None;
+                self.search(String::new());
+            }
+            _ => self.open = false,
+        }
+    }
+    pub fn mouse(&mut self, event: MouseEvent) {
+        match event.kind {
+            MouseEventKind::Down(MouseButton::Left) => {
+                if let Some(i) = self
+                    .controls
+                    .iter()
+                    .position(|(r, _)| r.contains((event.column, event.row).into()))
+                {
+                    self.activate(i);
+                }
+            }
+            MouseEventKind::ScrollDown => self.scroll = self.scroll.saturating_add(3),
+            MouseEventKind::ScrollUp => self.scroll = self.scroll.saturating_sub(3),
+            _ => (),
         }
     }
     fn search(&mut self, query: String) {
@@ -197,10 +264,11 @@ impl Guide {
         let block = ui::panel(" USER GUIDE · offline reference ");
         let inner = block.inner(area);
         frame.render_widget(block, area);
-        let [search, body, footer] = Layout::vertical([
+        let [search, body, footer, actions] = Layout::vertical([
             Constraint::Length(2),
             Constraint::Min(0),
-            Constraint::Length(3),
+            Constraint::Length(2),
+            Constraint::Length(1),
         ])
         .areas(inner);
         let label = self.draft.as_deref().unwrap_or(&self.query);
@@ -279,6 +347,25 @@ impl Guide {
                 .wrap(Wrap { trim: false }),
             footer,
         );
+        self.controls.clear();
+        for (i, ((label, key), rect)) in [
+            ("Search", KeyCode::Char('/')),
+            ("Contents", KeyCode::Char('t')),
+            ("Next match", KeyCode::Char('n')),
+            ("Clear", KeyCode::Char('c')),
+            ("Close", KeyCode::F(1)),
+        ]
+        .into_iter()
+        .zip(
+            Layout::horizontal([Constraint::Ratio(1, 5); 5])
+                .split(actions)
+                .iter(),
+        )
+        .enumerate()
+        {
+            ui::button(frame, *rect, label, self.focus == Some(i), false, true);
+            self.controls.push((*rect, key));
+        }
     }
 }
 #[cfg(test)]
@@ -302,6 +389,22 @@ mod tests {
         g.next(false);
         g.search("^## ".into());
         assert!(g.matches.len() > 10);
+    }
+    #[test]
+    fn research_reference_and_current_objective_audit_are_searchable_offline() {
+        let mut g = Guide::default();
+        for query in [
+            "s41591-023-02482-6",
+            "Objective-by-objective",
+            "Reduce bloat",
+            "polygenic",
+        ] {
+            g.search(query.into());
+            assert!(
+                !g.matches.is_empty(),
+                "missing research guide content: {query}"
+            );
+        }
     }
     #[test]
     fn typing_g_is_preserved_and_global_shortcuts_work_in_editors() {

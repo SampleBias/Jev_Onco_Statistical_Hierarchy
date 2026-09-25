@@ -1,5 +1,13 @@
 # CUP visualizations and NICE review
 
+Current TUI compatibility note: Open a case or bundle to inspect its explicitly
+labelled, read-only legacy records. Evidence, charts, guidance and saved review
+history remain available through the view selector; Export record saves a complete
+case. The separate F4 classifier and new guideline-review actions are retired from
+the main interface. The historical controls below document the original review
+implementation; its CLI/API and schema contracts remain compatible. See the
+[current User Guide](USER_GUIDE.md) for the supported sample-centered interface.
+
 Current application: 0.8.0. Clinical functionality introduced in 0.4.0; case schema 3
 and ruleset `cg104-review-v0.1` are unchanged.
 Source checked 2026-09-22. Clinical signoff and diagnostic outcome validation are **pending**.

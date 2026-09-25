@@ -27,6 +27,8 @@ enum Dialog {
     Live,
     Explain,
 }
+const VIEWS: [&str; 5] = ["Results", "Ring", "Scatter", "Waterfall", "OncoNPC [p]"];
+
 const IMPORT_LABELS: [&str; 6] = [
     "Sample ID",
     "Patient group ID",
@@ -37,6 +39,7 @@ const IMPORT_LABELS: [&str; 6] = [
 ];
 struct ImportForm {
     path: PathBuf,
+    samples: Vec<(String, usize)>,
     fields: [String; 6],
     active: usize,
 }
@@ -49,6 +52,7 @@ pub struct App {
     inference: Option<InferenceRun>,
     taxonomy: TaxonomyDefinition,
     run_root: Option<PathBuf>,
+    attempt_root: Option<PathBuf>,
     selected: usize,
     page: usize,
     status: String,
@@ -62,6 +66,7 @@ pub struct App {
     loaded: bool,
     import_form: Option<ImportForm>,
     buttons: Vec<(Rect, char)>,
+    view_hits: Vec<(Rect, usize)>,
     scroll: u16,
 }
 impl App {
@@ -86,6 +91,7 @@ impl App {
             inference,
             taxonomy,
             run_root: loaded.as_ref().and_then(|l| l.root.clone()),
+            attempt_root: None,
             selected: 0,
             page: 0,
             status:
@@ -101,11 +107,189 @@ impl App {
             loaded: loaded.is_some(),
             import_form: None,
             buttons: Vec::new(),
+            view_hits: Vec::new(),
             scroll: 0,
         })
     }
     pub fn busy(&self) -> bool {
         self.pending.is_some()
+    }
+    pub(crate) fn select_view(&mut self, page: usize) {
+        self.page = page.min(VIEWS.len() - 1);
+        self.scroll = 0;
+    }
+    pub(crate) fn has_input(&self) -> bool {
+        self.loaded
+    }
+    pub(crate) fn has_result(&self) -> bool {
+        self.inference.is_some()
+    }
+    pub(crate) fn request_preview(&self) -> Result<String, AppError> {
+        workflows::pretty(&josh_core::molecular::prepare(
+            &self.features,
+            &self.taxonomy,
+        )?)
+    }
+    pub(crate) fn has_explanation(&self) -> bool {
+        self.archive.as_ref().is_some_and(|a| a.result.is_some())
+    }
+    pub(crate) fn data_text(&self) -> String {
+        if !self.loaded {
+            return "Open data or try a sample to begin. Loading and validation are local.".into();
+        }
+        let readiness = crate::analysis::readiness(&self.features, &self.taxonomy);
+        let mut lines = vec![
+            format!(
+                "SAMPLE: {} · {:?}\nPatient group: {}\nProfile: {}",
+                self.features.sample_id,
+                self.features.data_class,
+                self.features.patient_group_id,
+                self.taxonomy.version
+            ),
+            format!(
+                "{} · {} observed / {} unavailable",
+                if readiness.ready {
+                    "Ready to analyze"
+                } else {
+                    "Setup needed"
+                },
+                readiness.observed,
+                readiness.unavailable
+            ),
+        ];
+        for blocker in readiness.blockers {
+            lines.push(format!("• {blocker}"));
+        }
+        lines.push("\nINPUT EVIDENCE · unknown and not tested are not negative results".into());
+        for f in &self.features.features {
+            lines.push(format!(
+                "{} · {} · {} · {}",
+                f.name,
+                f.modality.label(),
+                crate::report::status_label(&f.status),
+                f.value
+                    .as_ref()
+                    .map(|v| v.display())
+                    .unwrap_or_else(|| "Unavailable".into())
+            ));
+        }
+        lines.push(
+            "\nLoading does not send data. Run analysis opens the request confirmation.".into(),
+        );
+        lines.join("\n")
+    }
+    pub(crate) fn draw_data(&self, frame: &mut Frame, area: Rect) {
+        let text = self
+            .data_text()
+            .lines()
+            .map(workflows::display_text)
+            .collect::<Vec<_>>()
+            .join("\n");
+        frame.render_widget(
+            Paragraph::new(text)
+                .scroll((self.scroll, 0))
+                .wrap(Wrap { trim: false })
+                .block(crate::ui::panel(" Data · evidence and readiness ")),
+            area,
+        );
+    }
+    pub(crate) fn draw_results(&mut self, frame: &mut Frame, area: Rect, chart: usize) {
+        if !self.has_result() {
+            frame.render_widget(Paragraph::new("No result yet.\n\nReview Data, then choose Run analysis.\nLoading data does not make a prediction.\n\nSaved runs can be opened without calling Jev.").wrap(Wrap { trim: false }).block(crate::ui::panel(" Results ")), area);
+        } else if chart > 0 && !self.has_explanation() {
+            frame.render_widget(Paragraph::new("Explanation not computed.\n\nThe prediction is available in Summary. Charts require measured feature contributions, not just model scores.\n\nExplain result opens a separate request-budget confirmation. For portable inference-only exports, reopen the original run folder first.\n\nAn incomplete explanation remains a checkpoint; its missing values are not filled in.").wrap(Wrap { trim: false }).block(crate::ui::panel(" Explanation ")), area);
+        } else {
+            self.page = chart.min(4);
+            self.draw_area(frame, area, true);
+        }
+    }
+    pub(crate) fn can_explain(&self) -> bool {
+        self.run_root.is_some()
+            && self
+                .inference
+                .as_ref()
+                .is_some_and(|r| r.source == Source::Jev)
+    }
+    pub(crate) fn context(&self) -> String {
+        if !self.loaded {
+            return "No input loaded · research use only".into();
+        }
+        format!(
+            "{} · {} observations · {}",
+            self.features.sample_id,
+            self.features.features.len(),
+            self.inference
+                .as_ref()
+                .map(|r| crate::report::source_label(r.source))
+                .unwrap_or("Input loaded · no prediction")
+        )
+    }
+    pub(crate) fn status(&self) -> String {
+        if self.busy() {
+            format!(
+                "{} · {}/{} evaluations · {}s",
+                self.status,
+                self.progress.completed.load(Ordering::Relaxed),
+                self.evaluation_budget,
+                self.started.map_or(0, |t| t.elapsed().as_secs())
+            )
+        } else {
+            self.status.clone()
+        }
+    }
+    pub(crate) fn open_sample(&mut self, index: usize) -> Result<(), AppError> {
+        if self.busy() {
+            return Err("Wait for the analysis to finish before replacing its input.".into());
+        }
+        let features = crate::samples::load(index)?;
+        let mut next = Self::new(None, None)?;
+        next.features = features;
+        next.loaded = true;
+        next.status =
+            "Synthetic input loaded locally. Choose Analyze to review and confirm one Jev request."
+                .into();
+        *self = next;
+        Ok(())
+    }
+    pub(crate) fn editor(&self) -> Option<crate::editor::Editor> {
+        use crate::editor::Editor;
+        let dialog = self.dialog?;
+        let editor=match dialog {
+            Dialog::Open=>Editor::new("Open analysis", "Choose a molecular file or saved run folder.", "Open", &self.status).field("Path", &self.input),
+            Dialog::Save=>Editor::new("Export analysis", "Save to a NEW file. Markdown includes evidence and results; completed explanations also support SVG, CSV and JSON. Existing files are protected.", "Export", &self.status).field("Output file (.md, .svg, .csv, .json)", &self.input),
+            Dialog::Live=>Editor::new("Analyze with Jev", "Sends ONE synthetic sample to api.typesafe.ai; may incur charges. Results and report.md are saved automatically. Choose a new folder inside an existing parent.", "Send 1 request", &self.status).field("New run directory", &self.input),
+            Dialog::Explain=>Editor::new("Explain this Jev result", "Additional billed calls: up to 512 evaluations / 1,000,000 input tokens / 600 seconds; 16 paired permutations. Completed calls are checkpointed. No calls until you confirm.", "Start explanation", &self.status),
+            Dialog::Import=>{
+                let form=self.import_form.as_ref()?;
+                let count = form.samples.iter().find(|(id, _)| *id == form.fields[0]).map_or(0, |(_, n)| *n);
+                let mut e=Editor::new("Review molecular import", &format!("{} samples found; {} rows for selected sample. IDs and source are detected. Patient group defaults to sample ID: correct it for repeated patients. Only mark invented data synthetic. No Jev request.", form.samples.len(), count), "Load sample", &self.status);
+                for (label,value) in IMPORT_LABELS.iter().zip(&form.fields) { e=e.field(*label,value); }
+                if form.samples.len() > 1 { e.auxiliary=Some(("Choose sample", KeyEvent::new(KeyCode::F(6), KeyModifiers::NONE))); }
+                e
+            },
+        };
+        Some(editor)
+    }
+    pub(crate) fn focus_editor(&mut self, index: usize) {
+        if let Some(form) = &mut self.import_form {
+            form.active = index.min(IMPORT_LABELS.len() - 1);
+        }
+    }
+    pub(crate) fn import_samples(&self) -> Vec<String> {
+        self.import_form
+            .as_ref()
+            .map(|f| f.samples.iter().map(|(id, _)| id.clone()).collect())
+            .unwrap_or_default()
+    }
+    pub(crate) fn choose_import_sample(&mut self, index: usize) {
+        if let Some(form) = &mut self.import_form
+            && let Some((id, _)) = form.samples.get(index)
+        {
+            if form.fields[1] == form.fields[0] {
+                form.fields[1] = id.clone();
+            }
+            form.fields[0] = id.clone();
+        }
     }
     pub(crate) fn editing(&self) -> bool {
         self.dialog.is_some()
@@ -121,14 +305,6 @@ impl App {
         self.submit(Dialog::Open)?;
         self.input.clear();
         Ok(())
-    }
-    pub(crate) fn load_button(&self, event: MouseEvent) -> bool {
-        !self.editing()
-            && event.kind == MouseEventKind::Down(MouseButton::Left)
-            && self
-                .buttons
-                .iter()
-                .any(|(r, key)| *key == 'l' && r.contains((event.column, event.row).into()))
     }
     pub fn paste(&mut self, text: &str) {
         if self.guide.open {
@@ -162,6 +338,7 @@ impl App {
     }
     pub async fn poll(&mut self) {
         if self.pending.as_ref().is_some_and(|h| h.is_finished()) {
+            let attempt = self.attempt_root.take();
             match self.pending.take().expect("pending").await {
                 Ok(Ok((a, r, path))) => {
                     if let Some(a) = a {
@@ -194,14 +371,13 @@ impl App {
                             )
                         })
                         .unwrap_or_else(|| {
-                            "Offline demo complete. v Results · Tab Charts · s Export Markdown"
-                                .into()
+                            "Offline demo complete. p OncoNPC figure · v Results · s Export".into()
                         });
                 }
                 Ok(Err(e)) => {
                     self.status = e;
                     // Keep a completed inference usable even if explanation/report writing failed.
-                    if let Some(root) = &self.run_root
+                    if let Some(root) = attempt.as_ref().or(self.run_root.as_ref())
                         && let Ok(loaded) = crate::analysis::load(root)
                         && let Ok(saved) = josh_core::molecular::hash(&loaded.features)
                         && let Ok(current) = josh_core::molecular::hash(&self.features)
@@ -209,6 +385,7 @@ impl App {
                     {
                         self.inference = loaded.inference;
                         self.archive = loaded.archive;
+                        self.run_root = Some(root.clone());
                     }
                 }
                 Err(_) => {
@@ -266,8 +443,9 @@ impl App {
                 "deidentified_research" => josh_core::DataClass::DeidentifiedResearch,
                 _ => return Err("data class must be synthetic or deidentified_research".into()),
             };
-            let f = crate::analysis::import_table(
-                &form.path,
+            let f = josh_ingest::molecular::import_selected(
+                std::fs::File::open(&form.path)?,
+                crate::analysis::table_format(&form.path).ok_or("Unsupported table format")?,
                 &josh_ingest::molecular::Options {
                     sample_id: form.fields[0].clone(),
                     patient_group_id: form.fields[1].clone(),
@@ -276,7 +454,8 @@ impl App {
                     reference_build: (!form.fields[4].is_empty()).then(|| form.fields[4].clone()),
                     data_class,
                 },
-            )?;
+            )?
+            .features;
             let mut next = Self::new(None, None)?;
             next.features = f;
             next.loaded = true;
@@ -298,16 +477,30 @@ impl App {
                     if !path.is_file() {
                         return Err("input file does not exist".into());
                     }
+                    let samples = crate::analysis::table_samples(&path)?;
+                    let first = samples[0].0.clone();
+                    let source = path
+                        .file_name()
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                        .into_owned();
                     self.import_form = Some(ImportForm {
                         path,
-                        fields: Default::default(),
+                        samples,
+                        fields: [
+                            first.clone(),
+                            first,
+                            source,
+                            "unspecified".into(),
+                            String::new(),
+                            "deidentified_research".into(),
+                        ],
                         active: 0,
                     });
                     self.import_form.as_mut().expect("form").fields[5] =
                         "deidentified_research".into();
                     self.dialog = Some(Dialog::Import);
-                    self.status =
-                        "Complete the import settings. Only mark invented data synthetic.".into();
+                    self.status = "Review the detected sample and metadata, then Load sample. Data class is never inferred from a file name.".into();
                 } else {
                     *self = Self::new(Some(path), None)?;
                     self.status =
@@ -336,11 +529,14 @@ impl App {
                     };
                     workflows::save_new(&path, &content)?;
                 } else if path.extension().is_some_and(|s| s == "json") {
-                    molecular::write_new(
+                    workflows::save_new(
                         &path,
-                        self.inference
-                            .as_ref()
-                            .ok_or("analyze first; no result to export")?,
+                        &crate::analysis::export_run(
+                            &self.features,
+                            self.inference
+                                .as_ref()
+                                .ok_or("analyze first; no result to export")?,
+                        )?,
                     )?;
                 } else {
                     return Err("use .md for a report or .json for inference; charts require an explanation".into());
@@ -359,7 +555,10 @@ impl App {
                 self.progress = Progress::default();
                 let f = self.features.clone();
                 let t = self.taxonomy.clone();
-                self.run_root = Some(path.clone());
+                // Do not relabel an existing result with a new, possibly failed
+                // run directory. Commit the destination only with its result.
+                self.attempt_root = Some(path.clone());
+                let failed_path = path.clone();
                 self.pending = Some(tokio::spawn(async move {
                     let task = async {
                         let run = molecular::infer_and_save(&path, &f, &t).await?;
@@ -368,8 +567,9 @@ impl App {
                     .await;
                     task.map_err(|e| {
                         format!(
-                            "{}; inspect the run directory before retrying. No automatic retry.",
-                            crate::errors::envelope(&e).error.message
+                            "{}; inspect {} before retrying. No automatic retry. Any displayed result remains from its previous saved run.",
+                            crate::errors::envelope(&e).error.message,
+                            workflows::display_text(&failed_path.display().to_string())
                         )
                     })
                 }));
@@ -542,11 +742,15 @@ impl App {
             KeyCode::PageUp => self.scroll = self.scroll.saturating_sub(10),
             KeyCode::Home => self.scroll = 0,
             KeyCode::Tab | KeyCode::Right => {
-                self.page = (self.page + 1) % 4;
+                self.page = (self.page + 1) % VIEWS.len();
                 self.scroll = 0;
             }
-            KeyCode::Left => {
-                self.page = (self.page + 3) % 4;
+            KeyCode::Left | KeyCode::BackTab => {
+                self.page = (self.page + VIEWS.len() - 1) % VIEWS.len();
+                self.scroll = 0;
+            }
+            KeyCode::Char('p') => {
+                self.page = 4;
                 self.scroll = 0;
             }
             KeyCode::Char('v') => {
@@ -614,9 +818,9 @@ impl App {
         }
         false
     }
-    fn overview(&self) -> String {
+    fn overview(&self, include_input: bool) -> String {
         if !self.loaded {
-            return "START HERE\n\n1. Load data: click Load or press l.\n   Molecular JSON, CSV/TSV, annotated MAF/VCF, or a saved run directory.\n2. Review the evidence and setup checks, then Analyze (a).\n3. Read ranked outcomes and evidence checks under Results (v).\n4. Export a clean Markdown report (s).\n\nTRY IT OFFLINE\nPress d for the bundled analytical demonstration. No key or network is needed.\n\nJEV SETUP\nLive analysis needs TYPESAFE_API_KEY in the launching environment and synthetic data.\nRun josh doctor --format text for local setup status.\n\nExpression/reference data: F3 in this workspace\nHelp and supported data formats: g opens the searchable guide.".into();
+            return "START HERE\n\nChoose Samples for a built-in synthetic input. No file paths or setup needed.\nChoose Browse for your own data or a saved result.\n\n1. Load and review the evidence.\n2. Analyze with Jev, then inspect Data & results.\n3. Export a report; Explain adds the feature-attribution charts.\n\nLoading is local. Live Jev calls require a key and confirmation.\nTools contains the separate offline chart demo; its scores are invented.\nUse Help for supported formats and research limitations.".into();
         }
         let mut lines = vec![];
         if let Some(r) = &self.inference {
@@ -657,7 +861,7 @@ impl App {
                 }
             }
             lines.push(match self.archive.as_ref() {
-                Some(a) if a.result.is_some() => "\nExplanation available: Tab switches charts; t changes target offline.".into(),
+                Some(a) if a.result.is_some() => "\nExplanation available: Results > View selects charts; p opens the paired ring + scatter; t changes target offline.".into(),
                 Some(_) => "\nExplanation incomplete. Inference is available; resume with the CLI options recorded in the checkpoint.".into(),
                 None => "\nExplanation not requested. e runs an optional budgeted explanation.".into(),
             });
@@ -667,21 +871,23 @@ impl App {
         } else {
             lines.push(crate::analysis::readiness(&self.features, &self.taxonomy).text());
         }
-        lines.push(format!(
-            "\nINPUT EVIDENCE · {} · {:?}",
-            self.features.sample_id, self.features.data_class
-        ));
-        for f in &self.features.features {
+        if include_input {
             lines.push(format!(
-                "{} · {} · {} · {}",
-                f.name,
-                f.modality.label(),
-                crate::report::status_label(&f.status),
-                f.value
-                    .as_ref()
-                    .map(|v| v.display())
-                    .unwrap_or_else(|| "Unavailable".into())
+                "\nINPUT EVIDENCE · {} · {:?}",
+                self.features.sample_id, self.features.data_class
             ));
+            for f in &self.features.features {
+                lines.push(format!(
+                    "{} · {} · {} · {}",
+                    f.name,
+                    f.modality.label(),
+                    crate::report::status_label(&f.status),
+                    f.value
+                        .as_ref()
+                        .map(|v| v.display())
+                        .unwrap_or_else(|| "Unavailable".into())
+                ));
+            }
         }
         lines
             .into_iter()
@@ -700,6 +906,15 @@ impl App {
         }
         match event.kind {
             MouseEventKind::Down(MouseButton::Left) => {
+                if let Some((_, page)) = self
+                    .view_hits
+                    .iter()
+                    .find(|(r, _)| r.contains((event.column, event.row).into()))
+                {
+                    self.page = *page;
+                    self.scroll = 0;
+                    return;
+                }
                 if let Some((_, key)) = self
                     .buttons
                     .iter()
@@ -717,11 +932,26 @@ impl App {
         self.draw_area(frame, frame.area(), false);
     }
     pub(crate) fn draw_area(&mut self, frame: &mut Frame, area: Rect, embedded: bool) {
-        let [header, actions, body, footer] = Layout::vertical([
-            Constraint::Length(3),
-            Constraint::Length(3),
+        // The paired figure needs the available height even in an 80x24 workspace.
+        let figure = self.page == 4;
+        let [header, actions, views, body, footer] = Layout::vertical([
+            Constraint::Length(if embedded || figure { 0 } else { 3 }),
+            Constraint::Length(if embedded {
+                0
+            } else if figure {
+                1
+            } else {
+                3
+            }),
+            Constraint::Length(if embedded { 0 } else { 1 }),
             Constraint::Min(1),
-            Constraint::Length(3),
+            Constraint::Length(if embedded {
+                0
+            } else if figure {
+                2
+            } else {
+                3
+            }),
         ])
         .areas(area);
         let subtitle = if !self.loaded {
@@ -767,7 +997,11 @@ impl App {
                 || (matches!(key, 's' | 'v') && self.inference.is_none());
             frame.render_widget(
                 Paragraph::new(label)
-                    .block(Block::default().borders(Borders::ALL))
+                    .block(Block::default().borders(if figure {
+                        Borders::NONE
+                    } else {
+                        Borders::ALL
+                    }))
                     .style(Style::default().fg(if disabled {
                         crate::ui::MUTED
                     } else {
@@ -777,7 +1011,38 @@ impl App {
             );
             self.buttons.push((*rect, key));
         }
-        if self.page > 0 && self.archive.as_ref().is_some_and(|a| a.result.is_some()) {
+        self.view_hits.clear();
+        for (page, rect) in Layout::horizontal([Constraint::Ratio(1, 5); 5])
+            .split(views)
+            .iter()
+            .enumerate()
+        {
+            frame.render_widget(
+                Paragraph::new(VIEWS[page])
+                    .centered()
+                    .style(if self.page == page {
+                        Style::default()
+                            .fg(crate::ui::BG)
+                            .bg(crate::ui::ACCENT)
+                            .bold()
+                    } else {
+                        Style::default().fg(crate::ui::TEXT).bg(crate::ui::RAISED)
+                    }),
+                *rect,
+            );
+            self.view_hits.push((*rect, page));
+        }
+        if figure {
+            if let Some(a) = self.archive.as_ref().filter(|a| a.result.is_some()) {
+                crate::molecular_charts::draw_onconpc(frame, body, a, self.selected);
+            } else {
+                frame.render_widget(
+                    Paragraph::new("OncoNPC-inspired feature explanation\n\nLoad a completed explanation or press d for the offline demo.\nFor a saved Jev inference, e opens the explanation budget.\n\nThe ring and scatter need measured attributions; inference scores alone do not supply them.")
+                        .wrap(Wrap { trim: false }).block(crate::ui::panel(" OncoNPC · ring + scatter ")),
+                    body,
+                );
+            }
+        } else if self.page > 0 && self.archive.as_ref().is_some_and(|a| a.result.is_some()) {
             crate::molecular_charts::draw(
                 frame,
                 body,
@@ -786,7 +1051,7 @@ impl App {
                 self.page - 1,
             );
         } else {
-            let content = self.overview();
+            let content = self.overview(!embedded);
             frame.render_widget(
                 Paragraph::new(content)
                     .scroll((self.scroll, 0))
@@ -794,7 +1059,7 @@ impl App {
                     .block(
                         Block::default()
                             .borders(Borders::ALL)
-                            .title(" Data / results · Up/Down scroll · Tab charts "),
+                            .title(" Results · Up/Down scroll "),
                     ),
                 body,
             );
@@ -810,8 +1075,17 @@ impl App {
         } else {
             self.status.clone()
         };
-        frame.render_widget(Paragraph::new(format!("{}\nl Load · a Analyze · v Results · s Markdown · d Demo · e Explain · g Guide · q Quit", workflows::display_text(&status))).wrap(Wrap {trim:false}).style(Style::default().fg(crate::ui::MUTED)),footer);
-        if let Some(dialog) = self.dialog {
+        let hints = if figure {
+            "↑/↓ Select · t Target · Tab Views · s Export · e Explain · F1 Guide"
+        } else {
+            "l Load · a Analyze · v Results · p OncoNPC · s Export · d Demo · e Explain · g Guide"
+        };
+        frame.render_widget(
+            Paragraph::new(format!("{}\n{hints}", workflows::display_text(&status)))
+                .style(Style::default().fg(crate::ui::MUTED)),
+            footer,
+        );
+        if !embedded && let Some(dialog) = self.dialog {
             let width = area.width.saturating_sub(2).min(100);
             let height = (if matches!(dialog, Dialog::Import) {
                 20
@@ -895,5 +1169,46 @@ impl Drop for App {
         if let Some(job) = self.pending.take() {
             job.abort();
         }
+    }
+}
+
+#[cfg(test)]
+mod session_tests {
+    use super::*;
+    #[tokio::test]
+    async fn failed_rerun_cannot_relabel_the_previous_result_with_a_new_directory() {
+        let tmp = tempfile::tempdir().unwrap();
+        let saved = tmp.path().join("completed");
+        let features = molecular::example();
+        let taxonomy = josh_core::molecular::onconpc_taxonomy();
+        let request = josh_core::molecular::prepare(&features, &taxonomy).unwrap();
+        let inference = josh_core::molecular::interpret(
+            &features,
+            &taxonomy,
+            molecular::demo_response(&request),
+            Source::Mock,
+        )
+        .unwrap();
+        molecular::save_run(&saved, &features, &inference).unwrap();
+        let mut app = App::new(Some(saved.clone()), None).unwrap();
+        app.attempt_root = Some(tmp.path().join("failed"));
+        app.pending = Some(tokio::spawn(async {
+            Err("Failed new attempt; previous saved result retained.".into())
+        }));
+        for _ in 0..100 {
+            app.poll().await;
+            if !app.busy() {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+        assert!(!app.busy());
+        assert!(app.has_result());
+        assert_eq!(app.run_root, Some(saved));
+        assert_eq!(
+            app.inference.as_ref().unwrap().request_sha256,
+            inference.request_sha256
+        );
+        assert!(app.attempt_root.is_none());
     }
 }

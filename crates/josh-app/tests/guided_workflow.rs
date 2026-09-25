@@ -110,6 +110,20 @@ async fn imported_data_runs_once_archives_reopens_and_exports_without_a_second_c
         std::fs::read_to_string(&export).unwrap().trim(),
         saved.trim()
     );
+    // New inference-only JSON exports carry their evidence and are portable.
+    let portable = temp.path().join("portable.json");
+    key(&mut app, KeyCode::Char('s'));
+    enter(&mut app, portable.to_str().unwrap());
+    let reopened = analysis::load(&portable).unwrap();
+    assert_eq!(reopened.features.sample_id, f.sample_id);
+    assert_eq!(reopened.inference.unwrap().request_sha256, r.request_sha256);
+    assert!(reopened.archive.is_none());
+    let mut damaged: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&portable).unwrap()).unwrap();
+    damaged["features"]["sample_id"] = "different-sample".into();
+    std::fs::write(&portable, serde_json::to_vec(&damaged).unwrap()).unwrap();
+    assert!(analysis::load(&portable).is_err());
+    assert_eq!(transport.calls, 1);
     // Loading new input invalidates the prior inference and export action.
     key(&mut app, KeyCode::Char('l'));
     enter(
@@ -180,6 +194,10 @@ fn table_form_preserves_errors_requires_explicit_metadata_and_never_sends_on_loa
     assert!(
         render(&mut app).contains("Import settings") || render(&mut app).contains("Import · Tab")
     );
+    // The new guided importer detects the sample; explicitly invalidate it to
+    // check the same failed-import preservation behavior.
+    clear(&mut app);
+    app.paste("not-in-this-file");
     key(&mut app, KeyCode::Enter);
     assert!(render(&mut app).contains("Edit settings"));
     for (i, value) in [

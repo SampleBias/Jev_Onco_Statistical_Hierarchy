@@ -197,7 +197,24 @@ fn row(r: Row, o: &Options, hash: &str, record: usize) -> Result<Feature, Error>
             .collect(),
     })
 }
-pub fn import(mut reader: impl Read, format: Format, options: &Options) -> Result<Report, Error> {
+pub fn import(reader: impl Read, format: Format, options: &Options) -> Result<Report, Error> {
+    import_inner(reader, format, options, false)
+}
+/// Explicit sample selection for the guided importer. Provenance hashes the
+/// original whole file and keeps original record numbers, not a rewritten subset.
+pub fn import_selected(
+    reader: impl Read,
+    format: Format,
+    options: &Options,
+) -> Result<Report, Error> {
+    import_inner(reader, format, options, true)
+}
+fn import_inner(
+    mut reader: impl Read,
+    format: Format,
+    options: &Options,
+    selected_only: bool,
+) -> Result<Report, Error> {
     let mut bytes = Vec::new();
     reader
         .by_ref()
@@ -223,15 +240,14 @@ pub fn import(mut reader: impl Read, format: Format, options: &Options) -> Resul
                 return Err(Error::Format);
             }
             for (i, record) in csv.deserialize::<Row>().enumerate() {
-                if i >= MAX_FEATURES {
+                let record = record.map_err(|_| Error::Format)?;
+                if selected_only && record.sample_id != options.sample_id {
+                    continue;
+                }
+                if features.len() >= MAX_FEATURES {
                     return Err(Error::Limit);
                 }
-                features.push(row(
-                    record.map_err(|_| Error::Format)?,
-                    options,
-                    &hash,
-                    i + 2,
-                )?);
+                features.push(row(record, options, &hash, i + 2)?);
             }
         }
         Format::Maf => {
@@ -244,12 +260,15 @@ pub fn import(mut reader: impl Read, format: Format, options: &Options) -> Resul
                 return Err(Error::Format);
             }
             for (i, record) in csv.records().enumerate() {
-                if i >= MAX_FEATURES {
-                    return Err(Error::Limit);
-                }
                 let record = record.map_err(|_| Error::Format)?;
                 let cols: BTreeMap<_, _> = headers.iter().zip(record.iter()).collect();
                 let get = |k| cols.get(k).copied().ok_or(Error::Format);
+                if selected_only && get("Tumor_Sample_Barcode")? != options.sample_id {
+                    continue;
+                }
+                if features.len() >= MAX_FEATURES {
+                    return Err(Error::Limit);
+                }
                 let build = match get("NCBI_Build")? {
                     "37" | "GRCh37" => "GRCh37",
                     "38" | "GRCh38" => "GRCh38",

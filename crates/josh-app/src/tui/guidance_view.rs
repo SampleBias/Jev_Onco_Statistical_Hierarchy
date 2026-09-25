@@ -27,13 +27,19 @@ pub fn draw(
     case: &Case,
     selected: &mut u16,
     detail_scroll: &mut u16,
+    read_only: bool,
 ) {
     let Ok(report) = guidance::evaluate(case) else {
         return;
     };
     *selected = (*selected as usize).min(report.items.len().saturating_sub(1)) as u16;
     let [banner, body] = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).areas(area);
-    frame.render_widget(Paragraph::new(format!("NICE CG104 · {} · {}\nClinical signoff pending · selected recommendations · local review only\n↑/↓ select · ←/→ detail scroll · a review · s export · 8 history", report.ruleset_version, report.scope))
+    let hint = if read_only {
+        "Read-only legacy record · ↑/↓ select · ←/→ scroll · Menu for history"
+    } else {
+        "↑/↓ select · ←/→ detail scroll · a review · s export · 8 history"
+    };
+    frame.render_widget(Paragraph::new(format!("NICE CG104 · {} · {}\nClinical signoff pending · selected recommendations · local review only\n{hint}", report.ruleset_version, report.scope))
         .style(Style::default().fg(MUTED)), banner);
     if body.height < 5 {
         return;

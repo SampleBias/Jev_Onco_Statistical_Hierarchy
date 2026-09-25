@@ -5,7 +5,7 @@ use crate::{
 };
 use josh_core::{DataClass, molecular::*};
 use josh_explain::Archive;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
 fn invalid(message: &'static str) -> AppError {
@@ -17,6 +17,26 @@ pub struct Loaded {
     pub inference: Option<InferenceRun>,
     pub archive: Option<Archive>,
     pub root: Option<PathBuf>,
+}
+
+/// Reopenable inference-only export; legacy bare inference files still require
+/// their features.json sidecar. An absent explanation is not a fake checkpoint.
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RunExport {
+    pub kind: String,
+    pub schema_version: u32,
+    pub features: FeatureSet,
+    pub inference: InferenceRun,
+}
+pub fn export_run(features: &FeatureSet, inference: &InferenceRun) -> Result<String, AppError> {
+    inference.verify(features)?;
+    workflows::pretty(&RunExport {
+        kind: "josh_sample_run".into(),
+        schema_version: 1,
+        features: features.clone(),
+        inference: inference.clone(),
+    })
 }
 
 /// A directory can contain inference alone or an optional complete/incomplete explanation.
@@ -54,6 +74,19 @@ pub fn load(path: &Path) -> Result<Loaded, AppError> {
         });
     }
     let value: serde_json::Value = workflows::read_json(path, 64 * 1024 * 1024)?;
+    if value.get("kind").and_then(|v| v.as_str()) == Some("josh_sample_run") {
+        let run: RunExport = serde_json::from_value(value)?;
+        if run.schema_version != 1 {
+            return Err(invalid("unsupported sample run schema"));
+        }
+        run.inference.verify(&run.features)?;
+        return Ok(Loaded {
+            features: run.features,
+            inference: Some(run.inference),
+            archive: None,
+            root: None,
+        });
+    }
     if value.get("inference").is_some() {
         let a = molecular::load_archive(path)?;
         Ok(Loaded {
@@ -115,6 +148,76 @@ pub fn import_table(
     let format =
         table_format(path).ok_or_else(|| invalid("supported tables: .csv, .tsv, .maf or .vcf"))?;
     Ok(josh_ingest::molecular::import(std::fs::File::open(path)?, format, options)?.features)
+}
+
+/// Bounded, local sample discovery. This is not biological validation; the strict
+/// importer validates the selected sample before it can become the active input.
+pub fn table_samples(path: &Path) -> Result<Vec<(String, usize)>, AppError> {
+    use josh_ingest::molecular::{Format, MAX_BYTES};
+    use std::io::Read;
+    let format = table_format(path).ok_or("Unsupported table format")?;
+    let mut bytes = Vec::new();
+    std::fs::File::open(path)?
+        .take(MAX_BYTES as u64 + 1)
+        .read_to_end(&mut bytes)?;
+    if bytes.len() > MAX_BYTES {
+        return Err("Table exceeds the 16 MiB import limit.".into());
+    }
+    let mut counts = std::collections::BTreeMap::new();
+    if matches!(format, Format::Vcf) {
+        let source = std::str::from_utf8(&bytes)?;
+        let header = source
+            .lines()
+            .find(|l| l.starts_with("#CHROM\t"))
+            .ok_or("VCF header missing.")?;
+        let columns: Vec<_> = header.split('\t').collect();
+        if columns.len() != 10 {
+            return Err(
+                "Only annotated single-sample VCF is supported. Export one sample first.".into(),
+            );
+        }
+        counts.insert(
+            columns[9].to_owned(),
+            source
+                .lines()
+                .filter(|l| !l.starts_with('#') && !l.is_empty())
+                .count(),
+        );
+    } else {
+        let mut reader = csv::ReaderBuilder::new()
+            .delimiter(if matches!(format, Format::Csv) {
+                b','
+            } else {
+                b'\t'
+            })
+            .comment(matches!(format, Format::Maf).then_some(b'#'))
+            .from_reader(bytes.as_slice());
+        let column = if matches!(format, Format::Maf) {
+            "Tumor_Sample_Barcode"
+        } else {
+            "sample_id"
+        };
+        let index = reader
+            .headers()?
+            .iter()
+            .position(|h| h == column)
+            .ok_or("No sample identifier column found. Check the import format in Help.")?;
+        for row in reader.records() {
+            let row = row?;
+            let id = row
+                .get(index)
+                .filter(|s| !s.trim().is_empty())
+                .ok_or("A row has no sample identifier.")?;
+            *counts.entry(id.to_owned()).or_insert(0) += 1;
+        }
+    }
+    if counts.is_empty() {
+        return Err("No sample identifiers found in this table.".into());
+    }
+    if counts.len() > 1000 {
+        return Err("Open a table with at most 1,000 samples in the workbench.".into());
+    }
+    Ok(counts.into_iter().collect())
 }
 
 #[derive(Serialize)]

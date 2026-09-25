@@ -1,115 +1,80 @@
-# JOSH compared with OncoNPC
+# JOSH compared with OncoNPC — current objective audit
 
-Assessed September 24, 2026 against the current 0.8.0 source and its recorded
-validation. This is a code and evidence review, not a new cancer benchmark.
-The requested reference is the [2022 version-1 preprint](https://www.medrxiv.org/content/10.1101/2022.12.22.22283696v1.full).
-The [source register](../SOURCES.md) also records the published study and correction.
+Assessed 2026-09-25 against JOSH 0.8.0 and the
+[published article](https://pmc.ncbi.nlm.nih.gov/articles/PMC11484892/) with its
+[publisher correction](https://www.nature.com/articles/s41591-023-02693-x).
+This replaces the September 24 pre-build assessment. The
+[cohort delivery report](../reports/cohort-observatory.md) records what changed.
+The [research guide](../references/ONCONPC_GUIDE.md) explains the paper relationship,
+terminal figure and prioritized development direction.
 
-## Implementation update — September 24, 2026
+**We do not meet all of the paper's objectives.** Much of the research workflow
+is implemented. Cancer-specific predictive equivalence and clinical utility remain
+unmeasured. No new real-data experiment or live Jev call was performed for this audit.
 
-The assessment below is the **pre-build baseline**, retained as a dated comparison.
-Cohort Observatory now adds the three terminal plot types, patient-bootstrap
-classification intervals, threshold F1, a survival contract, Kaplan–Meier/log-rank,
-adjusted Cox and supplied-propensity IPTW diagnostics. See the
-[implementation report](../reports/cohort-observatory.md) and
-[Cohort Guide](../data/COHORT_GUIDE.md) for scope and limitations.
-The baseline 3/10 cohort engineering rating is no longer a current-state rating.
-Predictive equivalence remains **unmeasured**; no representative cancer benchmark
-or clinical validation was performed by implementing these tools.
+“Implemented” below means software exists, not that the scientific objective is
+validated. “Partial” identifies missing workflow or methods. “Missing” means the
+required analysis/evidence is not supplied by the current application.
 
-## Baseline assessment
+## Objective-by-objective assessment
 
-JOSH can execute a molecular inference workflow through Jev and explain its
-outputs. Equivalence to OncoNPC's predictive performance has not been measured.
-Rust and Ratatui provide the application and graphics; changing the classifier
-requires an independent assessment on known-origin tumors.
-
-These ratings are engineering judgments, not accuracy estimates or percentages
-of a measured project plan:
-
-| Dimension | Rating | Basis |
+| Research objective | Current JOSH evidence | Verdict and what remains |
 | --- | --- | --- |
-| Research application workflow | 7/10 | Import, validation, inference, archives, explanations, terminal charts and exports work; representative assay/cohort integration remains incomplete. |
-| Cohort study functionality | 3/10 | Frozen-prediction scoring and a bounded runner exist; the screenshot's plots, survival data model and outcome analyses are missing. |
-| Demonstrated predictive equivalence | Unmeasured | No real cancer benchmark is recorded; a numerical cancer-accuracy rating would be invented. |
+| Genomic origin classification across 22 cancer types | [Molecular core](../../crates/josh-core/src/molecular.rs), [importer](../../crates/josh-ingest/src/molecular.rs), [Jev transport](../../crates/josh-jev/src/lib.rs): mutation, CNA, signature and demographic features; typed taxonomy; unresolved outcomes | **Partial.** Jev inference works, but assay/preprocessing equivalence and representative cancer accuracy are unmeasured. Live inputs remain synthetic-only. Experimental parents are not the corrected paper grouping. |
+| Held-out classification and confidence/coverage assessment | [Evaluation](../../crates/josh-features/src/evaluation.rs), [study statistics](../../crates/josh-features/src/study.rs), F5: confusion, precision/recall, macro/weighted F1, top-1/top-3, threshold F1/coverage and patient-bootstrap intervals | **Tooling implemented; objective unvalidated.** No representative frozen test results or same-patient comparator benchmark. Reliability/Brier/log loss do not fit a calibration model. |
+| Generalization across centers, panels and populations; excluded cancer types | Partition checks, explicit unknown/other outcomes, failure accounting and archived model/prompt/input provenance | **Partial.** No dedicated center/panel/time/ancestry stratification report, external validation, validated OOD detector or measured subgroup performance. Low model confidence is not proof of an unseen cancer type. |
+| Feature robustness and feature selection | [Attribution engine](../../crates/josh-explain/src/lib.rs), grouped perturbations, feature QC and signature fitting | **Missing study.** No frozen feature-ablation sweep with held-out performance and uncertainty. Perturbing an input for explanation is not a population-level robustness experiment. |
+| Individual explanations and cohort-level biological patterns | Native exact/permutation Shapley, stability comparison, linked ring/scatter/waterfall, raw values and exports | **Individual tooling implemented; cohort objective partial.** No aggregate per-class attribution/carrier-rate study or independently verified biological concordance. Jev explanations and the paper's TreeSHAP use different models/semantics. |
+| CUP assignment and independent pathology agreement | Molecular archives and a separate Clinical review workflow | **Partial.** No representative CUP cohort, adjudicated pathology comparison, eligible-patient selection workflow or validated sample-to-clinical linkage. Merely switching screens does not link patients. |
+| Orthogonal germline polygenic-risk validation | No PRS input/analysis workflow | **Missing.** Requires appropriate germline data, reference weights, ancestry-aware processing, enrichment/control tests and independent validation. Somatic explanation scores cannot substitute for PRS. |
+| Prognostic stratification and clinical-outcome comparison | [Survival engine](../../crates/josh-features/src/survival.rs): delayed-entry Kaplan–Meier, censoring, risk counts, unweighted intervals/log-rank and F5 type curves | **Partial.** No real outcome validation, published CKP-vs-CUP prognostic comparison or prognostic somatic-feature analysis. Endpoint/selection review and independent numerical validation remain necessary. |
+| Treatment-concordance associations with adjustment | Reviewed concordance inputs, delayed entry, adjusted Cox, supplied-propensity IPTW curves and balance/overlap/effective-N diagnostics | **Partial, not method parity.** No cross-fitted propensity estimation, weighted uncertainty/log-rank or PH diagnostics. Cox permits eight numeric covariates, insufficient for the full published adjustment after categorical expansion without redesign. No reproduced real cohort effect. |
+| Actionable alterations and genomically guided treatment opportunities | Variant/CNA observations and source-linked clinical context | **Missing.** No OncoKB-style, versioned cancer-specific variant/fusion/therapy matching, evidence-level contract, actionability cohort analysis or measured increase in eligible therapies. |
+| Reproducible research delivery | Rust, Ratatui, Jev API, frozen archives/hashes, separate labels, request budgets, offline replay, JSON/CSV/SVG/Markdown and searchable references | **Engineering delivered.** Imported source declarations/hashes do not authenticate predictions. Real-data permissions, representative cohorts and reproducible external comparisons are still needed. |
 
-The preprint reports weighted F1 of 0.784 on 7,289 held-out tumors. At a maximum
-class probability threshold of 0.9, F1 increases to 0.942 while retaining 65.2%
-of the test tumors. The latter is not 94.2% accuracy on all CUP patients.
-[Source: version-1 results](https://www.medrxiv.org/content/10.1101/2022.12.22.22283696v1.full).
+Source: published Results, Methods and Extended Data, with implementation checked
+in the linked Rust modules. The native
+[cohort contract and method limits](../data/COHORT_GUIDE.md) specify current estimator
+assumptions and unavailable analyses.
 
-## What already exists, and where it falls short
+## Differences that materially affect comparison
 
-| Capability | Evidence in JOSH | Remaining gap |
-| --- | --- | --- |
-| Molecular inputs | [Molecular importer](../../crates/josh-ingest/src/molecular.rs): canonical tables, annotated MAF/VCF subsets, mutation/CNA/signature/demographic features | No established equivalence to the paper's panel-specific preprocessing; reviewed coverage, annotation, missingness and cohort adapters are needed. |
-| Cancer labels | [Molecular core](../../crates/josh-core/src/molecular.rs): 22 detailed experimental classes, plus insufficient-evidence and other-origin outcomes | Shared class names do not establish equivalent predictions; parent groups and extra outcomes need a frozen benchmark mapping. The legacy Clinical path has a different taxonomy. |
-| Origin prediction | The same core prepares typed Jev questions, validates responses and applies abstention rules | No locally trained OncoNPC model or cancer-specific Jev validation; raw scores and thresholds are uncalibrated. |
-| Signature processing | [SBS96/NNLS implementation](../../crates/josh-features/src/signatures.rs), imported signatures and indexed FASTA handling | External catalogue/genome assets, assay suitability and uncertainty remain unvalidated. NNLS fitting is not evidence of matching the original preprocessing. |
-| Explanations | [Rust attribution engine](../../crates/josh-explain/src/lib.rs) and [terminal/SVG charts](../../crates/josh-app/src/molecular_charts.rs) | Explanations describe Jev outputs; biological correctness does not follow from their numerical reconciliation. Provider variation and background sensitivity need broader measurement. |
-| Classification evaluation | [Evaluator](../../crates/josh-features/src/evaluation.rs): confusion counts, per-class precision/recall, macro/weighted F1, top-1/top-3, Brier, log loss, ECE/reliability and coverage/error | No real cohort results, confidence intervals, fitted calibration, or institution/panel/time validation. Threshold-specific weighted F1 is not currently reported. |
-| Cohort execution | [Runner](../../crates/josh-app/src/cohort.rs): separate labels, patient partition checks, budgets and resumable archives | Live execution is synthetic-only and limited to 1,000 cases per manifest. Research-data use and larger-scale operation need an explicit supported workflow. |
-| Clinical outcomes | Clinical review prompts and records exist | No survival endpoint/event/censoring schema, Kaplan–Meier estimator, Cox model, propensity weighting, treatment-concordance study or germline-risk validation. |
+- The paper's published numbers belong to its trained XGBoost classifier.
+  They cannot be transferred to Jev by matching labels, drawing its figures, or
+  substituting a raw score threshold. No JOSH cancer-accuracy percentage is justified.
+- The paper uses stabilized IPTW and cross-fitted propensities. JOSH currently
+  consumes supplied scores and uses unstabilized ATE weights. A constant groupwise
+  weight factor can cancel in a group's KM ratio, but that does not establish
+  equivalent diagnostics, uncertainty, tests or causal interpretation.
+- Current Cox fitting uses Breslow ties and model-based Wald intervals. Its
+  eight-covariate limit, numeric encoding requirements and lack of PH checks need
+  explicit reconciliation with a reviewed replication protocol.
+- The paper's treatment evidence is retrospective and subject to confounding;
+  it is not an individually validated drug-response predictor. JOSH does not
+  presently supply such a predictor either.
+- JOSH's 512-feature and 32-KiB request limits require a reviewed panel adapter.
+  Complete the input/aggregation protocol before comparison; do not silently
+  remove features. The bounded live cohort runner permits 1,000 cases per manifest;
+  the offline study evaluator supports up to 100,000 records.
+- Shapley sampling error excludes provider variability and background uncertainty.
+  The [small historical live check](../reports/0.7.0-molecular-validation.md)
+  verified API behavior on invented data; it did not estimate cancer performance.
 
-The original classifier learns from somatic mutations, copy-number changes,
-mutation signatures, age and sex using XGBoost. Jev consumes a different feature
-representation through a hosted model. The authors provide a preprocessing and
-model repository, which is a useful external comparator but is not installed in
-JOSH. [Source: original implementation](https://github.com/itmoon7/onconpc).
+## Acceptance gates and recommended order
 
-The recorded [JOSH validation](../reports/0.7.0-molecular-validation.md) used invented
-inputs. A live synthetic case abstained, and repeated full-input scores varied
-from 0.61 to 0.63. These observations establish API behavior and some variability;
-they cannot estimate cancer accuracy. A successful build or explanation test has
-the same limitation.
+1. **Eligible, frozen benchmark:** reviewed molecular representation and corrected
+   class mapping; disjoint patient partitions; documented model/prompt versions;
+   representative known-primary test data and frozen comparator outputs.
+2. **Measured inference quality:** locked thresholds, F1/coverage and intervals,
+   separate calibration fit, center/panel/population/OOD tests, repeatability and
+   prospectively specified modality/feature ablations. Report failures explicitly.
+3. **Independent CUP evidence:** adjudicated pathology agreement, aggregate
+   explanation analysis and germline-risk validation with appropriate controls.
+4. **Outcome and actionability evidence:** validated survival estimators, reviewed
+   cohort selection/time origins and adjustment, missing weighting methods, and
+   versioned therapeutic evidence. Evaluate external replication before inferring
+   clinical utility.
 
-Operational gaps also matter: molecular requests permit at most 512 features and
-32 KiB. A study-scale feature adapter must be checked against those limits;
-silently dropping genes to make a request fit would change the experiment. Extra
-IHC, histology or expression inputs should be evaluated as separate extensions
-when comparing a genomic-only protocol.
-
-## The three requested visual references
-
-The supplied screenshot represents cohort evaluation. Current molecular charts
-explain one sample. Both views are useful, but they answer different questions.
-
-| Screenshot panel | Current status | Data and implementation needed |
-| --- | --- | --- |
-| A: confusion heatmap and recall strip | Confusion counts and recall exist offline; no cohort heatmap in Ratatui | Load an evaluation report; render all truth/prediction classes, sample counts and recall. Label count versus row/column normalization, expose failure/unknown/other outcomes, and show the exact class mapping and cohort. |
-| B: survival by predicted type | Missing | Patient-level time origin, entry time where needed, event/censoring indicator, last follow-up and frozen predicted group; Kaplan–Meier curves with risk counts and uncertainty. |
-| C: survival by treatment concordance | Missing | Reviewed treatment/concordance labels, treatment and sequencing dates, prognostic covariates and endpoints; adjusted analyses with assumptions and diagnostics. A simple pair of unadjusted lines does not reproduce this panel. |
-
-The study used Cox adjustment and inverse-probability-weighted Kaplan–Meier
-analyses for treatment comparisons. Its retrospective associations do not prove
-that assigning treatment using JOSH improves survival.
-[Source: study methods and discussion](https://www.medrxiv.org/content/10.1101/2022.12.22.22283696v1.full).
-
-The preprint screenshot uses ten broad cancer groups; the published version uses
-thirteen. The [publisher correction](https://www.nature.com/articles/s41591-023-02693-x)
-changes group assignments and supplementary-data ordering. JOSH's experimental
-parent labels should not silently stand in for either mapping. Paper curves can
-be cited as external context, but JOSH result plots must derive from its own
-explicitly identified cohort and archived predictions.
-
-## Recommended order of work
-
-1. Freeze a Jev evaluation protocol: feature processing, genomic-only input set,
-   taxonomy and broad-group mapping, model/prompt versions, patient partitions,
-   endpoints and score thresholds. Select a permitted labeled known-primary
-   cohort; keep truth labels outside provider state and threshold tuning outside
-   the test partition. Resolve research-data eligibility before any live requests.
-2. Complete the existing evaluation view: confusion heatmap, per-class metrics,
-   coverage versus error, reliability, threshold-specific F1 and patient-bootstrap
-   intervals. Support saved reports offline and compare models on the same cases.
-   Until representative data are available, synthetic plots verify rendering only.
-3. Run a frozen benchmark, compare against an appropriate baseline, audit errors,
-   and assess institution/panel shift, abstention and repeatability. Fit any
-   calibration on a separate partition and evaluate it on the untouched test set.
-4. Add patient-level outcome import and validated survival methods. Review time
-   origins, censoring, delayed entry, repeated tumor samples, concordance labels
-   and confounders before interpreting the two survival views.
-
-The immediate milestone is a credible estimate of Jev's origin-prediction
-performance. Additional graphs will make that evidence understandable; their
-presence alone cannot establish predictive parity.
+All four gates remain scientifically open. The current change makes the requested
+individual explanation figure discoverable and improves the reference/assessment
+workflow; it does not claim completion of these research milestones.

@@ -1,4 +1,89 @@
-# Build status — 2026-09-24
+# Build status — 2026-09-25
+
+## Sample-centered workbench refactor
+
+The current interface supersedes the four-section navigation described below.
+It starts empty, with Data / Results, Open, a contextual next action and Menu.
+Cohort studies is a secondary workspace. Session ownership now binds evidence,
+results and expression preparation to one active input. Previous samples and
+invalidated expression runs remain explicitly separate in session history.
+
+Molecular tables discover IDs and support selected-sample CSV/TSV/MAF imports;
+VCF remains the supported annotated single-sample subset. Failed/cancelled imports
+preserve the active sample. Expression import has five basic fields plus Advanced
+settings. Inference-only JSON exports now include their features for reopening.
+Legacy archives remain readable; clinical cases retain read-only records and charts,
+without a separate live classifier or new guideline-review workflow in the main TUI.
+All molecular/cohort charts, CLI/API contracts and the pinned Jev model are retained.
+
+Verification: **222 workspace tests passed**; workspace build, formatting, diff
+checks and all-target clippy with warnings denied passed. A real PTY confirmed
+sample loading, request-confirmation cancellation and terminal restoration without
+provider calls. Scope and remaining boundaries are in the
+[delivery report](reports/sample-workbench.md).
+The following sections describe earlier increments, not current navigation.
+
+
+## 0.8.0 — unified workbench UX
+
+One shared action bar, navigation, focus model and form renderer now serve Analysis,
+Expression, Clinical and Cohort. Main controls and form fields/buttons are clickable;
+Tab/Shift-Tab moves focus and Enter activates it. Less-frequent actions are in Tools.
+The new browser supports directories, supported files, recognized run/bundle folders,
+filtering, hidden-file visibility, quoted/spaced paths, home-directory shorthand and
+session-only recent paths. Reference releases use the same browser and loader.
+
+Samples exposes all five synthetic molecular inputs directly from the binary,
+using the real importer; no generated files or metadata forms are needed. Loading
+does not call Jev. The fixed analytical chart demo is separate and asks before
+replacing an input. Confirmation-only forms focus Cancel by default. Existing
+validation, synthetic-only live inference, protected exports, job lifecycle and
+cross-section unsaved-review safeguards remain in force.
+
+Removed UI-only redundancy: repeated section headers/action bars, the placeholder
+Models and Projects pages, and the duplicate Clinical Help tab in normal navigation.
+Model identity remains in the common header; provenance stays with the data; shared
+Help remains searchable. All working analytical methods, visualizations and CLI
+workflows are retained. Tab now focuses controls rather than immediately switching
+views; click a view or use Tab then Enter. F2–F5 and existing analysis shortcuts remain.
+
+Verification includes bidirectional focus traversal, mouse/keyboard sample loading,
+form submission/export, background-click isolation, failed-load state preservation,
+asynchronous error visibility, form focus after section switches, demo replacement
+confirmation, Unicode and tiny layouts. Actual Ratatui screens were rendered for
+review at 120×40, 80×24 and 60×20, with the paired figure also checked at 160×50
+and 60×55. No dependencies, model changes or live provider requests were introduced.
+
+Final verification: **219 workspace tests passed**; locked workspace build,
+formatting, diff checks and all-target clippy with warnings denied passed. The two
+transport tests used localhost mock servers with sandbox approval. A real PTY smoke
+check verified mouse-opened Samples, loading without paths, the one-request
+confirmation, cancellation without sending, and terminal/mouse restoration on exit.
+
+## 0.8.0 — discoverable OncoNPC explanation and research guide
+
+Analysis adds a dedicated **OncoNPC [p]** view with linked category/feature rings,
+signed contribution bubbles, feature selection, raw values and numerical
+reconciliation. A clickable view strip and p shortcut make it accessible without
+discovering the old Tab sequence. The paired figure uses compact chrome at 80×24,
+stacks on tall narrow screens and falls back to a table on very small screens.
+Existing Results, Ring, Scatter, Waterfall, Data, Clinical and Cohort views remain.
+
+The published paper was already in Sources. Its new
+[research guide](references/ONCONPC_GUIDE.md),
+[current objective audit](assessment/ONCONPC_PARITY.md) and source register are
+compiled into the searchable offline help. The audit supersedes the pre-build
+assessment and identifies missing predictive validation, PRS, actionability and
+treatment-analysis methods. The roadmap now points to that research direction.
+
+Verification covers keyboard/mouse access through the shared workspace, preserved
+view order and section state, resize down to 1×1, offline retargeting, unchanged
+archives/exports, zero contributions, selection beyond the top ten and offline
+reference search. Actual terminal buffers were rendered for visual review at
+160×50, 120×40, 80×24 and 60×55. No dependencies, inference model changes, live
+provider calls or real patient data were introduced.
+
+Jev's cancer-prediction performance and treatment utility remain unmeasured.
 
 ## 0.8.0 — guided Jev analysis and Markdown reports
 

@@ -7,7 +7,7 @@ use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::{Color, Style},
     symbols::Marker,
-    text::Line,
+    text::{Line, Span},
     widgets::{
         Block, Borders, Cell, Paragraph, Row, Table, Wrap,
         canvas::{Canvas, Line as CanvasLine, Points},
@@ -338,6 +338,462 @@ pub fn draw_table(frame: &mut Frame, area: Rect, a: &Archive, selected: usize) {
     .block(panel(" Contributions · arrows select "));
     frame.render_widget(table, area);
 }
+
+/// A dedicated paired figure, independent of the older chart/table layout.
+/// Geometry always represents this archive's probability-space Shapley game.
+pub fn draw_onconpc(frame: &mut Frame, area: Rect, a: &Archive, selected: usize) {
+    let Some(result) = &a.result else { return };
+    let rows = ranked(a);
+    let selected = selected.min(rows.len().saturating_sub(1));
+    let compact = area.height < 22;
+    let [heading, plots, detail] = Layout::vertical([
+        Constraint::Length(3),
+        Constraint::Min(3),
+        Constraint::Length(if compact { 2 } else { 6 }),
+    ])
+    .areas(area);
+    frame.render_widget(
+        Paragraph::new(vec![
+            Line::styled(
+                format!(
+                    "Explain: {} ({}) · raw score {:.3}",
+                    safe(crate::report::class_label(
+                        &a.inference,
+                        &result.target_class
+                    )),
+                    safe(&result.target_class),
+                    result.full_probability
+                ),
+                Style::default().fg(crate::ui::TEXT).bold(),
+            ),
+            Line::styled(
+                format!(
+                    "{} · {}",
+                    crate::report::source_label(a.inference.source),
+                    if a.inference.status == "abstained" {
+                        "ABSTAINED"
+                    } else {
+                        "REVIEW REQUIRED"
+                    }
+                ),
+                Style::default().fg(crate::ui::GOLD),
+            ),
+            Line::styled(
+                "OncoNPC-inspired · Shapley Δ raw score (pp) · uncalibrated",
+                Style::default().fg(crate::ui::MUTED),
+            ),
+        ]),
+        heading,
+    );
+    if plots.width >= 72 {
+        let [ring, scatter] =
+            Layout::horizontal([Constraint::Percentage(43), Constraint::Percentage(57)])
+                .areas(plots);
+        draw_figure_ring(frame, ring, a, selected);
+        draw_figure_scatter(frame, scatter, a, selected);
+    } else if plots.height >= 18 {
+        let [ring, scatter] =
+            Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)]).areas(plots);
+        draw_figure_ring(frame, ring, a, selected);
+        draw_figure_scatter(frame, scatter, a, selected);
+    } else {
+        draw_table(frame, plots, a, selected);
+    }
+    let sum: f64 = rows.iter().map(|r| r.contribution).sum();
+    let total: f64 = rows.iter().map(|r| r.contribution.abs()).sum();
+    let mut lines = Vec::new();
+    if let Some(r) = rows.get(selected) {
+        let values = r
+            .feature_ids
+            .iter()
+            .filter_map(|id| a.features.features.iter().find(|f| &f.id == id))
+            .map(|f| {
+                format!(
+                    "{} = {}",
+                    safe(&f.name),
+                    safe(
+                        &f.value
+                            .as_ref()
+                            .map(|v| v.display())
+                            .unwrap_or_else(|| "unavailable".into())
+                    )
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("; ");
+        lines.push(Line::styled(
+            format!(
+                "#{} {}  {:+.3} pp · {}",
+                selected + 1,
+                safe(&r.label),
+                r.contribution * 100.0,
+                values
+            ),
+            Style::default().fg(color(&r.modalities)),
+        ));
+        if !compact {
+            lines.push(Line::from(format!(
+                "{} · sampling SE {} pp · {}",
+                label(&r.modalities),
+                r.sampling_standard_error
+                    .map(|v| format!("{:.4}", v * 100.0))
+                    .unwrap_or_else(|| "unavailable".into()),
+                safe(&result.method)
+            )));
+            for f in r
+                .feature_ids
+                .iter()
+                .filter_map(|id| a.features.features.iter().find(|f| &f.id == id))
+                .take(2)
+            {
+                lines.push(Line::styled(
+                    format!(
+                        "{} · {} · source {} / record {}",
+                        safe(&f.assay),
+                        safe(&f.coverage),
+                        safe(&f.source.source_id),
+                        f.source.record
+                    ),
+                    Style::default().fg(crate::ui::MUTED),
+                ));
+            }
+        }
+    }
+    if !compact {
+        let shown = figure_rows(a, selected);
+        let remaining: Vec<_> = rows
+            .iter()
+            .filter(|r| !shown.iter().any(|(_, s)| s.group == r.group))
+            .collect();
+        lines.push(Line::from(format!("Ring: all {} groups, |Δ| {:.2} pp · scatter: {} · omitted: {} (net {:+.2}, |Δ| {:.2} pp)",
+            rows.len(), total * 100.0, shown.len(), remaining.len(),
+            remaining.iter().map(|r| r.contribution).sum::<f64>() * 100.0,
+            remaining.iter().map(|r| r.contribution.abs()).sum::<f64>() * 100.0)));
+    }
+    lines.push(Line::styled(
+        format!(
+            "Base {:.3} + Δ {:+.3} = {:.3} · residual {:.1e}",
+            result.baseline_probability, sum, result.full_probability, result.additivity_residual
+        ),
+        Style::default().fg(crate::ui::MUTED),
+    ));
+    frame.render_widget(Paragraph::new(lines), detail);
+}
+
+fn figure_rows(a: &Archive, selected: usize) -> Vec<(usize, &Attribution)> {
+    let rows = ranked(a);
+    let mut visible: Vec<_> = rows.iter().copied().enumerate().take(10).collect();
+    // Keep a selected low-ranked feature visible without misrepresenting its rank.
+    if selected >= 10
+        && let Some(r) = rows.get(selected)
+    {
+        visible.pop();
+        visible.push((selected, *r));
+    }
+    visible
+}
+
+fn draw_figure_ring(frame: &mut Frame, area: Rect, a: &Archive, selected: usize) {
+    let block = crate::ui::panel(" Category / feature ring ");
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    let rows = ring_rows(a);
+    let ranked = ranked(a);
+    let total: f64 = rows.iter().map(|r| r.contribution.abs()).sum();
+    if total <= f64::EPSILON {
+        frame.render_widget(Paragraph::new("No nonzero attribution magnitude"), inner);
+        return;
+    }
+    let mut categories: BTreeMap<Vec<Modality>, f64> = BTreeMap::new();
+    for r in &rows {
+        *categories.entry(r.modalities.clone()).or_default() += r.contribution.abs();
+    }
+    let legend_height = if inner.height >= 12 {
+        categories.len().min(4) as u16
+    } else {
+        0
+    };
+    let [circle, legend] =
+        Layout::vertical([Constraint::Min(0), Constraint::Length(legend_height)]).areas(inner);
+    let aspect = (f64::from(circle.width) / f64::from(circle.height.max(1) * 2)).max(0.1);
+    let by = 1.06_f64.max(1.06 / aspect);
+    let bx = by * aspect;
+    let focused = ranked.get(selected).map(|r| r.group.as_str());
+    let mut start = std::f64::consts::FRAC_PI_2;
+    let sectors: Vec<_> = rows
+        .iter()
+        .map(|r| {
+            let end = start + r.contribution.abs() / total * TAU;
+            let gap = ((end - start) * 0.06).min(0.025);
+            let points = ring_points(start + gap, end - gap, 0.52, 0.82);
+            let middle = (start + end) / 2.0;
+            let highlight = if focused == Some(r.group.as_str()) {
+                ring_points(start + gap, end - gap, 0.82, 0.85)
+            } else {
+                Vec::new()
+            };
+            start = end;
+            (r, points, middle, highlight)
+        })
+        .collect();
+    let mut start = std::f64::consts::FRAC_PI_2;
+    let outer: Vec<_> = categories
+        .iter()
+        .map(|(m, value)| {
+            let end = start + value / total * TAU;
+            let points = ring_points(start, end, 0.87, 1.0);
+            start = end;
+            (m, points)
+        })
+        .collect();
+    frame.render_widget(
+        Canvas::default()
+            .marker(Marker::HalfBlock)
+            .background_color(crate::ui::PANEL)
+            .x_bounds([-bx, bx])
+            .y_bounds([-by, by])
+            .paint(|ctx| {
+                for (r, points, _, highlight) in &sectors {
+                    let shade = if focused == Some(r.group.as_str()) {
+                        color(&r.modalities)
+                    } else {
+                        match color(&r.modalities) {
+                            Color::Rgb(r, g, b) => Color::Rgb(r / 2, g / 2, b / 2),
+                            c => c,
+                        }
+                    };
+                    ctx.draw(&Points {
+                        coords: points,
+                        color: shade,
+                    });
+                    ctx.draw(&Points {
+                        coords: highlight,
+                        color: Color::White,
+                    });
+                }
+                for (m, points) in &outer {
+                    ctx.draw(&Points {
+                        coords: points,
+                        color: color(m),
+                    });
+                }
+                // Numeric labels link sectors to the scatter and inspector; tiny sectors stay unlabeled.
+                if circle.height >= 9 {
+                    for (r, _, angle, _) in &sectors {
+                        if r.contribution.abs() / total >= 0.045 {
+                            let rank =
+                                ranked.iter().position(|s| s.group == r.group).unwrap_or(0) + 1;
+                            ctx.print(
+                                0.69 * angle.cos() - 0.03,
+                                0.69 * angle.sin(),
+                                Line::styled(
+                                    rank.to_string(),
+                                    Style::default().fg(crate::ui::TEXT).bold(),
+                                ),
+                            );
+                        }
+                    }
+                }
+                ctx.print(
+                    -0.28,
+                    0.08,
+                    Line::styled("|Shapley|", Style::default().fg(crate::ui::TEXT)),
+                );
+                ctx.print(
+                    -0.22,
+                    -0.16,
+                    Line::styled(
+                        format!("#{:02}", selected + 1),
+                        Style::default().fg(crate::ui::ACCENT).bold(),
+                    ),
+                );
+            }),
+        circle,
+    );
+    let lines = categories
+        .iter()
+        .map(|(m, value)| {
+            Line::from(vec![
+                Span::styled("● ", Style::default().fg(color(m))),
+                Span::raw(format!("{} {:>5.1}%", label(m), value / total * 100.0)),
+            ])
+        })
+        .collect::<Vec<_>>();
+    frame.render_widget(Paragraph::new(lines), legend);
+}
+
+fn draw_figure_scatter(frame: &mut Frame, area: Rect, a: &Archive, selected: usize) {
+    let block = crate::ui::panel(" Signed contribution · pp ");
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    if inner.width < 12 || inner.height < 3 {
+        return;
+    }
+    let visible = figure_rows(a, selected);
+    let rows: Vec<_> = visible.iter().map(|(_, r)| *r).collect();
+    let (mut xs, _, mut bounds) = scatter_x(a, &rows);
+    let percentile = bounds.1 == 105.0;
+    if !percentile {
+        xs = visible.iter().map(|(i, _)| (*i + 1) as f64).collect();
+        bounds = (0.0, xs.iter().copied().fold(1.0_f64, f64::max) + 1.0);
+    }
+    let plot = Rect::new(inner.x + 6, inner.y, inner.width - 7, inner.height - 2);
+    let ymax = rows
+        .iter()
+        .map(|r| r.contribution.abs() * 100.0)
+        .fold(1.0_f64, f64::max)
+        * 1.35;
+    let sx = (bounds.1 - bounds.0) / f64::from(plot.width.saturating_sub(1).max(1));
+    let sy = 2.0 * ymax / f64::from(plot.height.saturating_sub(1).max(1));
+    // Place labels in terminal-cell coordinates to keep them inside the plot and apart.
+    let mut occupied: Vec<Rect> = Vec::new();
+    let mut labels = Vec::new();
+    for ((rank, r), x) in visible.iter().zip(&xs) {
+        let limit = usize::from((plot.width / 2).max(5));
+        let name = format!("{} {}", rank + 1, safe(&r.label));
+        let name = truncate_label(&name, limit);
+        let width = Line::from(name.clone())
+            .width()
+            .min(usize::from(plot.width)) as u16;
+        let col = (((x - bounds.0) / sx).round() as u16).min(plot.width.saturating_sub(width));
+        let row = (((ymax - r.contribution * 100.0) / sy).round() as u16)
+            .min(plot.height.saturating_sub(1));
+        let slot = (0..plot.height).min_by_key(|y| {
+            let rect = Rect::new(col.saturating_sub(1), *y, width + 2, 1);
+            let overlaps = occupied.iter().any(|r| r.intersects(rect));
+            (overlaps, y.abs_diff(row.saturating_sub(1)))
+        });
+        if let Some(y) = slot {
+            let rect = Rect::new(col.saturating_sub(1), y, width + 2, 1);
+            if !occupied.iter().any(|r| r.intersects(rect)) {
+                occupied.push(rect);
+                labels.push((Rect::new(col, y, width, 1), name, r));
+            }
+        }
+    }
+    frame.render_widget(
+        Canvas::default()
+            .marker(Marker::Braille)
+            .background_color(crate::ui::PANEL)
+            .x_bounds([bounds.0, bounds.1])
+            .y_bounds([-ymax, ymax])
+            .paint(|ctx| {
+                for y in [-ymax, 0.0, ymax] {
+                    ctx.draw(&CanvasLine {
+                        x1: bounds.0,
+                        y1: y,
+                        x2: bounds.1,
+                        y2: y,
+                        color: if y == 0.0 {
+                            crate::ui::MUTED
+                        } else {
+                            crate::ui::RAISED
+                        },
+                    });
+                }
+                let max = rows
+                    .iter()
+                    .map(|r| r.contribution.abs())
+                    .fold(1e-12_f64, f64::max);
+                for ((rank, r), x) in visible.iter().zip(&xs) {
+                    let radius = (r.contribution.abs() / max).sqrt() * 1.3 + 0.35;
+                    let mut dots = Vec::new();
+                    for dy in -8..=8 {
+                        for dx in -8..=8 {
+                            if dx * dx + dy * dy <= 64 {
+                                dots.push((
+                                    *x + f64::from(dx) / 8.0 * radius * sx,
+                                    r.contribution * 100.0
+                                        + f64::from(dy) / 8.0 * radius * sy / 2.0,
+                                ));
+                            }
+                        }
+                    }
+                    ctx.draw(&Points {
+                        coords: &dots,
+                        color: if *rank == selected {
+                            Color::White
+                        } else {
+                            color(&r.modalities)
+                        },
+                    });
+                    if let Some((rect, _, _)) = labels.iter().find(|(_, _, s)| s.group == r.group) {
+                        ctx.draw(&CanvasLine {
+                            x1: *x,
+                            y1: r.contribution * 100.0,
+                            x2: bounds.0 + f64::from(rect.x) * sx,
+                            y2: ymax - f64::from(rect.y) * sy,
+                            color: crate::ui::MUTED,
+                        });
+                    }
+                }
+            }),
+        plot,
+    );
+    // Render labels at exact cells: converting coordinates through Canvas::print
+    // can round adjacent rows into the same row and defeat collision avoidance.
+    for (rect, text, r) in labels {
+        frame.render_widget(
+            Paragraph::new(text).style(
+                Style::default()
+                    .fg(color(&r.modalities))
+                    .bg(crate::ui::PANEL),
+            ),
+            Rect::new(plot.x + rect.x, plot.y + rect.y, rect.width, 1),
+        );
+    }
+    for (row, value) in [
+        (0, ymax),
+        (plot.height.saturating_sub(1) / 2, 0.0),
+        (plot.height.saturating_sub(1), -ymax),
+    ] {
+        frame.render_widget(
+            Paragraph::new(format!("{value:>+5.1}")).style(Style::default().fg(crate::ui::MUTED)),
+            Rect::new(inner.x, plot.y + row, 6, 1),
+        );
+    }
+    let ticks: Vec<f64> = if percentile {
+        vec![0.0, 50.0, 100.0]
+    } else {
+        xs.clone()
+    };
+    let mut last_end = 0;
+    for value in ticks {
+        let col = (((value - bounds.0) / sx).round() as u16).min(plot.width.saturating_sub(3));
+        if col < last_end {
+            continue;
+        }
+        frame.render_widget(
+            Paragraph::new(format!("{value:.0}")).style(Style::default().fg(crate::ui::MUTED)),
+            Rect::new(plot.x + col, plot.bottom(), 3, 1),
+        );
+        last_end = col + 3;
+    }
+    frame.render_widget(
+        Paragraph::new(if percentile {
+            "X: background percentile"
+        } else {
+            "X: feature rank (raw values below)"
+        })
+        .style(Style::default().fg(crate::ui::MUTED)),
+        Rect::new(inner.x, inner.bottom() - 1, inner.width, 1),
+    );
+}
+
+fn truncate_label(text: &str, max_width: usize) -> String {
+    let mut out = String::new();
+    for c in text.chars() {
+        let mut next = out.clone();
+        next.push(c);
+        if Line::from(next.clone()).width() >= max_width {
+            out.push('…');
+            return out;
+        }
+        out = next;
+    }
+    out
+}
+
 pub fn draw(frame: &mut Frame, area: Rect, a: &Archive, selected: usize, page: usize) {
     let Some(result) = &a.result else {
         frame.render_widget(

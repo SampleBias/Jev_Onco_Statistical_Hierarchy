@@ -23,53 +23,38 @@ access. The launcher does not install prerequisites. No Python, Node, local GPU,
 database or model download is required. See the [quickstart](docs/QUICKSTART.md)
 for setup and the complete walkthrough.
 
-In **Analysis (F2)**:
+The easiest first run: **Try a sample → Open selected → Data → Run analysis**.
+The five synthetic inputs are built in; loading them is local and does not call Jev.
+Review the one-request confirmation before sending.
 
-1. **Load (`l`)** a molecular feature file, supported table or saved run. Tables
-   open import settings; review the sample, assay and data declaration.
-2. **Analyze (`a`)** opens a new run-directory dialog. Enter confirms one
-   potentially billed synthetic Jev request. Set `TYPESAFE_API_KEY` in the launching
-   shell first; `.env` files are not loaded automatically.
-3. **Results (`v`)** shows raw rankings, abstention reasons and evidence checks.
-   Successful inference saves its archive and `report.md` automatically.
-4. **Export (`s`)** saves another Markdown report to a new `.md` file.
-   An explanation is optional; `e` shows a budget before additional provider calls.
+The primary workspace has **Data** and **Results**, an **Open** browser, one
+contextual next action and **Menu**. Tab/Shift-Tab, Enter and mouse clicks work
+throughout. Results' **View ▾** groups all existing charts, including paired
+ring/scatter and waterfall. Explanations require a separate budget confirmation.
 
-To try the complete review/export flow offline, press **d** in Analysis. It replaces
-the current analysis with the bundled analytical demo. For importable molecular
-tables and expression data, use the [basic data demo](fixtures/basic-demo/README.md):
+**Menu → Offline chart demonstration** provides explicitly invented scores without
+a key. **Menu → Previous samples** restores earlier inputs and their results.
+Failed or cancelled imports preserve the active sample. Imported tables now detect
+sample IDs; multi-sample molecular tables offer a selector.
 
-```bash
-cargo run --locked -p josh-app --example prepare_demo -- --out-dir results/basic-demo
-```
+## One sample-centered workspace
 
-## One terminal workspace
+- **Data:** evidence, provenance, missingness and readiness; expression is an
+  optional input profile, not a separate app.
+- **Results:** rankings, abstention, explanations and protected exports.
+- **Workbench ▾ → Cohort studies (F5):** all existing classification, survival,
+  treatment, calibration and study-export tools.
+- **Legacy case files:** explicitly labelled read-only evidence, visualizations,
+  guidance and existing reviews; no second clinical classifier in the main UI.
 
-| Section | Purpose |
-| --- | --- |
-| **F2 Analysis** | Molecular inputs, Jev inference, saved results, explanations and Markdown reports |
-| **F3 Data** | Expression import, gene mapping, QC, exploration and local reference comparison |
-| **F4 Clinical** | Summarized cases, clinical context, source-linked NICE review and case exports |
-| **F5 Cohort** | Paper-inspired heatmap, survival, treatment associations, calibration and study exports |
+Jev remains pinned to **jev-1.13.0**, with synthetic-only live requests. Rust handles
+validation, statistical methods and rendering. Loading never silently joins
+patient records or transfers results between taxonomies.
 
-For the OncoNPC-inspired research dashboard, press **F5**, then **d**. The offline
-demo is explicitly synthetic. **1–6** changes views, **i** shows survival confidence
-bounds, **w** toggles supplied-propensity weighting, and **s** exports SVG, Markdown
-or a reopenable JSON archive. Load frozen cohorts with **l**. See the
-[Cohort Guide](docs/data/COHORT_GUIDE.md) for input contracts and statistical limits.
-These capabilities do not establish Jev's cancer accuracy or paper parity.
-
-Switching sections preserves their data, forms, results and jobs. Use the shared
-**l/o** loader or `josh tui PATH` for supported files and bundles; **F1** opens help
-even inside a form, and **g** opens it from navigation. **q** quits from navigation,
-checks for unsaved clinical reviews and waits for in-flight work to finish.
-
-The [user guide](docs/USER_GUIDE.md) documents input routing and section-specific
-keys. For example, **a** sends a confirmed Jev analysis in Analysis, performs local
-reference comparison in Data, and records a review on Clinical's Guidance page.
-In Data, **r** loads reference JSON and **m** attaches a usable comparison to
-Analysis. Clinical cases retain their own identity; switching sections does not
-join them to molecular samples.
+Run `josh tui PATH` or use Open for supported files and bundles. F1 opens searchable
+help even inside forms. q quits safely and waits for in-flight work. Session
+history is temporary; keep saved run folders. See the [User Guide](docs/USER_GUIDE.md)
+and [synthetic sample pack](fixtures/synthetic-jev/README.md).
 
 ## CLI workflows
 
@@ -132,6 +117,8 @@ outcomes. These are research contracts, not validated cancer classifiers.
 - [User guide](docs/USER_GUIDE.md) — shared navigation, inputs, keys, reports and troubleshooting
 - [Terminal and CLI reference](docs/TERMINAL_GUIDE.md) — commands, clinical controls and output conventions
 - [Molecular formats and explanations](docs/data/MOLECULAR_GUIDE.md)
+- [OncoNPC research guide and priorities](docs/references/ONCONPC_GUIDE.md) and
+  [objective-by-objective assessment](docs/assessment/ONCONPC_PARITY.md)
 - [Expression import](docs/data/EXPRESSION_GUIDE.md) and [reference comparison](docs/data/REFERENCE_GUIDE.md)
 - [Clinical review](docs/CLINICAL_REVIEW_GUIDE.md) and [case batch import](docs/data/IMPORT_GUIDE.md)
 - [Build status](docs/BUILD_STATUS.md) and [0.7.0 molecular validation report](docs/reports/0.7.0-molecular-validation.md)
@@ -139,7 +126,8 @@ outcomes. These are research contracts, not validated cancer classifiers.
 - [Intended use](docs/product/intended-use.md), [sources](docs/SOURCES.md) and [roadmap](docs/PLAN.md)
 
 The in-app guide is compiled into the binary and searches the user, molecular,
-expression, reference and terminal guides offline. Rebuild after changing those files.
+expression, reference, cohort and terminal guides, research assessment and source
+register offline. Press F1, then / and `OncoNPC`. Rebuild after changing those files.
 Earlier [gap assessments](docs/assessment/DATA_FIRST_GAP_ASSESSMENT.md) and phase
 plans describe their dated baselines; use the build status for delivered capabilities.
 

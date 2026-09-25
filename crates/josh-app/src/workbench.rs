@@ -20,16 +20,8 @@ use std::{
     },
 };
 
-const TABS: [&str; 7] = [
-    "Samples",
-    "Datasets",
-    "Analyze",
-    "Explore",
-    "Models",
-    "Reference",
-    "Projects",
-];
-const LABELS: [&str; 14] = [
+const TABS: [&str; 5] = ["Overview", "Quality", "Comparison", "Genes", "Reference"];
+const LABELS: [&str; 15] = [
     "Source path",
     "New output directory",
     "Dataset ID",
@@ -44,6 +36,7 @@ const LABELS: [&str; 14] = [
     "HGNC release",
     "Platform",
     "Transform",
+    "Data class: synthetic / deidentified_research",
 ];
 const MAX_PASTE: usize = 1024 * 1024;
 
@@ -55,6 +48,7 @@ struct Loaded {
 
 #[derive(Clone)]
 struct ImportForm {
+    advanced: bool,
     values: Vec<String>,
     active: usize,
     pasted: Option<String>,
@@ -62,6 +56,7 @@ struct ImportForm {
 impl ImportForm {
     fn new(pasted: Option<String>) -> Self {
         Self {
+            advanced: false,
             values: vec![
                 String::new(),
                 String::new(),
@@ -77,6 +72,7 @@ impl ImportForm {
                 String::new(),
                 String::new(),
                 "identity".into(),
+                "deidentified_research".into(),
             ],
             active: 0,
             pasted,
@@ -95,6 +91,8 @@ impl ImportForm {
             platform: (!v[12].is_empty()).then(|| v[12].clone()), ..ExpressionConfig::default()
         };
         Ok(expression::ImportOptions {
+            data_class: serde_json::from_value(parsed(&v[14]))
+                .map_err(|_| "Data class must be synthetic or deidentified_research")?,
             dataset_id: v[2].clone(),
             source_name: if self.pasted.is_some() {
                 "pasted-expression".into()
@@ -108,6 +106,13 @@ impl ImportForm {
             config,
             ..Default::default()
         })
+    }
+    fn fields(&self) -> Vec<usize> {
+        if self.advanced {
+            (0..LABELS.len()).collect()
+        } else {
+            vec![0, 1, 3, 4, 14]
+        }
     }
 }
 
@@ -134,6 +139,8 @@ struct Pending {
 }
 
 pub struct Workbench {
+    input_loaded: bool,
+    retry_import: Option<ImportForm>,
     guide: crate::guide::Guide,
     reference: Option<(josh_core::reference::ReferenceRelease, String)>,
     comparison: Option<josh_core::reference::EvidencePackage>,
@@ -200,6 +207,8 @@ fn load(root: PathBuf) -> Result<Loaded, AppError> {
 impl Workbench {
     pub fn new() -> Result<Self, AppError> {
         let mut app = Self {
+            input_loaded: true,
+            retry_import: None,
             guide: crate::guide::Guide::default(),
             reference: None,
             comparison: None,
@@ -219,11 +228,111 @@ impl Workbench {
         app.filter();
         Ok(app)
     }
+    /// Import staging has no active demonstration sample. The internal fixture is
+    /// inaccessible until an explicit import succeeds (or a demo is requested).
+    pub(crate) fn empty() -> Result<Self, AppError> {
+        let mut app = Self::new()?;
+        app.input_loaded = false;
+        app.status = "Open an expression table or dataset. No sample loaded.".into();
+        Ok(app)
+    }
+    pub(crate) fn has_input(&self) -> bool {
+        self.input_loaded
+    }
+    pub(crate) fn sample_id(&self) -> Option<&str> {
+        self.input_loaded
+            .then(|| self.loaded.manifest.samples[self.sample].sample_id.as_str())
+    }
+    pub(crate) fn binding(&self) -> Option<String> {
+        if !self.input_loaded {
+            return None;
+        }
+        josh_core::molecular::hash(&(&self.loaded.manifest, self.sample, &self.comparison)).ok()
+    }
+    pub(crate) fn samples(&self) -> Vec<String> {
+        if !self.input_loaded {
+            return vec![];
+        }
+        self.loaded
+            .manifest
+            .samples
+            .iter()
+            .map(|s| s.sample_id.clone())
+            .collect()
+    }
+    pub(crate) fn choose_sample(&mut self, index: usize) {
+        if self.input_loaded
+            && !self.busy()
+            && index < self.loaded.manifest.samples.len()
+            && index != self.sample
+        {
+            self.sample = index;
+            self.comparison = None;
+            self.filter();
+            self.tab = 0;
+        }
+    }
     pub(crate) fn editing(&self) -> bool {
         !matches!(self.dialog, Dialog::None)
     }
     pub(crate) fn busy(&self) -> bool {
         self.pending.is_some()
+    }
+    pub(crate) fn views(&self) -> Vec<(usize, &'static str)> {
+        TABS.into_iter().enumerate().collect()
+    }
+    pub(crate) fn view(&self) -> usize {
+        self.tab
+    }
+    pub(crate) fn select_view(&mut self, index: usize) {
+        self.tab = index.min(TABS.len() - 1);
+        self.scroll = 0;
+    }
+    pub(crate) fn status(&self) -> String {
+        self.status.clone()
+    }
+    pub(crate) fn context(&self) -> String {
+        if !self.input_loaded {
+            return "Expression import · no sample loaded".into();
+        }
+        format!(
+            "{} / {} · {:?} · local expression comparison",
+            self.loaded.manifest.dataset_id,
+            self.loaded.manifest.samples[self.sample].sample_id,
+            self.loaded.manifest.samples[self.sample].data_class
+        )
+    }
+    pub(crate) fn has_reference(&self) -> bool {
+        self.reference.is_some()
+    }
+    pub(crate) fn has_comparison(&self) -> bool {
+        self.comparison.is_some()
+    }
+    pub(crate) fn editor(&self) -> Option<crate::editor::Editor> {
+        use crate::editor::Editor;
+        let e=match &self.dialog {
+            Dialog::None=>return None,
+            Dialog::Import(form)=>{
+                let mut e=Editor::new(if form.advanced { "Import expression · advanced" } else { "Import expression" }, "Local import. Review the suggested new output folder and declare units and data class. Sample ID is only needed for two-column input. Advanced settings contain columns, gene mapping, platform and transform.", "Load dataset", &self.status);
+                for i in form.fields() { e=e.field(LABELS[i],&form.values[i]); }
+                e.submit=KeyEvent::new(KeyCode::Char('s'),KeyModifiers::CONTROL);
+                e.auxiliary=Some((if form.advanced { "Basic settings" } else { "Advanced settings" },KeyEvent::new(KeyCode::F(7),KeyModifiers::NONE)));
+                e
+            },
+            Dialog::Open(s)=>Editor::new("Open expression dataset", "Load a previously imported dataset folder.", "Open", &self.status).field("Dataset directory",s),
+            Dialog::Reference(s)=>Editor::new("Open reference release", "Choose a compatible curated reference JSON. This loads locally; it does not send data to Jev.", "Open", &self.status).field("Reference JSON",s),
+            Dialog::Save(s)=>Editor::new("Export expression data", "Exports comparison evidence on Compare, or the dataset manifest on other views. Existing files are protected.", "Export", &self.status).field("New JSON file",s),
+            Dialog::SaveRequest(s)=>Editor::new("Export Jev request preview", "Save the exact prepared request locally. Nothing is sent to the provider.", "Export", &self.status).field("New JSON file",s),
+            Dialog::Search(s)=>Editor::new("Find a gene", "Search original or canonical gene IDs. Leave empty to show all.", "Find", &self.status).field("Gene search",s),
+            Dialog::Paste(s)=>Editor::new("Paste expression table", "Paste CSV or TSV (up to 1 MiB). Continue to review import settings. Nothing is sent to Jev.", "Continue", &self.status).field("CSV / TSV text",s),
+        };
+        Some(e)
+    }
+    pub(crate) fn focus_editor(&mut self, index: usize) {
+        if let Dialog::Import(form) = &mut self.dialog {
+            let fields = form.fields();
+            form.active = fields[index.min(fields.len() - 1)];
+        }
     }
     pub(crate) fn cancel_job(&mut self) {
         self.cancel();
@@ -234,9 +343,21 @@ impl Workbench {
     pub(crate) fn import_path(&mut self, path: &Path) {
         let mut form = ImportForm::new(None);
         form.values[0] = path.display().to_string();
+        form.values[1] = crate::analysis::suggested_run_path()
+            .with_extension("dataset")
+            .display()
+            .to_string();
+        form.values[2] = path
+            .file_stem()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .into_owned();
         self.dialog = Dialog::Import(form);
     }
     pub(crate) fn analysis_input(&self) -> Result<crate::molecular_tui::App, AppError> {
+        if !self.input_loaded {
+            return Err("Import an expression sample first.".into());
+        }
         let e = self
             .comparison
             .as_ref()
@@ -250,7 +371,7 @@ impl Workbench {
                 .unwrap_or(&sample.sample_id),
         )
     }
-    fn open_reference(&mut self, path: PathBuf) {
+    pub(crate) fn open_reference(&mut self, path: PathBuf) {
         let state = Arc::new(AtomicU8::new(0));
         let copy = state.clone();
         let handle = tokio::task::spawn_blocking(move || {
@@ -264,6 +385,10 @@ impl Workbench {
         self.status = "Validating reference release locally…".into();
     }
     fn compare(&mut self) {
+        if !self.input_loaded {
+            self.status = "Import an expression sample first.".into();
+            return;
+        }
         let Some((reference, hash)) = self.reference.clone() else {
             self.status = "Press r to open a reference JSON first.".into();
             return;
@@ -368,6 +493,7 @@ impl Workbench {
         }
         let state = Arc::new(AtomicU8::new(0));
         let worker_state = state.clone();
+        self.retry_import = Some(form.clone());
         let handle = tokio::task::spawn_blocking(move || {
             let result = (|| -> Result<Loaded, AppError> {
                 let source = if let Some(pasted) = form.pasted {
@@ -467,32 +593,35 @@ impl Workbench {
             let canceled = pending.state.load(Ordering::SeqCst) == 1;
             let outcome = pending.handle.await;
             if canceled {
+                self.retry_import = None;
                 self.status = "Job canceled; current workspace preserved.".into();
                 return;
             }
             match outcome {
                 Ok(Ok(JobResult::Dataset(loaded))) => {
+                    self.retry_import = None;
+                    self.input_loaded = true;
                     self.comparison = None;
                     self.loaded = *loaded;
                     self.sample = 0;
                     self.query.clear();
                     self.filter();
                     self.status =
-                        "Dataset loaded. Inspect QC; r opens a reference and a compares locally."
+                        "Dataset loaded. Review Data; Load reference starts the local comparison workflow."
                             .into();
                 }
                 Ok(Ok(JobResult::Reference(reference, hash))) => {
                     self.reference = Some((*reference, hash));
                     self.comparison = None;
-                    self.tab = 5;
+                    self.tab = 4;
                     self.scroll = 0;
                     self.status =
-                        "Reference loaded. a compares the selected sample; g opens the guide."
+                        "Reference loaded. Compare locally is the next action; F1 opens the guide."
                             .into();
                 }
                 Ok(Ok(JobResult::Comparison(evidence))) => {
                     self.status = format!(
-                        "Comparison: {:?}. s exports evidence; e exports an offline Jev request preview.",
+                        "Comparison: {:?}. Prepare analysis is a separate, confirmed local step. Menu offers evidence and request exports.",
                         evidence.status
                     );
                     self.comparison = Some(*evidence);
@@ -503,8 +632,18 @@ impl Workbench {
                     self.dialog = Dialog::Import(form);
                     self.status = text;
                 }
-                Ok(Err(message)) => self.status = message,
-                Err(_) => self.status = "Dataset worker failed; current dataset preserved.".into(),
+                Ok(Err(message)) => {
+                    self.status = message;
+                    if let Some(form) = self.retry_import.take() {
+                        self.dialog = Dialog::Import(form);
+                    }
+                }
+                Err(_) => {
+                    self.status = "Dataset worker failed; current dataset preserved.".into();
+                    if let Some(form) = self.retry_import.take() {
+                        self.dialog = Dialog::Import(form);
+                    }
+                }
             }
         }
     }
@@ -527,6 +666,10 @@ impl Workbench {
         let mut preview = false;
         match &mut self.dialog {
             Dialog::Import(form) => match key.code {
+                KeyCode::F(7) => {
+                    form.advanced = !form.advanced;
+                    form.active = 0;
+                }
                 KeyCode::Esc => self.dialog = Dialog::None,
                 KeyCode::Tab | KeyCode::Down => form.active = (form.active + 1) % LABELS.len(),
                 KeyCode::BackTab | KeyCode::Up => {
@@ -534,6 +677,9 @@ impl Workbench {
                 }
                 KeyCode::Backspace => {
                     form.values[form.active].pop();
+                }
+                KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    form.values[form.active].clear()
                 }
                 KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                     preview = true
@@ -570,6 +716,9 @@ impl Workbench {
                     }
                     KeyCode::Backspace => {
                         text.pop();
+                    }
+                    KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                        text.clear()
                     }
                     KeyCode::Char(c)
                         if !c.is_control()
@@ -651,10 +800,14 @@ impl Workbench {
         if !matches!(self.dialog, Dialog::None) {
             return false;
         }
+        if !self.input_loaded && !matches!(key.code, KeyCode::Char('q' | 'x' | 'i' | 'p' | 'o')) {
+            self.status = "No expression sample loaded. Open a file first.".into();
+            return false;
+        }
         match key.code {
             KeyCode::Char('q') => { if self.pending.is_some() { self.quit_after_job=true; self.cancel(); } else { return true; } },
             KeyCode::Char('x') => self.cancel(),
-            KeyCode::Char(c @ '1'..='7') => { self.tab=(c as u8-b'1') as usize; self.scroll=0; },
+            KeyCode::Char(c @ '1'..='5') => { self.tab=(c as u8-b'1') as usize; self.scroll=0; },
             KeyCode::Tab => {self.tab=(self.tab+1)%TABS.len();self.scroll=0;},
             KeyCode::BackTab => {self.tab=(self.tab+TABS.len()-1)%TABS.len();self.scroll=0;},
             KeyCode::Down | KeyCode::Char('j') => self.scroll=self.scroll.saturating_add(1),
@@ -693,6 +846,10 @@ impl Workbench {
         self.draw_area(frame, frame.area(), false);
     }
     pub(crate) fn draw_area(&mut self, frame: &mut Frame, area: Rect, embedded: bool) {
+        if !self.input_loaded {
+            frame.render_widget(Paragraph::new("Expression import\n\nReview the import settings. Your active sample is preserved until loading succeeds.\nCancel returns to that sample; no data is sent to Jev.").wrap(Wrap { trim: false }).block(crate::ui::panel(" Data preview ")), area);
+            return;
+        }
         use crate::ui;
         use ratatui::{
             style::Modifier,
@@ -703,11 +860,11 @@ impl Workbench {
             area,
         );
         let [header, nav, body, status, footer] = Layout::vertical([
-            Constraint::Length(4),
-            Constraint::Length(3),
+            Constraint::Length(if embedded { 0 } else { 4 }),
+            Constraint::Length(if embedded { 0 } else { 3 }),
             Constraint::Min(1),
-            Constraint::Length(2),
-            Constraint::Length(2),
+            Constraint::Length(if embedded { 0 } else { 2 }),
+            Constraint::Length(if embedded { 0 } else { 2 }),
         ])
         .areas(area);
         let [brand, badge] = Layout::horizontal([
@@ -818,20 +975,7 @@ impl Workbench {
                         self.loaded.manifest.notices.join("\n")
                     ),
                     2 => self.analysis_text(),
-                    4 => format!(
-                        "JEV · STRUCTURED DECISIONS\n\nPinned model: {}\nExpression pipeline: {}\n\nJev remains the sole origin classifier. Reference correlations are numerical evidence, not class probabilities.\n\nPress m for molecular inference, circular and scatter explanations. Live calls accept declared synthetic data.\nNo calibrated cancer model or validated OOD detector is installed.\n\nPress g for the full guide and / inside the guide to search.",
-                        josh_core::MODEL,
-                        EXPRESSION_PIPELINE
-                    ),
-                    5 => self.reference_text(),
-                    _ => format!(
-                        "LOCAL WORKSPACE\n\nOpen dataset: {}\n\nDataset bundles preserve source files, gene dictionaries, measurements, QC and provenance.\n\nOpen a dataset with o; import with i or paste with p.\nA multi-dataset project catalog is planned.\n\nClinical evidence and review: F4 in this workspace.\nUser guide: g (F1/Ctrl+g inside forms).",
-                        self.loaded
-                            .root
-                            .as_ref()
-                            .map(|p| p.display().to_string())
-                            .unwrap_or_else(|| "bundled in-memory example".into())
-                    ),
+                    _ => self.reference_text(),
                 };
                 let paragraph = Paragraph::new(clean_multiline(&text)).wrap(Wrap { trim: false });
                 let panel = ui::panel(format!(" {} ", TABS[self.tab].to_uppercase()));
@@ -857,7 +1001,9 @@ impl Workbench {
             Line::from(Span::styled("m Molecular charts · Tab Views · r Reference · a Compare · s Export · x Cancel · F1 Help",Style::default().fg(ui::MUTED)))
         ]),footer);
         // A guide overlay leaves underlying forms and ongoing jobs intact.
-        self.draw_dialog(frame, area);
+        if !embedded {
+            self.draw_dialog(frame, area);
+        }
         self.guide.draw(frame);
     }
     fn draw_comparison(&mut self, frame: &mut Frame, area: Rect) {
@@ -1091,6 +1237,14 @@ impl Workbench {
             ),
             format!("Modality: {:?}", a.modality),
             format!("Data provenance: {:?}", s.data_class),
+            format!(
+                "Dataset folder: {}",
+                self.loaded
+                    .root
+                    .as_ref()
+                    .map(|p| p.display().to_string())
+                    .unwrap_or_else(|| "bundled in-memory example".into())
+            ),
         ];
         if let Some(q) = &a.qc {
             lines.push(format!("\nQUALITY: {:?}\nRecords: {} | measured: {} | missing: {} | zeros: {}\nMapped: {} | ambiguous: {} | unmapped: {}\nInvalid values: {} | duplicate genes: {}\nGene-ID mapping rate: {}\nRaw range: {} .. {}",q.status,q.total_records,q.measured_values,q.missing_values,q.zero_values,q.mapped_records,q.ambiguous_records,q.unmapped_records,q.invalid_values,q.duplicate_gene_records,q.gene_id_mapping_rate.map(|v|format!("{:.1}% of all source records",v*100.0)).unwrap_or_else(||"not assessed".into()),q.minimum.map(|v|format!("{v:.4}")).unwrap_or_else(||"unknown".into()),q.maximum.map(|v|format!("{v:.4}")).unwrap_or_else(||"unknown".into())));
@@ -1107,7 +1261,7 @@ impl Workbench {
                 c.reference_genome.as_deref().unwrap_or("unknown")
             ));
         }
-        lines.push(format!("\nPROVENANCE\nSource: {}\nSource hash: {}\nMeasurements: {}\nMeasurement hash: {}\nGene dictionary: {}\n\nThis section shows the selected dataset assay.\nReference comparison: Data > Analyze.\nMolecular inputs and results: F2 Analysis.",self.loaded.manifest.source_name,self.loaded.manifest.source.artifact.sha256,a.artifact.path,a.artifact.sha256,self.loaded.manifest.gene_map.as_ref().map(|m|m.release.as_str()).unwrap_or("not supplied")));
+        lines.push(format!("\nPROVENANCE\nSource: {}\nSource hash: {}\nMeasurements: {}\nMeasurement hash: {}\nGene dictionary: {}\n\nThis is the selected sample's expression assay.\nUse the next action for local comparison and explicit profile preparation.\nPredictions and explanations appear in Results.",self.loaded.manifest.source_name,self.loaded.manifest.source.artifact.sha256,a.artifact.path,a.artifact.sha256,self.loaded.manifest.gene_map.as_ref().map(|m|m.release.as_str()).unwrap_or("not supplied")));
         lines.join("\n")
     }
     fn draw_features(&mut self, frame: &mut Frame, area: Rect) {
@@ -1306,7 +1460,7 @@ mod tests {
         for (w, h) in [(120, 40), (60, 18), (28, 9), (5, 3)] {
             let mut app = Workbench::new().unwrap();
             let mut terminal = Terminal::new(TestBackend::new(w, h)).unwrap();
-            for tab in 0..7 {
+            for tab in 0..TABS.len() {
                 app.tab = tab;
                 terminal.draw(|f| app.draw(f)).unwrap();
             }
@@ -1320,7 +1474,7 @@ mod tests {
         assert!(t.contains("Jev Onco Statistical Hierarchy"));
         assert!(t.contains("Molecular Data Workbench"));
         assert!(!t.contains("SYNTHETIC DATA"));
-        assert!(t.contains("Samples"));
+        assert!(t.contains("Overview"));
         assert!(!t.contains("NICE"));
         assert!(t.contains("GENE ID COVERAGE"));
         assert!(t.contains("Synthetic"));
@@ -1328,7 +1482,7 @@ mod tests {
     #[test]
     fn guide_preserves_forms_and_never_submits_or_edits_underlying_input() {
         let mut app = Workbench::new().unwrap();
-        for tab in 0..7 {
+        for tab in 0..TABS.len() {
             app.tab = tab;
             app.key(key('g'));
             assert!(app.guide.open);
@@ -1476,6 +1630,25 @@ mod tests {
         let v: serde_json::Value = serde_json::from_slice(&std::fs::read(export).unwrap()).unwrap();
         assert_eq!(v["sends_to_provider"], false);
         assert!(v["request_sha256"].as_str().is_some());
+        // A prepared analysis belongs to the exact sample + comparison revision.
+        let mut session = crate::session::Session::expression(app);
+        session.use_expression().unwrap();
+        assert_eq!(
+            session.analysis().unwrap().features.sample_id,
+            session.data().unwrap().sample_id().unwrap()
+        );
+        assert!(!session.analysis().unwrap().has_result());
+        session.data_mut().unwrap().choose_sample(1);
+        session.reconcile();
+        assert!(session.analysis().is_none());
+        assert_eq!(session.previous_runs.len(), 1);
+        assert!(session.notice.contains("Evidence changed"));
+        assert_eq!(session.page, crate::session::Page::Data);
+        assert!(session.use_expression().is_err());
+        let crate::session::Input::Expression { data, .. } = session.input else {
+            unreachable!()
+        };
+        let mut app = *data;
         app.key(key(']'));
         assert!(app.comparison.is_none());
         assert!(app.reference.is_some());

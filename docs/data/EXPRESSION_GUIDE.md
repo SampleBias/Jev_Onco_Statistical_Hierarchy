@@ -1,24 +1,17 @@
 # Expression datasets
 
-The Data section (F3) provides independent samples,
-expression CSV/TSV import, gene mapping, QC, provenance, exploration and local
-reproduction. The [reference guide](REFERENCE_GUIDE.md) covers the subsequent
-local comparison and offline Jev request preview. Compatible comparisons can be attached to Analysis with m for molecular Jev inference.
-Clinical evidence is available in the same workspace through F4.
+Expression is an input profile in the single-sample workbench. Open a CSV/TSV or
+dataset folder, then use Data for gene mapping, QC, provenance and exploration.
+The [reference guide](REFERENCE_GUIDE.md) covers local comparison and confirmed
+expression-only preparation for Jev. It does not silently merge with another
+sample or a legacy clinical taxonomy.
 
 ## Try the sample workbench
 
-```bash
-cargo build --workspace --locked
-./target/debug/josh tui
-# Press F3 for Data.
-```
-
-The Data section contains two invented expression profiles and six real gene-ID
-mappings. Its provenance is labeled Synthetic in the sample metadata and exports; it supplies
-no cancer labels or predictions. The title displays the application name.
-Use F4 for Clinical. The shared Load action recognizes cases and bundles;
-`josh tui PATH` opens any supported input in this same application.
+Launch `./scripts/start`, then Open `fixtures/expression/synthetic-expression.tsv`.
+The basic import form has five fields, with full options under Advanced settings.
+Unlike older builds, launching the app or pressing F3 does not preload expression
+demonstrations. For the full reference example, use the CLI tutorial below.
 
 ## Import an expression matrix
 
@@ -165,43 +158,23 @@ import/migration because their output is the new bundle directory.
 
 ## Ratatui controls
 
-| Key | Action |
-| --- | --- |
-| `1`–`7` | Samples, Datasets, Analyze, Explore, Models, Reference, Projects |
-| `Tab` / `Shift-Tab` | Next/previous view |
-| `[` / `]` | Previous/next sample |
-| `↑` / `↓`, `j` / `k`, `PgUp` / `PgDn`, `Home` | Scroll |
-| `/` | Search a gene in Explore; empty search restores all rows |
-| `l` / `o` | Shared Load action; expression bundles open in Data |
-| `i` | Configure a local expression-file import |
-| `p` | Bracketed-paste a CSV/TSV table, then Enter for import settings |
-| `s` | Export comparison evidence on Analyze when present; otherwise the dataset manifest, as JSON |
-| `r` / `a` / `e` | Load reference / compare locally / export offline request |
-| `m` | Attach a usable comparison to Analysis, replacing its previous input/result |
-| `x` | Request cancellation before replacing a view or starting bundle writing |
-| `?` | Help |
-| `q` / `Ctrl-C` | Quit; a pending job finishes/cancels at its safe boundary |
+Expression uses the same Data / Results shell as molecular input. Data's selector
+offers Overview, Quality, Comparison, Genes and Reference. Menu offers sample
+selection, reference loading, local comparison, profile preparation and gene search.
+The contextual next action guides Load reference → Compare locally → Prepare analysis.
+Preparation has a confirmation; Jev inference is a separate confirmed action.
 
-In import settings, Tab/Shift-Tab or arrows select fields. Ctrl-D previews detection;
-Ctrl-S or Ctrl+Enter submits. Set Sample ID for a two-column table; leave it empty for wide data.
-Dictionary path and release must be supplied together. Fields are editable after
-preview. Units default to unknown. Use file paths in the TUI; `-` is reserved for
-CLI stdin because TUI stdin carries keyboard events. Paths are literal, with no
-shell or environment expansion. Dropped file paths can be pasted into a path field;
-this is not a browser upload API.
+Tab/Shift-Tab focuses controls and Enter activates them; controls are clickable.
+Basic import settings cover source, suggested output folder, two-column sample ID,
+units and data class. Advanced settings retains all column, mapping, platform and
+transform options. Only explicitly invented records should be declared synthetic.
+Ctrl+D detects columns; Ctrl+S or Ctrl+Enter imports. Escape cancels without replacing
+the active sample. / searches genes; [/] changes selected samples when idle.
+Use Menu to export dataset/comparison evidence or inspect the prepared request.
 
-The form imports with a deidentified_research declaration and has no synthetic
-toggle. For invented data intended for live inference, use the CLI with --synthetic,
-then load the bundle. The CLI also exposes genome, study and other metadata absent
-from the form.
-
-Import/open/detection run off the rendering thread. Cancellation is cooperative at
-the boundary before bundle writing or view replacement; it does not interrupt every
-parser operation. Once writing begins, it finishes rather than leaving a deliberately
-aborted export. A failed load preserves the current dataset. The Analyze view shows
-which stages are available. `r` opens a reference, `a` compares the current sample
-and `e` exports an offline molecular Jev request. `m` attaches a usable comparison
-to Analysis (F2), where a separate confirmed synthetic Jev inference is available. Press `g` for the searchable guide (`F1`/`Ctrl+g` in editors). Projects is a local-workspace view, not yet a catalog.
+Changing sample or comparison/reference invalidates the prepared analysis and moves
+it to Menu → Earlier runs with its original input. The app never shows that result
+as a prediction for the newly selected sample. Failed loads preserve existing data.
 
 ## Legacy compatibility and current limits
 

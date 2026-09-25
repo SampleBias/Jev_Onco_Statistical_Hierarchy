@@ -10,7 +10,7 @@ marked mock. No CUP calibration is installed.
 
 ```bash
 cargo run --locked --bin josh -- tui
-# d computes the analytical demo; Tab opens charts.
+# d computes the analytical demo; p opens the paired OncoNPC figure.
 ./target/debug/josh molecular demo --out-dir /tmp/josh-demo --format text
 ./target/debug/josh tui /tmp/josh-demo/explanation.json
 ./target/debug/josh molecular export /tmp/josh-demo/explanation.json \
@@ -25,7 +25,7 @@ saves `report.md`; a completed explanation adds `explanation-report.md`.
 `molecular export RUN_DIRECTORY --output NEW.md` exports offline and defaults to
 Markdown. Use explicit --kind svg/csv/json with a completed explanation JSON file for chart/data
 formats. The TUI chooses its export format by extension; the CLI uses --kind.
-Inference JSON needs its matching features.json sidecar to reopen or export Markdown.
+Legacy bare inference JSON needs its matching features.json sidecar. New TUI inference-only JSON exports are self-contained josh_sample_run bundles; existing run folders and explanation archives remain compatible.
 
 Choose new destinations. Demo measurements and coefficients are invented software
 fixtures, not a replication of the paper's patient or a substitute cancer model.
@@ -39,7 +39,13 @@ per-gene values. Top-ten SVG labels retain a visible signed/absolute remainder.
 Press t to change the explained class offline. A reference-percentile scatter
 axis is used only when the available background and all displayed numerical
 features support it; otherwise X is feature rank. Original values/units remain in
-the inspector. Narrow terminals fall back to a table and signed bars.
+the inspector. The dedicated **OncoNPC** view (p) keeps ring and scatter together
+from 80×24, with a compact inspector; narrow tall terminals stack them, and very
+small terminals fall back to a table. Results has one View selector for Summary,
+paired ring/scatter, Ring, Scatter and Waterfall. Tab then Enter or click to choose;
+with chart content focused, Right/Left also cycles the views. Data is separate.
+See the [OncoNPC research guide](../references/ONCONPC_GUIDE.md) for interpretation
+and the current paper-objective audit. Both are searchable through F1.
 
 ## Feature input and provenance
 

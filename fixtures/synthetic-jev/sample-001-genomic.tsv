@@ -1,0 +1,12 @@
+sample_id	id	name	modality	value	units	status	gene	chromosome	position	reference	alternate	consequence	somatic	catalogue	method	mutation_count	reference_build	assay	coverage	group	depends_on
+SYNTH-001	kras	KRAS p.Gly12Cys	mutation			observed	KRAS	12	25245351	C	A	missense_variant; p.Gly12Cys	true				GRCh38	synthetic-WGS-v1	simulated tumor depth 164x; alternate 52/164; normal 0/38	sequence-profile	
+SYNTH-001	tp53	TP53 p.Arg273His	mutation			observed	TP53	17	7673802	C	T	missense_variant; p.Arg273His	true				GRCh38	synthetic-WGS-v1	simulated tumor depth 180x; alternate 68/180; normal 0/42	sequence-profile	
+SYNTH-001	sbs1	SBS1	signature	0.14	fraction	observed								synthetic-profile-v1; COSMIC SBS names	synthetic-exposures-not-fitted	3200	GRCh38	synthetic-WGS-v1	simulated 3200 somatic SNVs; no VCF or fitted spectrum supplied	sequence-profile	kras;tp53
+SYNTH-001	sbs4	SBS4	signature	0.62	fraction	observed								synthetic-profile-v1; COSMIC SBS names	synthetic-exposures-not-fitted	3200	GRCh38	synthetic-WGS-v1	simulated 3200 somatic SNVs; no VCF or fitted spectrum supplied	sequence-profile	kras;tp53
+SYNTH-001	sbs5	SBS5	signature	0.24	fraction	observed								synthetic-profile-v1; COSMIC SBS names	synthetic-exposures-not-fitted	3200	GRCh38	synthetic-WGS-v1	simulated 3200 somatic SNVs; no VCF or fitted spectrum supplied	sequence-profile	kras;tp53
+SYNTH-001	cdkn2a-cna	CDKN2A copy number	copy_number	-2	discrete_call	observed	CDKN2A										GRCh38	synthetic-CNA-v1	simulated segmented DNA coverage; reviewed gene-level call	cdkn2a-cna	
+SYNTH-001	myc-cna	MYC copy number	copy_number	1	discrete_call	observed	MYC										GRCh38	synthetic-CNA-v1	simulated segmented DNA coverage; reviewed gene-level call	myc-cna	
+SYNTH-001	egfr-cna	EGFR copy number	copy_number	0	discrete_call	observed	EGFR										GRCh38	synthetic-CNA-v1	simulated segmented DNA coverage; reviewed gene-level call	egfr-cna	
+SYNTH-001	mdm2-cna	MDM2 copy number	copy_number			unknown	MDM2										GRCh38	synthetic-CNA-v1	simulated low-quality gene interval; no reliable call	mdm2-cna	
+SYNTH-001	age	Age at sampling	demographic	67	years	observed												synthetic-record-v1	invented exact age	demographics	
+SYNTH-001	sex	Recorded sex at birth	demographic	male		observed												synthetic-record-v1	invented record	demographics	

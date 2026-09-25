@@ -14,7 +14,7 @@ plots directly. Nothing is a screenshot of the paper.
 
 | Key in F5 | Action |
 | --- | --- |
-| 1–6 / Tab / Shift+Tab | Overview, Confusion, Survival, Treatment, Calibration, Protocol |
+| 1–6 / view selector | Overview, Confusion, Survival, Treatment, Calibration, Protocol |
 | Arrows | Inspect a confusion cell; scroll textual views |
 | n | Cycle counts, row-normalized recall, column-normalized precision |
 | b | Detailed / explicitly mapped broad classification groups, if supplied |
@@ -26,7 +26,7 @@ plots directly. Nothing is a screenshot of the paper.
 | x | Discard pending calculation when it finishes; keep previous study |
 | F1 / g | Searchable offline guide |
 
-Switching sections preserves the study and lets calculations finish. Failed loads
+Switching workspaces preserves the study and lets calculations finish. Failed loads
 preserve the previous study. d explicitly replaces it with the demo after calculation.
 Export before replacing a study or quitting; session state is not auto-saved.
 Export errors remain visible and existing files are protected.
@@ -136,7 +136,7 @@ time-varying exposure, robust clustered Cox uncertainty, propensity fitting, wei
 inference, germline risk or external OncoNPC model is included. Treatment labels are
 reviewed inputs, not automatically adjudicated from medication records.
 
-See [Sources](../SOURCES.md), the [baseline assessment](../assessment/ONCONPC_PARITY.md)
+See [Sources](../SOURCES.md), the [current objective assessment](../assessment/ONCONPC_PARITY.md)
 and [implementation report](../reports/cohort-observatory.md). Freeze data eligibility,
 preprocessing, labels, thresholds and validation splits before a representative
 benchmark; do not tune on the held-out test set.

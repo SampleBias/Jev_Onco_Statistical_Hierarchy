@@ -90,8 +90,63 @@ impl App {
     pub(crate) fn busy(&self) -> bool {
         self.pending.is_some()
     }
-    pub(crate) fn unsaved_reviews(&self) -> bool {
-        self.dirty_reviews
+    pub(crate) fn views(&self) -> Vec<(usize, &'static str)> {
+        let mut views = vec![
+            (0, "Evidence"),
+            (1, "Request"),
+            (2, "Results"),
+            (5, "Visuals"),
+            (6, "Guidance"),
+            (7, "Review"),
+        ];
+        if self.batch.is_some() {
+            views.push((4, "Import QC"));
+        }
+        views
+    }
+    pub(crate) fn view(&self) -> usize {
+        self.tab
+    }
+    pub(crate) fn enter_compatibility(&mut self) {
+        self.status = "Read-only legacy record. Inspect evidence, charts or saved reviews through the view selector.".into();
+    }
+    pub(crate) fn status(&self) -> String {
+        self.status.clone()
+    }
+    pub(crate) fn set_view(&mut self, index: usize) {
+        self.select_tab(index.min(TAB_COUNT - 1));
+    }
+    pub(crate) fn context(&self) -> String {
+        format!(
+            "{} · {} findings · {:?} · clinical case{}",
+            self.case.case_id,
+            self.case.findings.len(),
+            self.case.data_class,
+            if self.path.is_none() {
+                " (bundled example)"
+            } else {
+                ""
+            }
+        )
+    }
+    pub(crate) fn editor(&self) -> Option<crate::editor::Editor> {
+        use crate::editor::Editor;
+        let e=match self.dialog {
+            Dialog::None=>return None,
+            Dialog::ConfirmLive=>{
+                let mut e=Editor::new("Analyze clinical case with Jev",&format!("Send {} findings from {} to api.typesafe.ai? One live call may incur charges. Export the clinical result afterward to preserve it.",self.case.findings.len(),self.case.case_id),"Send 1 request",&self.status);
+                e.submit=KeyEvent::new(KeyCode::Char('y'),KeyModifiers::NONE); e
+            },
+            Dialog::DiscardReviews=>{
+                let mut e=Editor::new("Unsaved clinical reviews","Quit and discard unsaved reviews? Cancel, then use Review → Export to save them.","Discard and quit",&self.status);
+                e.submit=KeyEvent::new(KeyCode::Char('y'),KeyModifiers::NONE); e
+            },
+            Dialog::Review=>Editor::new("Record clinical review","Format: reviewer | YYYY-MM-DD | action | reason. Actions: acknowledged, deferred, not_applicable, departed. This edits locally; export the case to save.","Record review",&self.status).field("Review entry",&self.input),
+            Dialog::Open=>Editor::new("Open clinical case","Load a clinical case JSON locally.","Open",&self.status).field("File path",&self.input),
+            Dialog::OpenBatch=>Editor::new("Open clinical bundle","Choose an imported case bundle directory.","Open",&self.status).field("Bundle path",&self.input),
+            Dialog::Save=>Editor::new("Export clinical data","Exports the current view's data to a NEW JSON file. On Review, saves the complete case with review history. Existing files are protected.","Export",&self.status).field("New JSON file",&self.input),
+        };
+        Some(e)
     }
     pub(crate) fn paste(&mut self, text: &str) {
         if matches!(
@@ -332,7 +387,12 @@ impl App {
                 KeyCode::Backspace => {
                     self.input.pop();
                 }
-                KeyCode::Char(c) if !c.is_control() => {
+                KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    self.input.clear()
+                }
+                KeyCode::Char(c)
+                    if !c.is_control() && !key.modifiers.contains(KeyModifiers::CONTROL) =>
+                {
                     if self.input.len() < 4096 {
                         self.input.push(c);
                     }
@@ -574,7 +634,7 @@ impl App {
             Block::default().style(Style::default().bg(theme::BACKGROUND).fg(theme::TEXT)),
             area,
         );
-        if area.width < 48 || area.height < 12 {
+        if area.width < 48 || area.height < if embedded { 4 } else { 12 } {
             frame.render_widget(
                 Paragraph::new(
                     if self.dialog == Dialog::DiscardReviews {
@@ -588,11 +648,11 @@ impl App {
             return;
         }
         let [header, tabs, body, status, footer] = Layout::vertical([
-            Constraint::Length(3),
-            Constraint::Length(1),
+            Constraint::Length(if embedded { 0 } else { 3 }),
+            Constraint::Length(if embedded { 0 } else { 1 }),
             Constraint::Min(3),
-            Constraint::Length(2),
-            Constraint::Length(2),
+            Constraint::Length(if embedded { 0 } else { 2 }),
+            Constraint::Length(if embedded { 0 } else { 2 }),
         ])
         .areas(area);
         let connection = if self.pending.is_some() {
@@ -656,6 +716,7 @@ impl App {
                 &self.case,
                 &mut self.scroll,
                 &mut self.detail_scroll,
+                embedded,
             );
         } else {
             let paragraph = Paragraph::new(self.body()).wrap(Wrap { trim: false });
@@ -698,7 +759,7 @@ impl App {
             status,
         );
         frame.render_widget(Paragraph::new("o Open  b Batch  [/] Case  d Demo  c Jev  s Save  q Quit\n6/v Visuals  7 Guidance  8 Review  ←/→ charts  g Guide").style(Style::default().fg(theme::MUTED)), footer);
-        if self.dialog != Dialog::None {
+        if !embedded && self.dialog != Dialog::None {
             let popup = Rect {
                 x: area.x + 2,
                 y: area.y + area.height.saturating_sub(10) / 2,

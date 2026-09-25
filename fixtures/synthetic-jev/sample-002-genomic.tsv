@@ -1,0 +1,9 @@
+sample_id	id	name	modality	value	units	status	gene	chromosome	position	reference	alternate	consequence	somatic	catalogue	method	mutation_count	reference_build	assay	coverage	group	depends_on
+SYNTH-002	braf	BRAF p.Val600Glu	mutation			observed	BRAF	7	140753336	A	T	missense_variant; p.Val600Glu	true				GRCh38	synthetic-WGS-v1	simulated tumor depth 152x; alternate 44/152; normal 0/41	braf	
+SYNTH-002	tp53	TP53 p.Arg273His	mutation			observed	TP53	17	7673802	C	T	missense_variant; p.Arg273His	true				GRCh38	synthetic-WGS-v1	simulated tumor depth 180x; alternate 68/180; normal 0/42	tp53	
+SYNTH-002	myc-cna	MYC copy number	copy_number	1	discrete_call	observed	MYC										GRCh38	synthetic-CNA-v1	simulated segmented DNA coverage; reviewed gene-level call	myc-cna	
+SYNTH-002	egfr-cna	EGFR copy number	copy_number	0	discrete_call	observed	EGFR										GRCh38	synthetic-CNA-v1	simulated segmented DNA coverage; reviewed gene-level call	egfr-cna	
+SYNTH-002	erbb2-cna	ERBB2 copy number	copy_number			unknown	ERBB2										GRCh38	synthetic-CNA-v1	simulated coverage failure; no reliable gene-level call	erbb2-cna	
+SYNTH-002	sbs4	SBS4	signature			not_tested												synthetic-signature-assay-v1	no signature analysis performed	sbs4	
+SYNTH-002	age	Age at sampling	demographic	72	years	observed												synthetic-record-v1	invented exact age	demographics	
+SYNTH-002	sex	Recorded sex at birth	demographic	female		observed												synthetic-record-v1	invented record	demographics	

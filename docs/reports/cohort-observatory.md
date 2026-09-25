@@ -1,8 +1,9 @@
 # Cohort Observatory implementation — September 24, 2026
 
-This is an engineering report, not a cancer benchmark. The earlier
-[OncoNPC assessment](../assessment/ONCONPC_PARITY.md) is retained as the pre-build
-baseline. Jev's predictive equivalence remains unmeasured.
+This is an engineering report, not a cancer benchmark. The
+[OncoNPC assessment](../assessment/ONCONPC_PARITY.md) now contains the September 25
+objective audit, superseding the pre-build baseline. Jev's predictive equivalence
+remains unmeasured.
 
 ## Delivered
 

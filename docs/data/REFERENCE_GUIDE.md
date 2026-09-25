@@ -2,7 +2,7 @@
 
 ## OncoNPC literature reference
 
-Data (F3) → Reference (6) includes the user-supplied Moon et al. OncoNPC preprint
+Expression (F3) → Reference (5) includes the user-supplied Moon et al. OncoNPC preprint
 (2022; DOI: 10.1101/2022.12.22.22283696), the subsequent Nature Medicine article
 (2023; DOI: 10.1038/s41591-023-02482-6), and its publisher correction. The citations
 remain available when an expression reference is loaded. Scroll to the reference
@@ -116,14 +116,16 @@ unavailable. See the [Molecular Guide](MOLECULAR_GUIDE.md).
 
 ## TUI workflow
 
-In Data (F3), r opens reference JSON, a compares the selected sample, and Analyze shows signed
-correlations, sample counts, overlap, gate failures and scientific limitations.
-s on Analyze exports the complete evidence package; e exports the offline request
-with evidence. Open g to search this guide; F1/Ctrl+g work inside forms. Loading a
-new dataset/reference or switching samples invalidates the previous comparison.
-The shared Analysis result remains intact until you explicitly attach another
-usable comparison with m or replace its input. Comparison and request export do
-not call Jev.
+Open an expression dataset in the sample workbench. The next-action button guides
+Load reference → Compare locally → Prepare analysis. Data's selector exposes
+Comparison, including correlations, overlap, gate failures and limitations.
+Menu also exposes these actions and dataset sample selection.
+
+Preparation explicitly creates an expression-only analysis for the selected
+sample and frozen reference taxonomy. No molecular or clinical probabilities are
+merged. Run analysis asks separately before a Jev call. Changing the sample,
+reference or comparison removes the prior analysis from current Results and keeps
+it under Earlier runs. Loading/comparison alone never calls Jev.
 
 ## Reproducibility and interpretation
 
