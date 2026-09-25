@@ -309,3 +309,5 @@ fn issue(qc: &mut QcReport, code: &str, source_record: Option<u64>) {
 }
 pub mod evaluation;
 pub mod signatures;
+pub mod study;
+pub mod survival;

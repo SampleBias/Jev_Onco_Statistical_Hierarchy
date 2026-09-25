@@ -19,6 +19,8 @@ const MANUAL: &str = concat!(
     "\n\n",
     include_str!("../../../docs/data/REFERENCE_GUIDE.md"),
     "\n\n",
+    include_str!("../../../docs/data/COHORT_GUIDE.md"),
+    "\n\n",
     include_str!("../../../docs/TERMINAL_GUIDE.md")
 );
 

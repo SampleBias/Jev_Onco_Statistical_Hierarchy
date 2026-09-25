@@ -1,6 +1,6 @@
 //! The single terminal application: shared navigation, loader, help and job lifecycle.
 use crate::{
-    molecular_tui, tui, ui, workbench,
+    molecular_tui, study_tui, tui, ui, workbench,
     workflows::{self, AppError},
 };
 use crossterm::event::{
@@ -24,12 +24,14 @@ pub enum Section {
     Analysis,
     Data,
     Clinical,
+    Cohort,
 }
 
 pub struct App {
     analysis: molecular_tui::App,
     data: workbench::Workbench,
     clinical: tui::App,
+    cohort: study_tui::App,
     section: Section,
     guide: crate::guide::Guide,
     load_input: Option<String>,
@@ -45,10 +47,11 @@ impl App {
             analysis: molecular_tui::App::new(None, None)?,
             data: workbench::Workbench::new()?,
             clinical: tui::App::new(None)?,
+            cohort: study_tui::App::default(),
             section: Section::Analysis,
             guide: crate::guide::Guide::default(),
             load_input: None,
-            status: "One workspace · l Load · F2 Analysis · F3 Data · F4 Clinical · F1 Help".into(),
+            status: "l Load · F2 Analysis · F3 Data · F4 Clinical · F5 Cohort · F1 Help".into(),
             navigation: vec![],
             confirm_exit: false,
             quitting: false,
@@ -62,13 +65,14 @@ impl App {
         self.section
     }
     pub fn busy(&self) -> bool {
-        self.analysis.busy() || self.data.busy() || self.clinical.busy()
+        self.analysis.busy() || self.data.busy() || self.clinical.busy() || self.cohort.busy()
     }
     fn editing(&self) -> bool {
         match self.section {
             Section::Analysis => self.analysis.editing(),
             Section::Data => self.data.editing(),
             Section::Clinical => self.clinical.editing(),
+            Section::Cohort => self.cohort.editing(),
         }
     }
     fn select(&mut self, section: Section) {
@@ -131,7 +135,13 @@ impl App {
             }
         } else {
             let value: serde_json::Value = workflows::read_json(path, 64 * 1024 * 1024)?;
-            if value.get("case_id").is_some() {
+            if matches!(
+                value.get("kind").and_then(|v| v.as_str()),
+                Some("josh_cohort_study" | "josh_cohort_report")
+            ) {
+                self.cohort.open(path);
+                self.section = Section::Cohort;
+            } else if value.get("case_id").is_some() {
                 self.replace_clinical(tui::App::new(Some(path.into()))?)?;
             } else if path.file_name().is_some_and(|s| s == "dataset.json") {
                 self.data
@@ -149,7 +159,7 @@ impl App {
             }
         }
         self.status = format!(
-            "Opened {} in this workspace. F2/F3/F4 switch sections.",
+            "Opened {} in this workspace. F2/F3/F4/F5 switch sections.",
             workflows::display_text(&path.display().to_string())
         );
         Ok(())
@@ -179,6 +189,7 @@ impl App {
         self.analysis.poll().await;
         self.data.poll().await;
         self.clinical.poll_result().await;
+        self.cohort.poll().await;
     }
     pub fn exit_ready(&self) -> bool {
         self.quitting && !self.busy()
@@ -187,6 +198,7 @@ impl App {
         self.quitting = true;
         self.analysis.cancel_job();
         self.data.cancel_job();
+        self.cohort.cancel_job();
         self.status = "Finishing in-flight work before closing the workspace.".into();
     }
     fn request_quit(&mut self) {
@@ -259,6 +271,7 @@ impl App {
             KeyCode::F(2) => self.select(Section::Analysis),
             KeyCode::F(3) => self.select(Section::Data),
             KeyCode::F(4) => self.select(Section::Clinical),
+            KeyCode::F(5) => self.select(Section::Cohort),
             KeyCode::Esc if !self.editing() => (),
             KeyCode::Char('q') if !self.editing() => self.request_quit(),
             KeyCode::Char('l' | 'o') if !self.editing() => self.begin_load(),
@@ -272,6 +285,7 @@ impl App {
                     Section::Analysis => self.analysis.key(key),
                     Section::Data => self.data.key(key),
                     Section::Clinical => self.clinical.key(key),
+                    Section::Cohort => self.cohort.key(key),
                 };
                 // Esc closes editors, but never tears down a section or its state.
                 if exit && key.code != KeyCode::Esc {
@@ -301,6 +315,7 @@ impl App {
                 Section::Analysis => self.analysis.paste(text),
                 Section::Data => self.data.paste(text.into()),
                 Section::Clinical => self.clinical.paste(text),
+                Section::Cohort => self.cohort.paste(text),
             }
         }
     }
@@ -327,6 +342,8 @@ impl App {
             } else {
                 self.analysis.mouse(event);
             }
+        } else if self.section == Section::Cohort {
+            self.cohort.mouse(event);
         }
     }
     pub fn draw(&mut self, frame: &mut Frame) {
@@ -346,16 +363,23 @@ impl App {
                 .style(Style::default().fg(ui::ACCENT).bold()),
             title,
         );
-        let areas = Layout::horizontal([Constraint::Ratio(1, 4); 4]).split(navigation);
+        let areas = Layout::horizontal([Constraint::Ratio(1, 5); 5]).split(navigation);
         self.navigation.clear();
         for ((rect, label), section) in areas
             .iter()
-            .zip(["Load [l]", "Analysis [F2]", "Data [F3]", "Clinical [F4]"])
+            .zip([
+                "Load [l]",
+                "Analysis [F2]",
+                "Data [F3]",
+                "Clinical [F4]",
+                "Cohort [F5]",
+            ])
             .zip([
                 None,
                 Some(Section::Analysis),
                 Some(Section::Data),
                 Some(Section::Clinical),
+                Some(Section::Cohort),
             ])
         {
             frame.render_widget(
@@ -374,6 +398,7 @@ impl App {
             Section::Analysis => self.analysis.draw_area(frame, body, true),
             Section::Data => self.data.draw_area(frame, body, true),
             Section::Clinical => self.clinical.draw_area(frame, body, true),
+            Section::Cohort => self.cohort.draw_area(frame, body),
         }
         let jobs = if self.busy() { "Job running · " } else { "" };
         let dirty = if self.clinical.unsaved_reviews() {
@@ -404,7 +429,7 @@ impl App {
                 (
                     "Load into this workspace",
                     format!(
-                        "Molecular or clinical JSON, CSV/TSV, MAF/VCF, dataset/case bundle, or saved run. The file selects the section.\n\n{}\n\nEnter: load · Ctrl+u: clear · Esc: cancel\n\n{}",
+                        "Molecular, clinical or cohort-study JSON, CSV/TSV, MAF/VCF, dataset/case bundle, or saved run. The file selects the section.\n\n{}\n\nEnter: load · Ctrl+u: clear · Esc: cancel\n\n{}",
                         workflows::display_text(input),
                         workflows::display_text(&self.status)
                     ),

@@ -1,5 +1,35 @@
 # Source register
 
+## OncoNPC prediction and cohort figures — checked 2026-09-24
+
+- Moon I, LoPiccolo J, Baca SC, Sholl LM, Kehl KL, Hassett MJ, Liu D, Schrag D,
+  Gusev A. *Utilizing Electronic Health Records (EHR) and Tumor Panel Sequencing
+  to Demystify Prognosis of Cancer of Unknown Primary (CUP) patients.* medRxiv.
+  Version 1, posted December 26, 2022. DOI:
+  [10.1101/2022.12.22.22283696](https://doi.org/10.1101/2022.12.22.22283696).
+  [User-supplied full-text link](https://www.medrxiv.org/content/10.1101/2022.12.22.22283696v1.full-text)
+  and [indexed version 1 text](https://www.medrxiv.org/content/10.1101/2022.12.22.22283696v1.full).
+  This is the preprint requested as the project's research reference.
+- Moon I et al. *Machine learning for genetics-based classification and treatment
+  response prediction in cancer of unknown primary.* Nature Medicine.
+  2023;29:2057–2067. DOI:
+  [10.1038/s41591-023-02482-6](https://doi.org/10.1038/s41591-023-02482-6).
+  This is the subsequent peer-reviewed publication.
+- [Publisher correction](https://www.nature.com/articles/s41591-023-02693-x),
+  published online November 15, 2023; Nature Medicine 30:607 (2024).
+  Consult it when defining cancer groups or using supplementary data.
+
+The supplied screenshot motivates three cohort views: a confusion heatmap,
+survival by predicted cancer type, and survival by treatment concordance. These
+are research targets, not current JOSH results. The preprint screenshot uses ten
+broad groups; the published article reports thirteen. Freeze the chosen version
+and mapping before comparisons. OncoNPC's XGBoost results cannot be attributed to Jev.
+
+The exact version-1 results and methods were checked against indexed medRxiv text;
+direct medRxiv retrieval returned 403/cache errors. Publication metadata and the
+correction were checked against PubMed and the publisher. No patient data or model
+weights were downloaded. See the [implementation and evidence assessment](assessment/ONCONPC_PARITY.md).
+
 ## Molecular explanations — checked 2026-09-23
 
 - [OncoNPC full article and Extended Data Figure 4](https://pmc.ncbi.nlm.nih.gov/articles/PMC11484892/):
@@ -60,3 +90,21 @@ recommendations/update text and official guideline PDF were used for verificatio
 Exact source mapping, omissions and software-specific safety choices are documented
 in the [clinical review guide](CLINICAL_REVIEW_GUIDE.md). Visualizations are interface
 choices, not a claim that NICE mandates particular chart formats.
+
+## Cohort statistical methods — checked 2026-09-24
+
+The OncoNPC citations above motivate the study panels; their reported performance
+is not assigned to Jev. Method references for the native Rust implementation:
+
+- [R survival: survfit.formula](https://stat.ethz.ch/R-manual/R-devel/library/survival/html/survfit.formula.html):
+  product-limit estimation and confidence transformations; weighted observations
+  need appropriate variance estimation, not naive Greenwood intervals.
+- [R survival: coxph](https://stat.ethz.ch/R-manual/R-devel/library/survival/html/coxph.html):
+  proportional hazards, Breslow/Efron ties and infinite-coefficient limitations.
+  JOSH explicitly uses Breslow ties, not coxph's usual Efron default.
+- [R survival: survdiff](https://stat.ethz.ch/R-manual/R-devel/library/survival/html/survdiff.html):
+  log-rank comparison, distinct from propensity-weighted treatment inference.
+
+No R dependency or R implementation is bundled. These references specify methods;
+passing software checks is not clinical validation. See the
+[Cohort Guide](data/COHORT_GUIDE.md) for explicit assumptions and missing analyses.

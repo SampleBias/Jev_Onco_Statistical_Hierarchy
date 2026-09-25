@@ -50,6 +50,14 @@ cargo run --locked -p josh-app --example prepare_demo -- --out-dir results/basic
 | **F2 Analysis** | Molecular inputs, Jev inference, saved results, explanations and Markdown reports |
 | **F3 Data** | Expression import, gene mapping, QC, exploration and local reference comparison |
 | **F4 Clinical** | Summarized cases, clinical context, source-linked NICE review and case exports |
+| **F5 Cohort** | Paper-inspired heatmap, survival, treatment associations, calibration and study exports |
+
+For the OncoNPC-inspired research dashboard, press **F5**, then **d**. The offline
+demo is explicitly synthetic. **1–6** changes views, **i** shows survival confidence
+bounds, **w** toggles supplied-propensity weighting, and **s** exports SVG, Markdown
+or a reopenable JSON archive. Load frozen cohorts with **l**. See the
+[Cohort Guide](docs/data/COHORT_GUIDE.md) for input contracts and statistical limits.
+These capabilities do not establish Jev's cancer accuracy or paper parity.
 
 Switching sections preserves their data, forms, results and jobs. Use the shared
 **l/o** loader or `josh tui PATH` for supported files and bundles; **F1** opens help

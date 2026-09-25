@@ -1,5 +1,18 @@
 # Expression reference guide
 
+## OncoNPC literature reference
+
+Data (F3) → Reference (6) includes the user-supplied Moon et al. OncoNPC preprint
+(2022; DOI: 10.1101/2022.12.22.22283696), the subsequent Nature Medicine article
+(2023; DOI: 10.1038/s41591-023-02482-6), and its publisher correction. The citations
+remain available when an expression reference is loaded. Scroll to the reference
+library below the literature entries for loaded-reference details.
+
+Full citations are in the [source register](../SOURCES.md). The
+[OncoNPC comparison](../assessment/ONCONPC_PARITY.md) describes current functionality,
+the missing cohort figures, and the evidence needed to assess Jev prediction quality.
+A literature citation is not an expression reference dataset or validation of JOSH.
+
 ## What is implemented
 
 A local reference contains fixed canonical genes and per-class mean transformed

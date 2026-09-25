@@ -47,7 +47,7 @@ are never automatically retried or replaced by demo results.
 
 ## Shared loading and workspace navigation
 
-F2 Analysis, F3 Data and F4 Clinical select sections; clicking the persistent tabs
+F2 Analysis, F3 Data, F4 Clinical and F5 Cohort select sections; clicking the persistent tabs
 does the same. Section forms, results and jobs survive a switch. Close the shared
 Load dialog or quit confirmation before switching. l/o opens Load from navigation;
 `josh tui PATH` uses the same loader at startup.
@@ -61,6 +61,7 @@ Load dialog or quit confirmation before switching. l/o opens Load from navigatio
 | Expression CSV/TSV | Data import settings |
 | Dataset bundle directory or its dataset.json | Data |
 | Canonical case JSON; case import bundle or its manifest.json | Clinical |
+| Cohort study JSON; cohort report archive JSON | Cohort |
 
 CSV/TSV routing uses headers: case_id requires CLI case import first; modality or id
 selects molecular import; other headers select expression import. If your expression
@@ -86,6 +87,15 @@ or confirm discarding them. Quit requests cancellation at safe boundaries and wa
 for in-flight work. Export results you want to keep before quitting: section state
 is not a persistent project, and clinical calls are not automatically archived.
 Esc closes dialogs; it does not stop a job or leave a section.
+
+## Paper-inspired cohort workspace
+
+F5 then d loads an explicitly synthetic classification/outcome study without an
+API call. Six views show confusion, survival by predicted type, treatment
+concordance, calibration and provenance. l loads frozen studies; s exports
+SVG/Markdown/JSON. n switches normalization; i shows unweighted 95% survival bounds;
+w selects supplied-propensity IPTW. See the [Cohort Guide](data/COHORT_GUIDE.md)
+for schemas, methods and limits. This does not establish predictive equivalence.
 
 ## Molecular explanations and exports
 

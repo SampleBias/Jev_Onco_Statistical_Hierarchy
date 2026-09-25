@@ -8,7 +8,7 @@ from the repository to build and launch it. For the main Load → Analyze → Re
 
 | Key | Action outside text editors |
 | --- | --- |
-| F2 / F3 / F4 | Analysis / Data / Clinical; preserve section state and jobs |
+| F2 / F3 / F4 / F5 | Analysis / Data / Clinical / Cohort; preserve section state and jobs |
 | l / o | Shared Load dialog for supported files/bundles |
 | g | Searchable guide; F1/Ctrl+g also works inside editors |
 | Esc | Close a dialog; it does not stop a job or leave a section |
@@ -43,6 +43,15 @@ s exports comparison evidence on Analyze when present, otherwise the manifest.
 m attaches a usable comparison to Analysis, replacing its previous input/result.
 See the [Expression Guide](data/EXPRESSION_GUIDE.md) and
 [Reference Guide](data/REFERENCE_GUIDE.md). These Data operations make no provider call.
+
+## Cohort controls and CLI
+
+F5 opens Cohort Observatory. d loads an invented demo, 1–6 selects views,
+arrows inspect confusion cells, n cycles normalization, b toggles an explicit broad
+mapping, i toggles unweighted bounds, w toggles IPTW, and [/] pages survival groups.
+l loads study/archive JSON; s exports SVG/Markdown/JSON. Use `josh study demo`,
+`from-records`, `analyze` or `export` for the offline CLI and `josh schema cohort-study`
+for the input contract. See the [Cohort Guide](data/COHORT_GUIDE.md) for limits.
 
 ## Clinical controls
 

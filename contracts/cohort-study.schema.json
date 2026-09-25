@@ -1,0 +1,288 @@
+{
+  "$defs": {
+    "CancerClass": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "parent": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "parent"
+      ],
+      "type": "object"
+    },
+    "Concordance": {
+      "enum": [
+        "concordant",
+        "discordant",
+        "empiric",
+        "unreviewed"
+      ],
+      "type": "string"
+    },
+    "DataClass": {
+      "enum": [
+        "synthetic",
+        "deidentified_research"
+      ],
+      "type": "string"
+    },
+    "Observation": {
+      "additionalProperties": false,
+      "properties": {
+        "concordance": {
+          "$ref": "#/$defs/Concordance"
+        },
+        "covariates": {
+          "additionalProperties": {
+            "format": "double",
+            "type": "number"
+          },
+          "type": "object"
+        },
+        "entry": {
+          "format": "double",
+          "type": "number"
+        },
+        "event": {
+          "type": "boolean"
+        },
+        "patient_id": {
+          "type": "string"
+        },
+        "predicted_class": {
+          "type": "string"
+        },
+        "propensity": {
+          "description": "P(concordant | baseline covariates), supplied by a documented external model.",
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "time": {
+          "format": "double",
+          "type": "number"
+        }
+      },
+      "required": [
+        "patient_id",
+        "predicted_class",
+        "entry",
+        "time",
+        "event",
+        "concordance",
+        "covariates"
+      ],
+      "type": "object"
+    },
+    "Outcomes": {
+      "additionalProperties": false,
+      "properties": {
+        "adjustment_covariates": {
+          "description": "Frozen numeric baseline covariates; categorical variables must be explicitly encoded.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "observations": {
+          "items": {
+            "$ref": "#/$defs/Observation"
+          },
+          "type": "array"
+        },
+        "propensity_model": {
+          "description": "Required when propensity scores are supplied. No score is fitted or clipped silently.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "type": "string"
+        },
+        "time_origin": {
+          "type": "string"
+        },
+        "time_unit": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "endpoint",
+        "time_origin",
+        "time_unit",
+        "source",
+        "adjustment_covariates",
+        "observations"
+      ],
+      "type": "object"
+    },
+    "Record": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted": {
+          "type": "boolean"
+        },
+        "failure": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "partition": {
+          "type": "string"
+        },
+        "patient_group_id": {
+          "type": "string"
+        },
+        "probabilities": {
+          "additionalProperties": {
+            "format": "double",
+            "type": "number"
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "sample_id": {
+          "type": "string"
+        },
+        "truth": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "sample_id",
+        "patient_group_id",
+        "partition",
+        "truth",
+        "accepted"
+      ],
+      "type": "object"
+    },
+    "TaxonomyDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "classes": {
+          "items": {
+            "$ref": "#/$defs/CancerClass"
+          },
+          "type": "array"
+        },
+        "other_id": {
+          "type": "string"
+        },
+        "unknown_id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "classes",
+        "unknown_id",
+        "other_id"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "broad_group_version": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "broad_groups": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "A complete, explicit leaf -> group map; empty means no broad-group analysis.",
+      "type": "object"
+    },
+    "data_class": {
+      "$ref": "#/$defs/DataClass"
+    },
+    "kind": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "outcomes": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Outcomes"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "partition": {
+      "type": "string"
+    },
+    "prediction_source": {
+      "type": "string"
+    },
+    "protocol": {
+      "type": "string"
+    },
+    "records": {
+      "items": {
+        "$ref": "#/$defs/Record"
+      },
+      "type": "array"
+    },
+    "schema_version": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "study_id": {
+      "type": "string"
+    },
+    "taxonomy": {
+      "$ref": "#/$defs/TaxonomyDefinition"
+    },
+    "title": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "schema_version",
+    "study_id",
+    "title",
+    "data_class",
+    "protocol",
+    "prediction_source",
+    "model",
+    "partition",
+    "taxonomy",
+    "records",
+    "broad_groups"
+  ],
+  "title": "Study",
+  "type": "object"
+}

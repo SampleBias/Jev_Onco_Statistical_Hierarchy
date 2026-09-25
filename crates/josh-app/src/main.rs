@@ -53,6 +53,7 @@ enum SchemaKind {
     SignatureCatalogue,
     EvaluationRecords,
     Cohort,
+    CohortStudy,
 }
 
 #[derive(Clone, Copy, ValueEnum)]
@@ -65,6 +66,11 @@ enum InputFormat {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Offline cohort evaluation, survival analysis and paper-style graphics.
+    Study {
+        #[command(subcommand)]
+        command: josh_app::study::Command,
+    },
     /// Molecular imports, Jev inference and native Rust Shapley explanations.
     Molecular {
         #[command(subcommand)]
@@ -144,6 +150,12 @@ async fn run(args: Args) -> Result<bool, AppError> {
     let mut raw_output = None;
     let mut rejected_records = false;
     let value = match args.command {
+        Command::Study { command } => {
+            let result = josh_app::study::execute(command)?;
+            human = Some(result.text);
+            raw_output = result.raw;
+            result.value
+        }
         Command::Molecular { command } => {
             let result = josh_app::molecular::execute(*command).await?;
             human = Some(result.text);
@@ -227,6 +239,7 @@ async fn run(args: Args) -> Result<bool, AppError> {
                 SchemaKind::SignatureCatalogue => "signature-catalogue.schema.json",
                 SchemaKind::EvaluationRecords => "evaluation-records.schema.json",
                 SchemaKind::Cohort => "cohort.schema.json",
+                SchemaKind::CohortStudy => "cohort-study.schema.json",
             };
             josh_app::contracts::documents()
                 .remove(name)

@@ -135,7 +135,6 @@ struct Pending {
 
 pub struct Workbench {
     guide: crate::guide::Guide,
-    tick: usize,
     reference: Option<(josh_core::reference::ReferenceRelease, String)>,
     comparison: Option<josh_core::reference::EvidencePackage>,
     loaded: Loaded,
@@ -202,7 +201,6 @@ impl Workbench {
     pub fn new() -> Result<Self, AppError> {
         let mut app = Self {
             guide: crate::guide::Guide::default(),
-            tick: 0,
             reference: None,
             comparison: None,
             loaded: demo()?,
@@ -289,10 +287,30 @@ impl Workbench {
         self.tab = 2;
     }
     fn reference_text(&self) -> String {
-        match &self.reference {
+        let library = match &self.reference {
             None => "REFERENCE LIBRARY\n\nPress r to open a curated reference JSON.\nBuild a reference: josh reference build DATASET --labels LABELS.tsv --release-id VERSION --citation SOURCE --output NEW.json\n\nGene dictionaries map identifiers; they are not tumor references.\nPress g for the complete guide, including label format and compatibility gates.".into(),
             Some((r,hash)) => format!("REFERENCE {}\nSHA256: {}\nCitation: {}\nSource dataset: {}\nSynthetic: {}\n\n{} samples · {} classes · {} common genes\nProcessing: TPM → log2(x+1) · {}\nMinimum overlap: {} genes / {:.0}%\n\n{}\n\nPress a to compare the selected sample.\nNo calibrated probabilities or validated OOD detector.\n{}",r.release_id,hash,r.citation,r.source_dataset_id,r.synthetic,r.members.len(),r.classes.len(),r.genes.len(),r.compatibility.platform,r.minimum_genes,r.minimum_overlap*100.,r.classes.iter().map(|c|format!("{}  (n={})",c.cancer_type,c.samples)).collect::<Vec<_>>().join("\n"),r.limitations.join("\n")),
-        }
+        };
+        format!(
+            "RESEARCH REFERENCES\n\n\
+             OncoNPC - Moon I et al.\n\
+             Utilizing Electronic Health Records (EHR) and Tumor Panel Sequencing to Demystify Prognosis of Cancer of Unknown Primary (CUP) patients.\n\
+             medRxiv, 2022, version 1 (preprint). DOI: 10.1101/2022.12.22.22283696\n\
+             https://www.medrxiv.org/content/10.1101/2022.12.22.22283696v1.full-text\n\n\
+             Published study: Moon I et al.\n\
+             Machine learning for genetics-based classification and treatment response prediction in cancer of unknown primary.\n\
+             Nature Medicine 29, 2057-2067 (2023).\n\
+             https://doi.org/10.1038/s41591-023-02482-6\n\
+             Publisher correction (cancer grouping):\n\
+             https://doi.org/10.1038/s41591-023-02693-x\n\n\
+             Research and visualization reference for JOSH. Published OncoNPC results do not validate Jev predictions.\n\
+             Cohort figures: confusion matrix, survival by predicted cancer type, and survival by treatment concordance.\n\
+             F5 Cohort: confusion heatmap, survival curves, adjusted Cox and supplied-propensity IPTW.\n\
+             Press d there for a labeled synthetic demo; load frozen studies for local analysis.\n\
+             Weighted survival intervals/tests and real cancer predictive validation remain unavailable.\n\
+             Assessment: docs/assessment/ONCONPC_PARITY.md\n\n\
+             {library}"
+        )
     }
     fn analysis_text(&self) -> String {
         match &self.comparison {
@@ -440,7 +458,6 @@ impl Workbench {
         }
     }
     pub async fn poll(&mut self) {
-        self.tick = self.tick.wrapping_add(1);
         if self
             .pending
             .as_ref()
@@ -727,25 +744,30 @@ impl Workbench {
             ]),
             brand,
         );
-        let pulse = ["◐", "◓", "◑", "◒"][self.tick % 4];
         frame.render_widget(
             Paragraph::new(vec![
-                Line::from(Span::styled(
-                    "  ⠙⢦⡀⢀⡴⠋  SAMPLE → EVIDENCE",
-                    Style::default().fg(ui::BLUE),
-                )),
-                Line::from(Span::styled(
-                    "  ⢀⡴⠋⠙⢦⡀  Molecular evidence",
-                    Style::default().fg(ui::MUTED),
-                )),
-                Line::from(Span::styled(
-                    if self.pending.is_some() {
-                        format!("  {pulse} Local processing")
-                    } else {
-                        "  ● Workspace ready".into()
-                    },
-                    Style::default().fg(ui::ACCENT),
-                )),
+                Line::from(vec![
+                    Span::styled(
+                        "  ● ",
+                        Style::default().fg(if workflows::key_configured() {
+                            ui::ACCENT
+                        } else {
+                            ui::MUTED
+                        }),
+                    ),
+                    Span::styled("JEV Ready", Style::default().fg(ui::TEXT)),
+                ]),
+                Line::from(vec![
+                    Span::styled(
+                        "  ● ",
+                        Style::default().fg(if self.pending.is_some() {
+                            ui::GOLD
+                        } else {
+                            ui::ACCENT
+                        }),
+                    ),
+                    Span::styled("Workspace", Style::default().fg(ui::TEXT)),
+                ]),
             ]),
             badge,
         );
