@@ -21,6 +21,7 @@ pub mod molecular;
 pub mod molecular_charts;
 pub mod molecular_research;
 pub mod molecular_tui;
+pub mod prompt_comparison;
 pub mod reference;
 pub mod report;
 pub mod samples;

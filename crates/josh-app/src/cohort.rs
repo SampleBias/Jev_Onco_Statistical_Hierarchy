@@ -211,7 +211,16 @@ pub async fn run(
                     failure: None,
                     elapsed_ms,
                 },
-                _ => CaseResult {
+                Ok(Err(error)) => {
+                    molecular::save_response_diagnostic(out_dir, &error)?;
+                    CaseResult {
+                        feature_sha256: core::hash(&features[i])?,
+                        run: None,
+                        failure: Some(error.to_string()),
+                        elapsed_ms,
+                    }
+                }
+                Err(_) => CaseResult {
                     feature_sha256: core::hash(&features[i])?,
                     run: None,
                     failure: Some("provider_error_or_timeout; no automatic retry".into()),

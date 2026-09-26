@@ -100,6 +100,38 @@ fn close(a: f64, b: f64) {
     assert!((a - b).abs() < 1e-10, "{a} != {b}");
 }
 #[tokio::test]
+async fn legacy_inference_and_explanation_keep_the_original_questions() {
+    let f = features();
+    let t = onconpc_taxonomy();
+    let request = prepare_versioned(&f, &t, LEGACY_PROMPT).unwrap();
+    let inference =
+        interpret_versioned(&f, &t, response(&request), Source::Replay, LEGACY_PROMPT).unwrap();
+    let mut a = Archive::new(
+        f,
+        inference,
+        Config {
+            algorithm: Algorithm::Exact,
+            ..Config::default()
+        },
+        None,
+    )
+    .unwrap();
+    let mut oracle = Oracle { calls: 0 };
+    run(&mut a, &mut oracle, &Progress::default(), |_| Ok(()))
+        .await
+        .unwrap();
+    a.validate().unwrap();
+    for e in a.evaluations.values() {
+        assert_eq!(
+            hash(&e.request.questions).unwrap(),
+            hash(&request.questions).unwrap()
+        );
+        assert!(e.request.state.get("measurement_semantics").is_none());
+    }
+    a.inference.prompt_version = PROMPT.into();
+    assert!(a.validate().is_err());
+}
+#[tokio::test]
 async fn exact_shapley_splits_interaction_and_assigns_dummy_zero() {
     let mut a = archive(
         Config {

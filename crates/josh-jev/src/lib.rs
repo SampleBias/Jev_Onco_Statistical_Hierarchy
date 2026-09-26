@@ -1,3 +1,4 @@
+use josh_core::response::{ResponseCode, ResponseDiagnostic};
 use josh_core::{Case, DataClass, JevResponse, ResultRecord, Source, interpret, prepare};
 use std::time::Duration;
 
@@ -40,7 +41,7 @@ impl Client {
         }
         if request.model != josh_core::MODEL
             || serde_json::to_vec(request)
-                .map_err(|_| Error::Response)?
+                .map_err(|_| josh_core::ValidationError("request serialization failed"))?
                 .len()
                 > josh_core::molecular::MAX_REQUEST_BYTES
         {
@@ -57,23 +58,113 @@ impl Client {
         if !response.status().is_success() {
             return Err(Error::Http(response.status().as_u16()));
         }
+        let status = response.status().as_u16();
         if response
             .content_length()
             .is_some_and(|n| n > MAX_RESPONSE_BYTES as u64)
         {
-            return Err(Error::Response);
+            let mut d = ResponseDiagnostic::new(ResponseCode::BodyTooLarge);
+            d.request_sha256 = josh_core::molecular::hash(request).ok();
+            d.http_status = Some(status);
+            return Err(Error::Response(Box::new(d)));
         }
         let mut bytes = Vec::new();
         while let Some(chunk) = response.chunk().await.map_err(|_| Error::Transport)? {
             if bytes.len() + chunk.len() > MAX_RESPONSE_BYTES {
-                return Err(Error::Response);
+                let mut d = ResponseDiagnostic::new(ResponseCode::BodyTooLarge);
+                d.request_sha256 = josh_core::molecular::hash(request).ok();
+                d.http_status = Some(status);
+                return Err(Error::Response(Box::new(d)));
             }
             bytes.extend_from_slice(&chunk);
         }
-        let response: JevResponse = serde_json::from_slice(&bytes).map_err(|_| Error::Response)?;
-        josh_core::molecular::validate_response(request, &response).map_err(|_| Error::Response)?;
-        Ok(response)
+        decode_response(request, &bytes, status)
     }
+}
+
+/// Can also inspect a locally captured response without making a network request.
+pub fn decode_response(
+    request: &josh_core::JevRequest,
+    bytes: &[u8],
+    status: u16,
+) -> Result<JevResponse, Error> {
+    if bytes.len() > MAX_RESPONSE_BYTES {
+        let mut d = ResponseDiagnostic::new(ResponseCode::BodyTooLarge);
+        d.request_sha256 = josh_core::molecular::hash(request).ok();
+        d.response_bytes = Some(bytes.len());
+        d.http_status = Some(status);
+        return Err(Error::Response(Box::new(d)));
+    }
+    let response: JevResponse = serde_json::from_slice(bytes).map_err(|e| {
+        let code = if e.is_data() {
+            ResponseCode::JsonShape
+        } else {
+            ResponseCode::InvalidJson
+        };
+        let mut d = ResponseDiagnostic::new(code).attach_body(request, bytes, status);
+        if e.is_data()
+            && let Ok(value) = serde_json::from_slice::<serde_json::Value>(bytes)
+        {
+            let (field, index) = invalid_field(request, &value);
+            d.field = field.map(str::to_owned);
+            d.question_index = index;
+        }
+        // serde error messages may contain values from the provider; retain only coordinates.
+        d.json_line = Some(e.line());
+        d.json_column = Some(e.column());
+        Error::Response(Box::new(d))
+    })?;
+    josh_core::response::validate(request, &response)
+        .map_err(|d| Error::Response(Box::new((*d).attach_body(request, bytes, status))))?;
+    Ok(response)
+}
+
+fn invalid_field(
+    request: &josh_core::JevRequest,
+    value: &serde_json::Value,
+) -> (Option<&'static str>, Option<usize>) {
+    if !value["model"].is_string() {
+        return (Some("model"), None);
+    }
+    if !value["answers"].is_object() {
+        return (Some("answers"), None);
+    }
+    if !value["usage"].is_object() {
+        return (Some("usage"), None);
+    }
+    for field in ["input_tokens", "output_tokens"] {
+        if value["usage"][field].as_u64().is_none() {
+            return (Some(field), None);
+        }
+    }
+    for (index, id) in request.questions.keys().enumerate() {
+        let Some(answer) = value["answers"].get(id) else {
+            continue;
+        };
+        match answer["type"].as_str() {
+            Some("choice") => {
+                if !answer["choice"].is_string() {
+                    return (Some("choice"), Some(index));
+                }
+                if answer["confidence"].as_f64().is_none() {
+                    return (Some("confidence"), Some(index));
+                }
+                if answer["probabilities"]
+                    .as_object()
+                    .is_none_or(|p| p.values().any(|v| v.as_f64().is_none()))
+                {
+                    return (Some("probabilities"), Some(index));
+                }
+            }
+            Some("noul") => {
+                if answer["noul"].as_f64().is_none() {
+                    return (Some("noul"), Some(index));
+                }
+            }
+            _ => return (Some("type"), Some(index)),
+        }
+    }
+    (None, None)
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -90,8 +181,8 @@ pub enum Error {
     Transport,
     #[error("Jev returned HTTP {0}")]
     Http(u16),
-    #[error("invalid or oversized Jev response")]
-    Response,
+    #[error("{0}")]
+    Response(Box<ResponseDiagnostic>),
 }
 
 pub async fn classify(case: &Case, key: &str) -> Result<ResultRecord, Error> {
@@ -111,7 +202,7 @@ pub async fn classify(case: &Case, key: &str) -> Result<ResultRecord, Error> {
     let response = Client::new(key)?
         .evaluate(&request, &case.data_class)
         .await?;
-    interpret(case, response, Source::Jev).map_err(|_| Error::Response)
+    interpret(case, response, Source::Jev).map_err(Error::Validation)
 }
 
 #[cfg(test)]
@@ -170,6 +261,143 @@ mod transport_tests {
             serde_json::from_str(include_str!("../../../fixtures/synthetic-case.json")).unwrap();
         prepare(&case).unwrap()
     }
+    #[test]
+    fn diagnostics_identify_failures_without_echoing_provider_content() {
+        use serde_json::json;
+        let request = request();
+        let valid = serde_json::to_value(josh_core::mock_response()).unwrap();
+        let changes = [
+            (
+                "/model",
+                json!("SECRET-PROVIDER-VALUE"),
+                ResponseCode::ModelMismatch,
+            ),
+            (
+                "/answers/primary_site/type",
+                json!("SECRET-PROVIDER-VALUE"),
+                ResponseCode::JsonShape,
+            ),
+            (
+                "/usage/input_tokens",
+                json!("SECRET-PROVIDER-VALUE"),
+                ResponseCode::JsonShape,
+            ),
+            (
+                "/answers/primary_site/confidence",
+                json!(1.5),
+                ResponseCode::ConfidenceRange,
+            ),
+            (
+                "/answers/primary_site/probabilities",
+                json!({"SECRET-PROVIDER-VALUE":1.0}),
+                ResponseCode::OptionMismatch,
+            ),
+            (
+                "/answers/primary_site/choice",
+                json!("SECRET-PROVIDER-VALUE"),
+                ResponseCode::ChoiceNotMaximum,
+            ),
+            (
+                "/answers/evidence_sufficient/noul",
+                json!(-0.1),
+                ResponseCode::ProbabilityRange,
+            ),
+            (
+                "/answers/evidence_sufficient",
+                json!({"type":"choice","choice":"a","probabilities":{"a":1.0},"confidence":1.0}),
+                ResponseCode::AnswerType,
+            ),
+        ];
+        for (pointer, change, expected) in changes {
+            let mut body = valid.clone();
+            *body.pointer_mut(pointer).unwrap() = change;
+            let bytes = serde_json::to_vec(&body).unwrap();
+            let Error::Response(d) = decode_response(&request, &bytes, 200).unwrap_err() else {
+                panic!("expected diagnostic");
+            };
+            assert_eq!(d.code, expected);
+            assert_eq!(d.http_status, Some(200));
+            assert_eq!(d.response_bytes, Some(bytes.len()));
+            assert_eq!(
+                d.request_sha256.as_deref(),
+                Some(josh_core::molecular::hash(&request).unwrap().as_str())
+            );
+            assert_eq!(
+                d.response_sha256.as_deref(),
+                Some(josh_core::molecular::bytes_hash(&bytes).as_str())
+            );
+            assert!(
+                !serde_json::to_string(&d)
+                    .unwrap()
+                    .contains("SECRET-PROVIDER-VALUE")
+            );
+            assert!(!d.to_string().contains("SECRET-PROVIDER-VALUE"));
+        }
+        for (bytes, expected) in [
+            (
+                b"{\"SECRET-PROVIDER-VALUE\":".to_vec(),
+                ResponseCode::InvalidJson,
+            ),
+            (
+                vec![b'x'; MAX_RESPONSE_BYTES + 1],
+                ResponseCode::BodyTooLarge,
+            ),
+        ] {
+            let Error::Response(d) = decode_response(&request, &bytes, 200).unwrap_err() else {
+                panic!();
+            };
+            assert_eq!(d.code, expected);
+        }
+        let mut missing = valid.clone();
+        missing["answers"]["primary_site"]
+            .as_object_mut()
+            .unwrap()
+            .remove("confidence");
+        let Error::Response(d) =
+            decode_response(&request, &serde_json::to_vec(&missing).unwrap(), 200).unwrap_err()
+        else {
+            panic!();
+        };
+        assert_eq!(d.field.as_deref(), Some("confidence"));
+        missing = valid.clone();
+        missing["answers"]
+            .as_object_mut()
+            .unwrap()
+            .remove("evidence_sufficient");
+        let Error::Response(d) =
+            decode_response(&request, &serde_json::to_vec(&missing).unwrap(), 200).unwrap_err()
+        else {
+            panic!();
+        };
+        assert_eq!(d.code, ResponseCode::QuestionMismatch);
+        assert_eq!(d.received_count, Some(2));
+    }
+
+    #[test]
+    fn probability_sum_failure_retains_total_and_never_normalizes() {
+        let request = request();
+        let mut response = josh_core::mock_response();
+        if let josh_core::Answer::Choice { probabilities, .. } =
+            response.answers.get_mut("primary_site").unwrap()
+        {
+            for p in probabilities.values_mut() {
+                *p *= 0.99;
+            }
+        }
+        let bytes = serde_json::to_vec(&response).unwrap();
+        let Error::Response(d) = decode_response(&request, &bytes, 200).unwrap_err() else {
+            panic!();
+        };
+        assert_eq!(d.code, ResponseCode::ProbabilitySum);
+        assert!((d.probability_sum.unwrap() - 0.99).abs() < 1e-12);
+        assert!(d.to_string().contains("0.99000000"));
+        let response = josh_core::mock_response();
+        let bytes = serde_json::to_vec(&response).unwrap();
+        assert_eq!(
+            serde_json::to_vec(&decode_response(&request, &bytes, 200).unwrap()).unwrap(),
+            bytes
+        );
+    }
     #[tokio::test]
     async fn validates_mock_http_response_and_does_not_retry_http_errors() {
         let (client, task) = server(
@@ -204,7 +432,7 @@ mod transport_tests {
             let (client, task) = server(200, body);
             assert!(matches!(
                 client.evaluate(&request(), &DataClass::Synthetic).await,
-                Err(Error::Response)
+                Err(Error::Response(_))
             ));
             task.join().unwrap();
         }

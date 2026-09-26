@@ -3,9 +3,42 @@ use josh_core::{Case, ResultRecord, Source, interpret, mock_response};
 use std::{
     io::{Read, Write},
     path::Path,
+    sync::{OnceLock, RwLock},
 };
 
 pub type AppError = Box<dyn std::error::Error + Send + Sync>;
+
+static SESSION_API_KEY: OnceLock<RwLock<Option<String>>> = OnceLock::new();
+
+fn session_api_key() -> &'static RwLock<Option<String>> {
+    SESSION_API_KEY.get_or_init(|| RwLock::new(None))
+}
+
+pub fn set_session_api_key(key: String) {
+    *session_api_key()
+        .write()
+        .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(key);
+}
+
+pub fn api_key() -> Option<String> {
+    session_api_key()
+        .read()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .clone()
+        .filter(|key| !key.trim().is_empty())
+        .or_else(|| {
+            std::env::var("TYPESAFE_API_KEY")
+                .ok()
+                .filter(|key| !key.trim().is_empty())
+        })
+}
+
+#[cfg(test)]
+pub fn clear_session_api_key() {
+    *session_api_key()
+        .write()
+        .unwrap_or_else(|poisoned| poisoned.into_inner()) = None;
+}
 
 pub fn example_case() -> Case {
     serde_json::from_str(include_str!("../../../fixtures/synthetic-case.json"))
@@ -182,13 +215,12 @@ pub fn demo(case: &Case) -> Result<ResultRecord, AppError> {
 }
 
 pub async fn classify(case: &Case) -> Result<ResultRecord, AppError> {
-    let key = std::env::var("TYPESAFE_API_KEY")
-        .map_err(|_| ErrorEnvelope::new(ErrorCode::MissingApiKey))?;
+    let key = api_key().ok_or_else(|| ErrorEnvelope::new(ErrorCode::MissingApiKey))?;
     Ok(josh_jev::classify(case, &key).await?)
 }
 
 pub fn key_configured() -> bool {
-    std::env::var("TYPESAFE_API_KEY").is_ok_and(|key| !key.trim().is_empty())
+    api_key().is_some()
 }
 
 /// Create a private new file; protect cases and previous results from overwrite.

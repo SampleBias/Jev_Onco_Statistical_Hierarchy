@@ -52,6 +52,7 @@ enum Control {
     Explain,
     Export,
     Cancel,
+    ConfigureKey,
     Help,
     Quit,
     Demo,
@@ -96,6 +97,7 @@ impl Action {
 enum Confirm {
     Demo,
     Expression,
+    ApiKey,
 }
 
 pub struct App {
@@ -118,6 +120,7 @@ pub struct App {
     menu_hits: Vec<(Rect, usize)>,
     form: Form,
     confirm: Option<Confirm>,
+    api_key_draft: String,
     inspection: Option<(String, u16)>,
     quitting: bool,
 }
@@ -142,6 +145,7 @@ impl App {
             menu_hits: vec![],
             form: Form::default(),
             confirm: None,
+            api_key_draft: String::new(),
             inspection: None,
             quitting: false,
         };
@@ -550,6 +554,14 @@ impl App {
                         || s.data().is_some_and(|d| d.has_input())
                 };
                 let mut actions = vec![
+                    Action::new(
+                        Control::ConfigureKey,
+                        if workflows::key_configured() {
+                            "Replace TypeSafe Jev API key… (set for session)"
+                        } else {
+                            "Set TypeSafe Jev API key…"
+                        },
+                    ),
                     Action::new(Control::Export, "Export…").when(
                         idle && exportable,
                         "Load a result or dataset first; wait for the current job.",
@@ -772,6 +784,11 @@ impl App {
                     self.start_demo();
                 }
             }
+            Control::ConfigureKey => {
+                self.api_key_draft.clear();
+                self.confirm = Some(Confirm::ApiKey);
+                self.form.clear();
+            }
             Control::Request => {
                 if let Some(a) = self.current().analysis() {
                     match a.request_preview() {
@@ -884,8 +901,16 @@ impl App {
                     "Prepare an expression-only analysis of the selected sample using the comparison's frozen taxonomy. No genomic or clinical scores are merged. This step is local; Run analysis asks separately before sending data.",
                     "Prepare profile",
                 ),
+                Confirm::ApiKey => (
+                    "Configure TypeSafe Jev API key",
+                    "Enter the key for this JOSH session. It is masked and kept only in process memory; it is not written to files or archives.",
+                    "Load key for session",
+                ),
             };
             let mut e = Editor::new(title, notice, label, &self.status);
+            if matches!(confirm, Confirm::ApiKey) {
+                e = e.field("TypeSafe API key", &self.api_key_draft).secret();
+            }
             e.submit = key('y');
             return Some(e);
         }
@@ -969,6 +994,10 @@ impl App {
             return;
         }
         if let Some(confirm) = self.confirm {
+            if matches!(confirm, Confirm::ApiKey) {
+                self.api_key_editor_key(event);
+                return;
+            }
             match event.code {
                 KeyCode::Char('y' | 'Y') => {
                     self.confirm = None;
@@ -980,6 +1009,7 @@ impl App {
                                 self.status = e.to_string();
                             }
                         }
+                        Confirm::ApiKey => unreachable!("API key editor handles its own input"),
                     }
                 }
                 KeyCode::Esc | KeyCode::Char('n' | 'N') => {
@@ -997,8 +1027,69 @@ impl App {
             }
         }
     }
+    fn api_key_editor_key(&mut self, event: KeyEvent) {
+        if let Some(FieldFocus::Field(0)) = self.form.focus {
+            match event.code {
+                KeyCode::Char('u') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+                    self.api_key_draft.clear();
+                }
+                KeyCode::Backspace => {
+                    self.api_key_draft.pop();
+                }
+                KeyCode::Char(c)
+                    if !event
+                        .modifiers
+                        .intersects(KeyModifiers::CONTROL | KeyModifiers::ALT) =>
+                {
+                    self.api_key_draft.push(c);
+                }
+                KeyCode::Enter => {
+                    self.set_api_key();
+                }
+                _ => self.form.cycle(
+                    &self.editor().expect("API key editor"),
+                    matches!(event.code, KeyCode::BackTab | KeyCode::Up),
+                ),
+            }
+        } else if matches!(event.code, KeyCode::Enter | KeyCode::Char(' ' | 'y' | 'Y')) {
+            if self.form.focus == Some(FieldFocus::Submit) {
+                self.set_api_key();
+            } else if self.form.focus == Some(FieldFocus::Cancel) {
+                self.confirm = None;
+                self.form.clear();
+                self.api_key_draft.clear();
+            }
+        } else if matches!(event.code, KeyCode::Esc | KeyCode::F(6)) {
+            self.confirm = None;
+            self.form.clear();
+            self.api_key_draft.clear();
+        } else if matches!(event.code, KeyCode::Tab | KeyCode::BackTab) {
+            self.form.cycle(
+                &self.editor().expect("API key editor"),
+                event.code == KeyCode::BackTab,
+            );
+        }
+    }
+    fn set_api_key(&mut self) {
+        let key = self.api_key_draft.trim().to_owned();
+        if key.is_empty() {
+            self.status = "Enter a non-empty TypeSafe Jev API key.".into();
+            return;
+        }
+        // The key is intentionally session-only: it is never persisted or rendered.
+        workflows::set_session_api_key(key);
+        self.confirm = None;
+        self.form.clear();
+        self.api_key_draft.clear();
+        self.status =
+            "TypeSafe Jev API key configured for this JOSH session; it remains unverified.".into();
+    }
     fn editor_key(&mut self, event: KeyEvent, editor: &Editor) {
         self.form.sync(editor);
+        if matches!(self.confirm, Some(Confirm::ApiKey)) {
+            self.submit_editor_key(event);
+            return;
+        }
         if let Some(FieldFocus::Field(i)) = self.form.focus {
             self.focus_field(i);
         }
@@ -1143,7 +1234,9 @@ impl App {
     }
     pub fn paste(&mut self, text: &str) {
         if self.quitting
-            || self.confirm.is_some()
+            || self
+                .confirm
+                .is_some_and(|confirm| !matches!(confirm, Confirm::ApiKey))
             || self.inspection.is_some()
             || self.menu.is_some()
         {
@@ -1160,6 +1253,10 @@ impl App {
         if let Some(editor) = self.editor() {
             self.form.sync(&editor);
             if let Some(FieldFocus::Field(i)) = self.form.focus {
+                if matches!(self.confirm, Some(Confirm::ApiKey)) && i == 0 {
+                    self.api_key_draft.push_str(text.trim());
+                    return;
+                }
                 self.focus_field(i);
             } else {
                 return;
@@ -1382,8 +1479,11 @@ impl App {
             "No key · local use"
         };
         frame.render_widget(
-            Paragraph::new(format!("JOSH · {} · {credential}", josh_core::MODEL))
-                .style(Style::default().fg(ui::ACCENT)),
+            Paragraph::new(format!(
+                "Jev Onco Statistical Hierarchy (JOSH) · {} · {credential}",
+                josh_core::MODEL
+            ))
+            .style(Style::default().fg(ui::ACCENT)),
             brand,
         );
         let actions = self.actions();

@@ -147,6 +147,12 @@ taxonomies are not silently mapped or linked by matching display names.
 
 ## Keyboard, mouse and help
 
+If a Jev response is rejected, the message now identifies the failed check.
+Inspect `run-status.json` and `response-diagnostic-*.json` in that run directory.
+The diagnostic preserves numeric/schema details without credentials or raw
+provider text. See [Jev diagnostics and prompt comparison](evaluation/PROMPT_COMPARISON.md).
+Older results retain their original request version when reopened or explained.
+
 Tab/Shift-Tab moves visible focus; Enter or Space activates a control. Main actions,
 selectors, menus, browser and forms also accept mouse clicks. Escape closes the top
 dialog; opening help never submits a form. Ctrl+U clears a field. Ctrl+Enter submits

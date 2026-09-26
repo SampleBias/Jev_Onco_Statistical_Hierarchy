@@ -117,6 +117,7 @@ outcomes. These are research contracts, not validated cancer classifiers.
 - [User guide](docs/USER_GUIDE.md) — shared navigation, inputs, keys, reports and troubleshooting
 - [Terminal and CLI reference](docs/TERMINAL_GUIDE.md) — commands, clinical controls and output conventions
 - [Molecular formats and explanations](docs/data/MOLECULAR_GUIDE.md)
+- [Jev response diagnostics and paired prompt comparison](docs/evaluation/PROMPT_COMPARISON.md)
 - [OncoNPC research guide and priorities](docs/references/ONCONPC_GUIDE.md) and
   [objective-by-objective assessment](docs/assessment/ONCONPC_PARITY.md)
 - [Expression import](docs/data/EXPRESSION_GUIDE.md) and [reference comparison](docs/data/REFERENCE_GUIDE.md)

@@ -1,6 +1,19 @@
 use crate::workflows::AppError;
 use josh_core::errors::{ErrorCode, ErrorEnvelope};
 
+/// Response diagnostics contain only fixed messages and bounded numeric facts.
+pub fn user_message(error: &AppError) -> String {
+    if let Some(josh_explain::Error::ProviderResponse(d)) =
+        error.downcast_ref::<josh_explain::Error>()
+    {
+        return d.to_string();
+    }
+    if let Some(josh_jev::Error::Response(d)) = error.downcast_ref::<josh_jev::Error>() {
+        return d.to_string();
+    }
+    envelope(error).error.message.into()
+}
+
 pub fn envelope(error: &AppError) -> ErrorEnvelope {
     if let Some(e) = error.downcast_ref::<josh_explain::Error>() {
         return match e {
@@ -13,7 +26,7 @@ pub fn envelope(error: &AppError) -> ErrorEnvelope {
             josh_explain::Error::Cancelled => ErrorEnvelope::new(ErrorCode::ExplanationCancelled),
             josh_explain::Error::Provider => ErrorEnvelope::new(ErrorCode::ProviderTransport),
             josh_explain::Error::ProviderHttp(_) => ErrorEnvelope::new(ErrorCode::ProviderHttp),
-            josh_explain::Error::ProviderResponse => {
+            josh_explain::Error::ProviderResponse(_) => {
                 ErrorEnvelope::new(ErrorCode::ProviderResponse)
             }
             josh_explain::Error::Checkpoint => ErrorEnvelope::new(ErrorCode::ExplanationCheckpoint),
@@ -62,7 +75,7 @@ pub fn envelope(error: &AppError) -> ErrorEnvelope {
             josh_jev::Error::MissingKey => ErrorCode::MissingApiKey,
             josh_jev::Error::Client | josh_jev::Error::Transport => ErrorCode::ProviderTransport,
             josh_jev::Error::Http(_) => ErrorCode::ProviderHttp,
-            josh_jev::Error::Response => ErrorCode::ProviderResponse,
+            josh_jev::Error::Response(_) => ErrorCode::ProviderResponse,
         }
     } else if let Some(e) = error.downcast_ref::<josh_ingest::dataset::DatasetError>() {
         use josh_ingest::dataset::DatasetError as D;

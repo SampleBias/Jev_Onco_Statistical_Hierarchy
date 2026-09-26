@@ -33,6 +33,20 @@ pub enum ExportFormat {
 }
 #[derive(Subcommand)]
 pub enum Command {
+    /// Prepare a paired v2/v3 protocol locally; --execute makes bounded live synthetic calls.
+    ComparePrompts {
+        manifest: PathBuf,
+        #[arg(long)]
+        out_dir: PathBuf,
+        #[arg(long)]
+        execute: bool,
+        #[arg(long, default_value_t = 10)]
+        max_evaluations: usize,
+        #[arg(long, default_value_t = 100_000)]
+        max_input_tokens: u64,
+        #[arg(long, default_value_t = 120)]
+        max_seconds: u64,
+    },
     /// Check data and local Jev prerequisites without contacting the provider.
     Check {
         features: PathBuf,
@@ -319,7 +333,7 @@ impl LiveEvaluator {
         if data_class != DataClass::Synthetic {
             return Err(josh_jev::Error::DataPolicy.into());
         }
-        let key = std::env::var("TYPESAFE_API_KEY").map_err(|_| josh_jev::Error::MissingKey)?;
+        let key = workflows::api_key().ok_or(josh_jev::Error::MissingKey)?;
         Ok(Self {
             client: josh_jev::Client::new(&key)?,
             data_class,
@@ -333,9 +347,8 @@ impl Evaluator for LiveEvaluator {
             .await
             .map_err(|e| match e {
                 josh_jev::Error::Http(status) => josh_explain::Error::ProviderHttp(status),
-                josh_jev::Error::Response | josh_jev::Error::Validation(_) => {
-                    josh_explain::Error::ProviderResponse
-                }
+                josh_jev::Error::Response(d) => josh_explain::Error::ProviderResponse(d),
+                josh_jev::Error::Validation(e) => josh_explain::Error::Invalid(e),
                 _ => josh_explain::Error::Provider,
             })
     }
@@ -533,9 +546,18 @@ pub async fn infer_with_evaluator(
         Ok(response) => response,
         Err(error) => {
             run_status(root, "failed_or_uncertain", &error.to_string())?;
+            save_response_diagnostic(root, &error)?;
             return Err(error.into());
         }
     };
+    // Injected evaluators must obey the same validation and archival rules as HTTP.
+    if let Err(mut d) = josh_core::response::validate(&request, &response) {
+        d.request_sha256 = Some(hash(&request)?);
+        let error = josh_explain::Error::ProviderResponse(d);
+        run_status(root, "failed_or_uncertain", &error.to_string())?;
+        save_response_diagnostic(root, &error)?;
+        return Err(error.into());
+    }
     let run = interpret(features, taxonomy, response, Source::Jev)?;
     write_new(&root.join("inference.json"), &run)?;
     workflows::save_new(
@@ -548,6 +570,20 @@ pub async fn infer_with_evaluator(
         "Inference and Markdown report saved. No explanation requested.",
     )?;
     Ok(run)
+}
+
+pub(crate) fn save_response_diagnostic(
+    root: &Path,
+    error: &josh_explain::Error,
+) -> Result<(), AppError> {
+    if let josh_explain::Error::ProviderResponse(d) = error {
+        // Hash names preserve distinct failed attempts, and duplicate evidence is harmless.
+        let path = root.join(format!("response-diagnostic-{}.json", hash(d)?));
+        if !path.exists() {
+            write_new(&path, d)?;
+        }
+    }
+    Ok(())
 }
 
 fn run_status(root: &Path, status: &str, detail: &str) -> Result<(), AppError> {
@@ -603,10 +639,14 @@ pub async fn explain(
         .await?;
     } else if archive.inference.source == Source::Jev {
         let mut evaluator = LiveEvaluator::new(archive.features.data_class.clone())?;
-        josh_explain::run(&mut archive, &mut evaluator, progress, |a| {
+        let result = josh_explain::run(&mut archive, &mut evaluator, progress, |a| {
             checkpoint(root, a)
         })
-        .await?;
+        .await;
+        if let Err(error) = result {
+            save_response_diagnostic(root, &error)?;
+            return Err(error.into());
+        }
     } else {
         return Err(josh_core::ValidationError(
             "unverified replay cannot start new provider evaluations",
@@ -651,6 +691,30 @@ pub async fn execute(command: Command) -> Result<Output, AppError> {
     let mut raw = None;
     let mut text = String::new();
     let value = match command {
+        Command::ComparePrompts {
+            manifest,
+            out_dir,
+            execute,
+            max_evaluations,
+            max_input_tokens,
+            max_seconds,
+        } => {
+            let comparison = crate::prompt_comparison::Comparison::load(&manifest)?;
+            if execute {
+                let mut evaluator = LiveEvaluator::new(DataClass::Synthetic)?;
+                comparison
+                    .run(
+                        &out_dir,
+                        &mut evaluator,
+                        max_evaluations,
+                        max_input_tokens,
+                        max_seconds,
+                    )
+                    .await?
+            } else {
+                comparison.prepare(&out_dir)?
+            }
+        }
         Command::Check { features, taxonomy } => {
             let f = load_features(&features)?;
             let t = load_taxonomy(taxonomy.as_deref())?;

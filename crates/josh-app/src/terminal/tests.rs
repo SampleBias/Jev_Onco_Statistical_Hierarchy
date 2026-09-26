@@ -47,6 +47,42 @@ async fn settle(app: &mut App) {
     }
     panic!("job timeout");
 }
+
+#[test]
+fn api_key_paste_is_masked_and_loaded_for_the_session() {
+    struct SessionKeyGuard;
+    impl Drop for SessionKeyGuard {
+        fn drop(&mut self) {
+            workflows::clear_session_api_key();
+        }
+    }
+    let _guard = SessionKeyGuard;
+    workflows::clear_session_api_key();
+
+    let mut app = App::new(None).unwrap();
+    app.activate(Control::ConfigureKey);
+    app.paste("  test-jev-session-key  ");
+
+    assert_eq!(app.api_key_draft, "test-jev-session-key");
+    let dialog = screen(&mut app, 100, 24);
+    assert!(dialog.contains("********"));
+    assert!(!dialog.contains("test-jev-session-key"));
+
+    press(&mut app, KeyCode::Enter);
+    assert!(app.confirm.is_none());
+    assert_eq!(
+        workflows::api_key().as_deref(),
+        Some("test-jev-session-key")
+    );
+    assert!(app.status.contains("configured for this JOSH session"));
+    assert!(screen(&mut app, 120, 24).contains("Key set · unverified"));
+    assert!(
+        app.menu_actions(Menu::Main)
+            .iter()
+            .any(|action| action.label.contains("set for session"))
+    );
+}
+
 #[test]
 fn starts_empty_with_one_toolbar_and_no_unrelated_demo_patients() {
     let mut app = App::new(None).unwrap();

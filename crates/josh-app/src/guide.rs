@@ -25,6 +25,8 @@ const MANUAL: &str = concat!(
     "\n\n",
     include_str!("../../../docs/assessment/ONCONPC_PARITY.md"),
     "\n\n",
+    include_str!("../../../docs/evaluation/PROMPT_COMPARISON.md"),
+    "\n\n",
     include_str!("../../../docs/SOURCES.md"),
     "\n\n",
     include_str!("../../../docs/TERMINAL_GUIDE.md")

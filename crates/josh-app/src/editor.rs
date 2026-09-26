@@ -11,6 +11,7 @@ use ratatui::{
 pub struct Field {
     pub label: String,
     pub value: String,
+    pub secret: bool,
 }
 pub struct Editor {
     pub title: String,
@@ -37,7 +38,14 @@ impl Editor {
         self.fields.push(Field {
             label: label.into(),
             value: value.into(),
+            secret: false,
         });
+        self
+    }
+    pub fn secret(mut self) -> Self {
+        if let Some(field) = self.fields.last_mut() {
+            field.secret = true;
+        }
         self
     }
     pub fn controls(&self) -> Vec<Focus> {
@@ -133,7 +141,15 @@ impl Form {
             )
             .intersection(fields);
             let focused = self.focus == Some(Focus::Field(i));
-            let value = workflows::display_text(&f.value);
+            let value = if f.secret {
+                if f.value.is_empty() {
+                    String::new()
+                } else {
+                    "********".into()
+                }
+            } else {
+                workflows::display_text(&f.value)
+            };
             // Tail scrolling keeps the insertion point visible for long paths and Unicode.
             let tail = ui::tail(&value, rect.width.saturating_sub(3) as usize);
             frame.render_widget(

@@ -28,8 +28,8 @@ pub enum Error {
     Provider,
     #[error("provider returned HTTP {0}; completed calls are retained")]
     ProviderHttp(u16),
-    #[error("provider returned an invalid response; completed calls are retained")]
-    ProviderResponse,
+    #[error("{0}; completed calls are retained")]
+    ProviderResponse(Box<josh_core::response::ResponseDiagnostic>),
     #[error("explanation wall-time limit reached; completed calls are retained")]
     Timeout,
     #[error("archive checkpoint failed")]
@@ -370,18 +370,20 @@ impl Archive {
                                 .clone();
                         }
                     }
-                    Ok(molecular::prepare_masked(
+                    Ok(molecular::prepare_masked_versioned(
                         &hybrid,
                         &self.inference.taxonomy,
                         &hybrid.groups().into_iter().collect(),
+                        &self.inference.prompt_version,
                     )?)
                 })
                 .collect()
         } else {
-            Ok(vec![molecular::prepare_masked(
+            Ok(vec![molecular::prepare_masked_versioned(
                 &self.features,
                 &self.inference.taxonomy,
                 visible,
+                &self.inference.prompt_version,
             )?])
         }
     }

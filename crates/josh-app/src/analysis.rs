@@ -275,7 +275,7 @@ pub fn readiness(f: &FeatureSet, t: &TaxonomyDefinition) -> Readiness {
         blockers.push("Live Jev currently accepts synthetic data only. Real research data can be inspected locally; provider eligibility is still required.".into());
     }
     if !key_configured {
-        blockers.push("Set TYPESAFE_API_KEY in the launching shell or secret manager, then restart JOSH. A .env file is not loaded automatically. The offline demo needs no key.".into());
+        blockers.push("Load a TypeSafe Jev key from Menu > Set TypeSafe Jev API key for this session, or set TYPESAFE_API_KEY before launching. A .env file is not loaded automatically. The offline demo needs no key.".into());
     }
     Readiness {
         ready: blockers.is_empty(),

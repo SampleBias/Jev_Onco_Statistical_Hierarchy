@@ -125,6 +125,9 @@ impl App {
         self.inference.is_some()
     }
     pub(crate) fn request_preview(&self) -> Result<String, AppError> {
+        if let Some(run) = &self.inference {
+            return workflows::pretty(&run.request);
+        }
         workflows::pretty(&josh_core::molecular::prepare(
             &self.features,
             &self.taxonomy,
@@ -568,7 +571,7 @@ impl App {
                     task.map_err(|e| {
                         format!(
                             "{}; inspect {} before retrying. No automatic retry. Any displayed result remains from its previous saved run.",
-                            crate::errors::envelope(&e).error.message,
+                            crate::errors::user_message(&e),
                             workflows::display_text(&failed_path.display().to_string())
                         )
                     })

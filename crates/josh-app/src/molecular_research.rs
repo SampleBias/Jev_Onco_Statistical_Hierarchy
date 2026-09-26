@@ -41,7 +41,12 @@ pub async fn repeatability(
         return Err(ValidationError("provider repeatability requires an original Jev run").into());
     }
     let mut evaluator = molecular::LiveEvaluator::new(features.data_class.clone())?;
-    let baseline = core::prepare_masked(&features, &run.taxonomy, &BTreeSet::new())?;
+    let baseline = core::prepare_masked_versioned(
+        &features,
+        &run.taxonomy,
+        &BTreeSet::new(),
+        &run.prompt_version,
+    )?;
     let requests = [(&run.request, "full"), (&baseline, "masked_baseline")];
     std::fs::create_dir(out_dir)?;
     molecular::write_new(
@@ -73,7 +78,10 @@ pub async fn repeatability(
                 Ok(Ok(response)) => response,
                 failure => {
                     let reason = match failure {
-                        Ok(Err(e)) => e.to_string(),
+                        Ok(Err(e)) => {
+                            molecular::save_response_diagnostic(out_dir, &e)?;
+                            e.to_string()
+                        }
                         _ => "provider wall-time limit".into(),
                     };
                     molecular::write_new(
