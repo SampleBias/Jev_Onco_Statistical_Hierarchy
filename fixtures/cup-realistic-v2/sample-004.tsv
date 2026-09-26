@@ -1,0 +1,25 @@
+sample_id	id	name	modality	value	units	status	gene	chromosome	position	reference	alternate	consequence	somatic	catalogue	method	mutation_count	reference_build	assay	coverage	group	depends_on
+SYNTH-004	age	Age at sampling	demographic	58	years	observed												synthetic-record-v2	simulated observation; no real patient	demographics	
+SYNTH-004	sex	Recorded sex at birth	demographic	female		observed												synthetic-record-v2	simulated observation; no real patient	demographics	
+SYNTH-004	specimen	Specimen context	histology	Left axillary node core; ipsilateral supraclavicular adenopathy.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-004	workup	Workup context	histology	Mammography, ultrasound and breast MRI show no definite primary; CT shows no dominant visceral mass.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-004	quality	Specimen quality	histology	FFPE node core; estimated tumor fraction 60%; pretreatment specimen.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-004	morphology	Biopsy morphology	histology	Metastatic adenocarcinoma with small tubules and discohesive areas.		observed												synthetic-pathology-v2	simulated observation; no real patient	morphology	
+SYNTH-004	mut-pik3ca	PIK3CA reported nonsynonymous variant count	mutation	1	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	mut-pik3ca	
+SYNTH-004	mut-tp53	TP53 reported nonsynonymous variant count	mutation	1	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	mut-tp53	
+SYNTH-004	mut-esr1	ESR1 reported nonsynonymous variant count	mutation	0	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	mut-esr1	
+SYNTH-004	cna-erbb2	ERBB2 copy number	copy_number	0	discrete_call	observed	ERBB2										GRCh38	synthetic-panel-CNA-v2	simulated validated gene-level ordinal call; not absolute copies	cna-erbb2	
+SYNTH-004	cna-ccnd1	CCND1 copy number	copy_number	1	discrete_call	observed	CCND1										GRCh38	synthetic-panel-CNA-v2	simulated validated gene-level ordinal call; not absolute copies	cna-ccnd1	
+SYNTH-004	ihc-1	GATA3	ihc	positive; strong diffuse nuclear staining		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-004	ihc-2	ER	ihc	positive; strong nuclear staining in 90%		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-004	ihc-3	PR	ihc	positive; nuclear staining in 25%		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-004	ihc-4	Mammaglobin	ihc	positive; focal cytoplasmic staining		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-004	ihc-5	HER2	ihc	IHC 1+; faint incomplete membranous staining		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-004	ihc-6	CK7	ihc	positive; diffuse		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-004	ihc-7	CK20	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-004	ihc-8	TTF-1	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-004	ihc-9	PAX8	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-004	ihc-10	Uroplakin II	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-004	unavailable-1	GCDFP-15	ihc			not_tested												synthetic-workup-v2	No remaining section; not performed	unavailable-1	
+SYNTH-004	signatures	SBS signature assessment	signature			not_tested												synthetic-targeted-DNA-panel-v2	Too few panel variants for a stable signature fit; no exposure estimated	signatures	
+SYNTH-004	expression	RNA expression profile	expression			not_tested												synthetic-RNA-workup-v2	No RNA expression assay performed	expression	

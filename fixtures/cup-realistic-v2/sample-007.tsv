@@ -1,0 +1,24 @@
+sample_id	id	name	modality	value	units	status	gene	chromosome	position	reference	alternate	consequence	somatic	catalogue	method	mutation_count	reference_build	assay	coverage	group	depends_on
+SYNTH-007	age	Age at sampling	demographic	69	years	observed												synthetic-record-v2	simulated observation; no real patient	demographics	
+SYNTH-007	sex	Recorded sex at birth	demographic	male		observed												synthetic-record-v2	simulated observation; no real patient	demographics	
+SYNTH-007	specimen	Specimen context	histology	Lytic humeral lesion with soft-tissue extension; biopsy taken from non-decalcified soft tissue.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-007	workup	Workup context	histology	CT shows small bilateral renal cysts but no definite renal primary; thyroid ultrasound unrevealing.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-007	quality	Specimen quality	histology	FFPE soft-tissue core; estimated tumor fraction 40%; no decalcification; pretreatment.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-007	morphology	Biopsy morphology	histology	Clear-cell carcinoma in nests with a delicate capillary network.		observed												synthetic-pathology-v2	simulated observation; no real patient	morphology	
+SYNTH-007	mut-vhl	VHL reported nonsynonymous variant count	mutation	1	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	renal-sequence	
+SYNTH-007	mut-pbrm1	PBRM1 reported nonsynonymous variant count	mutation	1	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	renal-sequence	
+SYNTH-007	mut-bap1	BAP1 reported nonsynonymous variant count	mutation	0	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	mut-bap1	
+SYNTH-007	cna-vhl	VHL copy number	copy_number	-1	discrete_call	observed	VHL										GRCh38	synthetic-panel-CNA-v2	simulated validated gene-level ordinal call; not absolute copies	renal-sequence	
+SYNTH-007	cna-pbrm1	PBRM1 copy number	copy_number	-1	discrete_call	observed	PBRM1										GRCh38	synthetic-panel-CNA-v2	simulated validated gene-level ordinal call; not absolute copies	renal-sequence	
+SYNTH-007	ihc-1	PAX8	ihc	positive; diffuse nuclear staining		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-007	ihc-2	CAIX	ihc	positive; diffuse complete membranous staining		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-007	ihc-3	CD10	ihc	positive; diffuse membranous staining		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-007	ihc-4	RCC marker	ihc	positive; focal cytoplasmic staining		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-007	ihc-5	CK7	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-007	ihc-6	TTF-1	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-007	ihc-7	Thyroglobulin	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-007	ihc-8	GATA3	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-007	ihc-9	ER	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-007	unavailable-1	TFE3	ihc			not_tested												synthetic-workup-v2	Not performed; subtype workup incomplete	unavailable-1	
+SYNTH-007	signatures	SBS signature assessment	signature			not_tested												synthetic-targeted-DNA-panel-v2	Too few panel variants for a stable signature fit; no exposure estimated	signatures	
+SYNTH-007	expression	RNA expression profile	expression			not_tested												synthetic-RNA-workup-v2	No RNA expression assay performed	expression	

@@ -23,9 +23,11 @@ access. The launcher does not install prerequisites. No Python, Node, local GPU,
 database or model download is required. See the [quickstart](docs/QUICKSTART.md)
 for setup and the complete walkthrough.
 
-The easiest first run: **Try a sample → Open selected → Data → Run analysis**.
-The five synthetic inputs are built in; loading them is local and does not call Jev.
+The easiest first run: **Open data → Samples → Open selected → Data → Run analysis**.
+Ten [synthetic CUP workups](fixtures/cup-realistic-v2/README.md) are built in; loading them is local and does not call Jev.
 Review the one-request confirmation before sending.
+See [how Jev is used](docs/references/JEV_WORKFLOW.md) for the evidence, questions,
+versioned comparisons and interpretation of the returned scores.
 
 The primary workspace has **Data** and **Results**, an **Open** browser, one
 contextual next action and **Menu**. Tab/Shift-Tab, Enter and mouse clicks work

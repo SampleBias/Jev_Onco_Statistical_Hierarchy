@@ -7,8 +7,10 @@ research workbench, using pinned Jev `jev-1.13.0`. Single-sample analysis is the
 primary workflow; cohort research is secondary.
 
 The app starts empty, not with unrelated demo patients. Choose **Open data…**
-to browse a file or saved run, or **Try a sample** for one of five built-in
-invented inputs. These contain evidence, not prewritten predictions.
+to browse a file or saved run, then choose **Samples** for one of ten built-in
+synthetic CUP workups. These contain evidence, not prewritten predictions.
+The [sample guide](../fixtures/cup-realistic-v2/README.md) describes each case;
+[How Jev is used](references/JEV_WORKFLOW.md) explains requests and evaluation.
 
 Live requests remain synthetic-only. Cancer accuracy, clinical calibration and
 validated out-of-distribution detection are not established. This UX change does

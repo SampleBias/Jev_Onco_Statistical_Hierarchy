@@ -1,0 +1,23 @@
+sample_id	id	name	modality	value	units	status	gene	chromosome	position	reference	alternate	consequence	somatic	catalogue	method	mutation_count	reference_build	assay	coverage	group	depends_on
+SYNTH-010	age	Age at sampling	demographic	70	years	observed												synthetic-record-v2	simulated observation; no real patient	demographics	
+SYNTH-010	sex	Recorded sex at birth	demographic	male		observed												synthetic-record-v2	simulated observation; no real patient	demographics	
+SYNTH-010	specimen	Specimen context	histology	Portacaval node core and lytic rib lesions; no dominant liver lesion on initial staging.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-010	workup	Workup context	histology	Multiphasic liver MRI shows only subcentimeter indeterminate nodules; upper/lower endoscopy unrevealing.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-010	quality	Specimen quality	histology	FFPE node core; estimated tumor fraction 55%; pretreatment; non-decalcified tissue.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-010	morphology	Biopsy morphology	histology	Carcinoma with thick trabeculae, polygonal cells, eosinophilic cytoplasm and focal bile-like pigment.		observed												synthetic-pathology-v2	simulated observation; no real patient	morphology	
+SYNTH-010	mut-ctnnb1	CTNNB1 reported nonsynonymous variant count	mutation	1	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	mut-ctnnb1	
+SYNTH-010	mut-tp53	TP53 reported nonsynonymous variant count	mutation	1	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	mut-tp53	
+SYNTH-010	cna-myc	MYC copy number	copy_number	1	discrete_call	observed	MYC										GRCh38	synthetic-panel-CNA-v2	simulated validated gene-level ordinal call; not absolute copies	cna-myc	
+SYNTH-010	cna-met	MET copy number	copy_number	0	discrete_call	observed	MET										GRCh38	synthetic-panel-CNA-v2	simulated validated gene-level ordinal call; not absolute copies	cna-met	
+SYNTH-010	ihc-1	Arginase-1	ihc	positive; strong diffuse cytoplasmic and nuclear staining		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-010	ihc-2	HepPar-1	ihc	positive; granular cytoplasmic staining		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-010	ihc-3	Glypican-3	ihc	positive; patchy membranous and cytoplasmic staining		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-010	ihc-4	Polyclonal CEA	ihc	positive; canalicular pattern		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-010	ihc-5	CK7	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-010	ihc-6	CK20	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-010	ihc-7	PAX8	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-010	ihc-8	TTF-1	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-010	ihc-9	CDX2	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-010	unavailable-1	Albumin RNA in situ hybridization	histology			not_tested												synthetic-workup-v2	Not performed; tissue retained for review	unavailable-1	
+SYNTH-010	signatures	SBS signature assessment	signature			not_tested												synthetic-targeted-DNA-panel-v2	Too few panel variants for a stable signature fit; no exposure estimated	signatures	
+SYNTH-010	expression	RNA expression profile	expression			not_tested												synthetic-RNA-workup-v2	No RNA expression assay performed	expression	

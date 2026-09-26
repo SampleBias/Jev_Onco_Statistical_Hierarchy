@@ -15,6 +15,15 @@ fn request_versions_preserve_legacy_bytes_and_describe_only_visible_measurements
         hash(&legacy).unwrap(),
         "3f8af1083490217a5a8099e5d95028edacb6bb553bdaa63ebc78537604579544"
     );
+    let previous = prepare_versioned(&f, &t, PREVIOUS_PROMPT).unwrap();
+    assert_eq!(
+        hash(&previous).unwrap(),
+        "4474aa56d9fa26f0c62291f7d91e6e72fc801c226b45b97c6ceedab46f510298"
+    );
+    assert_eq!(
+        hash(&prepare_versioned(&f, &t, V4_PROMPT).unwrap()).unwrap(),
+        "0bce7420a9ee88a215c20b3cf212cc94d4d9c7707ade70637996c3a88ad1e034"
+    );
     for call in -2..=2 {
         let cna = f
             .features
@@ -103,9 +112,47 @@ fn response_validation_uses_actual_request_options() {
     validate_response(&request, &response).unwrap();
     let run = interpret(&f, &t, response.clone(), Source::Replay).unwrap();
     run.verify(&f).unwrap();
+    for version in [LEGACY_PROMPT, PREVIOUS_PROMPT, V4_PROMPT] {
+        interpret_versioned(&f, &t, response.clone(), Source::Replay, version)
+            .unwrap()
+            .verify(&f)
+            .unwrap();
+    }
     if let Answer::Choice { probabilities, .. } = response.answers.get_mut("primary_site").unwrap()
     {
         probabilities.insert("foreign_class".into(), 0.0);
     }
     assert!(validate_response(&request, &response).is_err());
+}
+
+#[test]
+fn v4_annotates_somatic_uncertainty_and_respects_custom_class_meaning() {
+    let mut f = sample();
+    let mut taxonomy = onconpc_taxonomy();
+    taxonomy.classes[0].name = "Custom class with reused ID".into();
+    for somatic_status in [None, Some(false), Some(true)] {
+        for feature in &mut f.features {
+            if let Some(FeatureValue::Mutation { somatic, .. }) = &mut feature.value {
+                *somatic = somatic_status;
+            }
+        }
+        let request = prepare(&f, &taxonomy).unwrap();
+        let mutation = request.state["features"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|v| v["value"]["kind"] == "mutation")
+            .unwrap();
+        let meaning = mutation["value"]["somatic_interpretation"]
+            .as_str()
+            .unwrap();
+        assert!(meaning.contains(match somatic_status {
+            None => "unresolved",
+            Some(false) => "germline",
+            Some(true) => "Reported somatic",
+        }));
+        if let josh_core::Question::Choice { criteria, .. } = &request.questions["primary_site"] {
+            assert!(!criteria["NSCLC"].contains("TTF-1"));
+        }
+    }
 }

@@ -1,0 +1,22 @@
+sample_id	id	name	modality	value	units	status	gene	chromosome	position	reference	alternate	consequence	somatic	catalogue	method	mutation_count	reference_build	assay	coverage	group	depends_on
+SYNTH-009	age	Age at sampling	demographic	66	years	observed												synthetic-record-v2	simulated observation; no real patient	demographics	
+SYNTH-009	sex	Recorded sex at birth	demographic	male		observed												synthetic-record-v2	simulated observation; no real patient	demographics	
+SYNTH-009	specimen	Specimen context	histology	Specimen A: liver core. Specimen B: supraclavicular node core obtained two weeks later before therapy.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-009	workup	Workup context	histology	CT and directed endoscopy identify no definite primary; no clonal comparison of A and B is available.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-009	quality	Specimen quality	histology	A: FFPE tumor fraction 50%. B: FFPE tumor fraction 45%. Both have adequate stain controls.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-009	morphology	Biopsy morphology	histology	A: gland-forming carcinoma with dirty necrosis. B: adenocarcinoma with acinar architecture.		observed												synthetic-pathology-v2	simulated observation; no real patient	specimens	
+SYNTH-009	mut-tp53	TP53 reported nonsynonymous variant count	mutation	1	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	specimen A only; coding exons passed depth >=250x; simulated matched-normal somatic calls	mut-tp53	
+SYNTH-009	mut-kras	KRAS reported nonsynonymous variant count	mutation	1	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	specimen A only; coding exons passed depth >=250x; simulated matched-normal somatic calls	mut-kras	
+SYNTH-009	cna-myc	MYC copy number	copy_number	1	discrete_call	observed	MYC										GRCh38	synthetic-panel-CNA-v2	specimen A only; simulated validated gene-level ordinal call	cna-myc	
+SYNTH-009	ihc-1	A: SATB2	ihc	positive; strong diffuse nuclear staining		observed												synthetic-IHC-v2	simulated specimen A; internal and external controls adequate	ihc-a	
+SYNTH-009	ihc-2	A: CDX2	ihc	positive; strong diffuse nuclear staining		observed												synthetic-IHC-v2	simulated specimen A; internal and external controls adequate	ihc-a	
+SYNTH-009	ihc-3	A: CK20	ihc	positive; diffuse		observed												synthetic-IHC-v2	simulated specimen A; internal and external controls adequate	ihc-a	
+SYNTH-009	ihc-4	A: TTF-1	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated specimen A; internal and external controls adequate	ihc-a	
+SYNTH-009	ihc-5	B: TTF-1	ihc	positive; strong diffuse nuclear staining		observed												synthetic-IHC-v2	simulated specimen B; internal and external controls adequate	ihc-b	
+SYNTH-009	ihc-6	B: Napsin A	ihc	positive; granular cytoplasmic staining		observed												synthetic-IHC-v2	simulated specimen B; internal and external controls adequate	ihc-b	
+SYNTH-009	ihc-7	B: CK7	ihc	positive; diffuse		observed												synthetic-IHC-v2	simulated specimen B; internal and external controls adequate	ihc-b	
+SYNTH-009	ihc-8	B: SATB2	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated specimen B; internal and external controls adequate	ihc-b	
+SYNTH-009	ihc-9	B: CDX2	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated specimen B; internal and external controls adequate	ihc-b	
+SYNTH-009	unavailable-1	Specimen B sequencing	mutation			not_tested												synthetic-workup-v2	Sequencing supplied only for specimen A; clonality unresolved	unavailable-1	
+SYNTH-009	signatures	SBS signature assessment	signature			not_tested												synthetic-targeted-DNA-panel-v2	Too few panel variants for a stable signature fit; no exposure estimated	signatures	
+SYNTH-009	expression	RNA expression profile	expression			not_tested												synthetic-RNA-workup-v2	No RNA expression assay performed	expression	

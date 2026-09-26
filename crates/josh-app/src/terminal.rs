@@ -439,9 +439,8 @@ impl App {
         }
         if !self.studies && !self.current().ready() {
             return vec![
-                Action::new(Control::Open, "Open data…"),
-                Action::new(Control::TrySample, "Try a sample"),
                 Action::new(Control::Menu(Menu::Main), "Menu"),
+                Action::new(Control::Open, "Open data…"),
             ];
         }
         let mut actions = if self.studies {

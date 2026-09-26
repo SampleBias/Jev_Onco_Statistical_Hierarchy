@@ -1,0 +1,25 @@
+sample_id	id	name	modality	value	units	status	gene	chromosome	position	reference	alternate	consequence	somatic	catalogue	method	mutation_count	reference_build	assay	coverage	group	depends_on
+SYNTH-002	age	Age at sampling	demographic	72	years	observed												synthetic-record-v2	simulated observation; no real patient	demographics	
+SYNTH-002	sex	Recorded sex at birth	demographic	female		observed												synthetic-record-v2	simulated observation; no real patient	demographics	
+SYNTH-002	specimen	Specimen context	histology	Liver core; multiple liver and peritoneal deposits.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-002	workup	Workup context	histology	CT chest/abdomen/pelvis shows no dominant primary; colonoscopy incomplete at fixed sigmoid angulation.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-002	quality	Specimen quality	histology	FFPE core; estimated tumor fraction 55%; pretreatment; adequate DNA and stain controls.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-002	morphology	Biopsy morphology	histology	Gland-forming adenocarcinoma with luminal dirty necrosis.		observed												synthetic-pathology-v2	simulated observation; no real patient	morphology	
+SYNTH-002	mut-apc	APC reported nonsynonymous variant count	mutation	2	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	mut-apc	
+SYNTH-002	mut-tp53	TP53 reported nonsynonymous variant count	mutation	1	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	mut-tp53	
+SYNTH-002	mut-kras	KRAS reported nonsynonymous variant count	mutation	1	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	mut-kras	
+SYNTH-002	mut-braf	BRAF reported nonsynonymous variant count	mutation	0	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	mut-braf	
+SYNTH-002	cna-myc	MYC copy number	copy_number	1	discrete_call	observed	MYC										GRCh38	synthetic-panel-CNA-v2	simulated validated gene-level ordinal call; not absolute copies	cna-myc	
+SYNTH-002	cna-erbb2	ERBB2 copy number	copy_number	0	discrete_call	observed	ERBB2										GRCh38	synthetic-panel-CNA-v2	simulated validated gene-level ordinal call; not absolute copies	cna-erbb2	
+SYNTH-002	ihc-1	SATB2	ihc	positive; strong nuclear staining in 85%		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-002	ihc-2	CDX2	ihc	positive; strong nuclear staining in 90%		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-002	ihc-3	CK20	ihc	positive; diffuse		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-002	ihc-4	CK7	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-002	ihc-5	TTF-1	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-002	ihc-6	PAX8	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-002	ihc-7	MLH1	ihc	retained nuclear expression		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-002	ihc-8	PMS2	ihc	retained nuclear expression		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-002	unavailable-1	MSH2	ihc			not_tested												synthetic-workup-v2	Tissue exhausted before remaining mismatch-repair stains	unavailable-1	
+SYNTH-002	unavailable-2	MSH6	ihc			not_tested												synthetic-workup-v2	Tissue exhausted; do not infer complete MMR proficiency	unavailable-2	
+SYNTH-002	signatures	SBS signature assessment	signature			not_tested												synthetic-targeted-DNA-panel-v2	Too few panel variants for a stable signature fit; no exposure estimated	signatures	
+SYNTH-002	expression	RNA expression profile	expression			not_tested												synthetic-RNA-workup-v2	No RNA expression assay performed	expression	

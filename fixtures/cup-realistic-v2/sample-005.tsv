@@ -1,0 +1,25 @@
+sample_id	id	name	modality	value	units	status	gene	chromosome	position	reference	alternate	consequence	somatic	catalogue	method	mutation_count	reference_build	assay	coverage	group	depends_on
+SYNTH-005	age	Age at sampling	demographic	64	years	observed												synthetic-record-v2	simulated observation; no real patient	demographics	
+SYNTH-005	sex	Recorded sex at birth	demographic	female		observed												synthetic-record-v2	simulated observation; no real patient	demographics	
+SYNTH-005	specimen	Specimen context	histology	Omental core and ascites cell block; diffuse peritoneal deposits.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-005	workup	Workup context	histology	CT and pelvic ultrasound show no dominant ovarian, tubal or uterine mass; endometrial sampling is scant.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-005	quality	Specimen quality	histology	FFPE omental core; estimated tumor fraction 50%; all reported tumor stains from the same core.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-005	morphology	Biopsy morphology	histology	High-grade carcinoma with papillary and solid architecture and marked nuclear atypia.		observed												synthetic-pathology-v2	simulated observation; no real patient	morphology	
+SYNTH-005	mut-tp53	TP53 reported nonsynonymous variant count	mutation	1	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	mut-tp53	
+SYNTH-005	mut-brca1	BRCA1 reported nonsynonymous variant count	mutation	0	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	mut-brca1	
+SYNTH-005	mut-brca2	BRCA2 reported nonsynonymous variant count	mutation	0	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	mut-brca2	
+SYNTH-005	cna-ccne1	CCNE1 copy number	copy_number	2	discrete_call	observed	CCNE1										GRCh38	synthetic-panel-CNA-v2	simulated validated gene-level ordinal call; not absolute copies	cna-ccne1	
+SYNTH-005	cna-myc	MYC copy number	copy_number	1	discrete_call	observed	MYC										GRCh38	synthetic-panel-CNA-v2	simulated validated gene-level ordinal call; not absolute copies	cna-myc	
+SYNTH-005	ihc-1	PAX8	ihc	positive; diffuse nuclear staining		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-005	ihc-2	WT1	ihc	positive; diffuse nuclear staining		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-005	ihc-3	ER	ihc	positive; nuclear staining in 60%		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-005	ihc-4	p53	ihc	aberrant overexpression in more than 90%		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-005	ihc-5	CK7	ihc	positive; diffuse		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-005	ihc-6	CK20	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-005	ihc-7	CDX2	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-005	ihc-8	GATA3	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-005	ihc-9	TTF-1	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-005	unavailable-1	Homologous recombination deficiency assay	mutation			not_tested												synthetic-workup-v2	No genomic-scar assay; no HRD inference from BRCA counts	unavailable-1	
+SYNTH-005	unavailable-2	Endometrial morphology	histology			unknown												synthetic-workup-v2	Insufficient endometrial material; exact anatomic origin unresolved	unavailable-2	
+SYNTH-005	signatures	SBS signature assessment	signature			not_tested												synthetic-targeted-DNA-panel-v2	Too few panel variants for a stable signature fit; no exposure estimated	signatures	
+SYNTH-005	expression	RNA expression profile	expression			not_tested												synthetic-RNA-workup-v2	No RNA expression assay performed	expression	

@@ -92,7 +92,7 @@ fn starts_empty_with_one_toolbar_and_no_unrelated_demo_patients() {
     assert!(app.history.is_empty());
     assert!(text.contains("Try a sample"));
     assert!(!text.contains("SYNTHETIC-001"));
-    assert_eq!(app.actions().len(), 3);
+    assert_eq!(app.actions().len(), 2);
     assert!(
         !app.actions()
             .iter()
@@ -103,10 +103,13 @@ fn starts_empty_with_one_toolbar_and_no_unrelated_demo_patients() {
 fn keyboard_first_sample_needs_no_paths_or_typed_identifiers() {
     let mut app = App::new(None).unwrap();
     screen(&mut app, 80, 24);
-    press(&mut app, KeyCode::Tab);
-    assert_eq!(app.focus, Some(Control::TrySample));
+    assert_eq!(app.focus, Some(Control::Open));
     press(&mut app, KeyCode::Enter);
     assert!(app.browser.is_some());
+    for _ in 0..4 {
+        press(&mut app, KeyCode::BackTab);
+    }
+    press(&mut app, KeyCode::Enter);
     press(&mut app, KeyCode::Enter);
     assert!(app.browser.is_none());
     assert_eq!(

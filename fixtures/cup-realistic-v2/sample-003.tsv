@@ -1,0 +1,20 @@
+sample_id	id	name	modality	value	units	status	gene	chromosome	position	reference	alternate	consequence	somatic	catalogue	method	mutation_count	reference_build	assay	coverage	group	depends_on
+SYNTH-003	age	Age at sampling	demographic	61	years	observed												synthetic-record-v2	simulated observation; no real patient	demographics	
+SYNTH-003	sex	Recorded sex at birth	demographic			unknown												synthetic-record-v2	simulated observation; no real patient	demographics	
+SYNTH-003	specimen	Specimen context	histology	Lytic iliac bone lesion core; liver lesions and retroperitoneal nodes also present.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-003	workup	Workup context	histology	CT chest/abdomen/pelvis and directed endoscopy did not identify a primary; repeat biopsy pending.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-003	quality	Specimen quality	histology	Acid-decalcified FFPE core; estimated viable tumor fraction 10%; extensive necrosis.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-003	morphology	Biopsy morphology	histology	Poorly differentiated carcinoma; very limited viable nests.		observed												synthetic-pathology-v2	simulated observation; no real patient	morphology	
+SYNTH-003	mut-tp53	TP53 reported nonsynonymous variant count	mutation	1	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	tumor-only; locus depth 180x; VAF 7%; somatic status unresolved; other loci may fail	mut-tp53	
+SYNTH-003	ihc-1	AE1/AE3	ihc	positive; focal in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-003	ihc-2	CK7	ihc	positive; patchy staining in 25%		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-003	ihc-3	CK20	ihc	positive; weak focal staining in 5%		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-003	unavailable-1	KRAS	mutation			unknown												synthetic-workup-v2	Failed coverage; mutation absence cannot be assessed	unavailable-1	
+SYNTH-003	unavailable-2	CDKN2A copy number	copy_number			unknown												synthetic-workup-v2	Low tumor fraction and noisy segmentation; no reliable call	unavailable-2	
+SYNTH-003	unavailable-3	TTF-1	ihc			unknown												synthetic-workup-v2	Equivocal stain after decalcification; repeat unavailable	unavailable-3	
+SYNTH-003	unavailable-4	CDX2	ihc			unknown												synthetic-workup-v2	Internal stain control failed	unavailable-4	
+SYNTH-003	unavailable-5	SATB2	ihc			not_tested												synthetic-workup-v2	Tissue exhausted	unavailable-5	
+SYNTH-003	unavailable-6	PAX8	ihc			not_tested												synthetic-workup-v2	Tissue exhausted	unavailable-6	
+SYNTH-003	unavailable-7	Napsin A	ihc			not_tested												synthetic-workup-v2	Tissue exhausted	unavailable-7	
+SYNTH-003	signatures	SBS signature assessment	signature			not_tested												synthetic-targeted-DNA-panel-v2	Too few panel variants for a stable signature fit; no exposure estimated	signatures	
+SYNTH-003	expression	RNA expression profile	expression			not_tested												synthetic-RNA-workup-v2	No RNA expression assay performed	expression	

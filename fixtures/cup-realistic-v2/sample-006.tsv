@@ -1,0 +1,24 @@
+sample_id	id	name	modality	value	units	status	gene	chromosome	position	reference	alternate	consequence	somatic	catalogue	method	mutation_count	reference_build	assay	coverage	group	depends_on
+SYNTH-006	age	Age at sampling	demographic	76	years	observed												synthetic-record-v2	simulated observation; no real patient	demographics	
+SYNTH-006	sex	Recorded sex at birth	demographic	male		observed												synthetic-record-v2	simulated observation; no real patient	demographics	
+SYNTH-006	specimen	Specimen context	histology	Retroperitoneal node core; diffuse sclerotic bone lesions.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-006	workup	Workup context	histology	CT shows no dominant primary; prostate MRI equivocal and initial targeted cores are nondiagnostic.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-006	quality	Specimen quality	histology	Non-decalcified FFPE node core; estimated tumor fraction 35%; pretreatment specimen.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-006	morphology	Biopsy morphology	histology	Metastatic adenocarcinoma with small fused glands and prominent nucleoli.		observed												synthetic-pathology-v2	simulated observation; no real patient	morphology	
+SYNTH-006	mut-tp53	TP53 reported nonsynonymous variant count	mutation	1	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	mut-tp53	
+SYNTH-006	mut-pten	PTEN reported nonsynonymous variant count	mutation	1	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	pten	
+SYNTH-006	mut-spop	SPOP reported nonsynonymous variant count	mutation	0	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	mut-spop	
+SYNTH-006	cna-pten	PTEN copy number	copy_number	-1	discrete_call	observed	PTEN										GRCh38	synthetic-panel-CNA-v2	simulated validated gene-level ordinal call; not absolute copies	pten	
+SYNTH-006	cna-ar	AR copy number	copy_number	0	discrete_call	observed	AR										GRCh38	synthetic-panel-CNA-v2	simulated validated gene-level ordinal call; not absolute copies	cna-ar	
+SYNTH-006	ihc-1	NKX3.1	ihc	positive; strong diffuse nuclear staining		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-006	ihc-2	PSA	ihc	positive; weak focal cytoplasmic staining		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-006	ihc-3	PSAP	ihc	positive; cytoplasmic staining in 50%		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-006	ihc-4	Androgen receptor	ihc	positive; diffuse nuclear staining		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-006	ihc-5	CK7	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-006	ihc-6	CK20	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-006	ihc-7	GATA3	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-006	ihc-8	PAX8	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-006	ihc-9	TTF-1	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-006	unavailable-1	ERG	ihc			not_tested												synthetic-workup-v2	Not performed	unavailable-1	
+SYNTH-006	signatures	SBS signature assessment	signature			not_tested												synthetic-targeted-DNA-panel-v2	Too few panel variants for a stable signature fit; no exposure estimated	signatures	
+SYNTH-006	expression	RNA expression profile	expression			not_tested												synthetic-RNA-workup-v2	No RNA expression assay performed	expression	

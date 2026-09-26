@@ -1,0 +1,25 @@
+sample_id	id	name	modality	value	units	status	gene	chromosome	position	reference	alternate	consequence	somatic	catalogue	method	mutation_count	reference_build	assay	coverage	group	depends_on
+SYNTH-008	age	Age at sampling	demographic	63	years	observed												synthetic-record-v2	simulated observation; no real patient	demographics	
+SYNTH-008	sex	Recorded sex at birth	demographic	female		observed												synthetic-record-v2	simulated observation; no real patient	demographics	
+SYNTH-008	specimen	Specimen context	histology	Liver core; multiple hepatic lesions, peritoneal nodules and porta hepatis nodes.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-008	workup	Workup context	histology	CT, MRCP and endoscopic ultrasound show no definite pancreatic or biliary primary.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-008	quality	Specimen quality	histology	FFPE liver core; estimated tumor fraction 30%; pretreatment specimen.		observed												synthetic-pathology-v2	simulated observation; no real patient	context	
+SYNTH-008	morphology	Biopsy morphology	histology	Mucin-producing adenocarcinoma with desmoplastic stroma.		observed												synthetic-pathology-v2	simulated observation; no real patient	morphology	
+SYNTH-008	mut-kras	KRAS reported nonsynonymous variant count	mutation	1	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	mut-kras	
+SYNTH-008	mut-tp53	TP53 reported nonsynonymous variant count	mutation	1	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	mut-tp53	
+SYNTH-008	mut-smad4	SMAD4 reported nonsynonymous variant count	mutation	1	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	mut-smad4	
+SYNTH-008	mut-idh1	IDH1 reported nonsynonymous variant count	mutation	0	nonsynonymous_variants	observed											GRCh38	synthetic-targeted-DNA-panel-v2	coding exons passed depth >=250x; validated VAF limit 5%; simulated matched-normal somatic calls	mut-idh1	
+SYNTH-008	cna-cdkn2a	CDKN2A copy number	copy_number	-2	discrete_call	observed	CDKN2A										GRCh38	synthetic-panel-CNA-v2	simulated validated gene-level ordinal call; not absolute copies	cna-cdkn2a	
+SYNTH-008	cna-erbb2	ERBB2 copy number	copy_number	0	discrete_call	observed	ERBB2										GRCh38	synthetic-panel-CNA-v2	simulated validated gene-level ordinal call; not absolute copies	cna-erbb2	
+SYNTH-008	ihc-1	CK7	ihc	positive; diffuse		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-008	ihc-2	CK19	ihc	positive; diffuse		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-008	ihc-3	CK20	ihc	positive; focal staining in 10%		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-008	ihc-4	CDX2	ihc	positive; weak focal nuclear staining in 5%		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-008	ihc-5	SATB2	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-008	ihc-6	SMAD4	ihc	loss of tumor nuclear staining; stromal control retained		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-008	ihc-7	TTF-1	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-008	ihc-8	PAX8	ihc	negative in viable tumor		observed												synthetic-IHC-v2	simulated sampled tumor; internal and external controls adequate	ihc-panel	
+SYNTH-008	unavailable-1	Albumin RNA in situ hybridization	histology			not_tested												synthetic-workup-v2	Assay not performed	unavailable-1	
+SYNTH-008	unavailable-2	FGFR2 rearrangement	mutation			not_tested												synthetic-workup-v2	DNA panel lacks validated fusion detection; RNA not available	unavailable-2	
+SYNTH-008	signatures	SBS signature assessment	signature			not_tested												synthetic-targeted-DNA-panel-v2	Too few panel variants for a stable signature fit; no exposure estimated	signatures	
+SYNTH-008	expression	RNA expression profile	expression			not_tested												synthetic-RNA-workup-v2	No RNA expression assay performed	expression	

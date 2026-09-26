@@ -1,5 +1,17 @@
 # Comparing Jev request versions
 
+The current CLI compares **v3 versus v5**. The current request adds specimen/assay
+interpretation, locally computed visible-evidence counts, class boundaries and
+shorter lineage-specific yes/no questions. The
+[Jev workflow guide](../references/JEV_WORKFLOW.md) and
+[ten-case sample pack](../../fixtures/cup-realistic-v2/README.md) describe the
+current preparation and bounded comparison. v2 and v3 remain reproducible.
+
+The following describes the original v3 change and historical preparation example.
+`prepare_prompt_comparison` explicitly freezes v2/v3 and uses the original five
+fixtures. Invoking `molecular compare-prompts` on its manifests now compares the
+current v3/v5 pair; always inspect `protocol.json` for the executed versions.
+
 `molecular-origin-v3` adds explicit measurement meanings and outcome rubrics to
 the existing three-question request. `molecular-origin-v2` remains available for
 archive verification, explanations and paired comparison. The model remains

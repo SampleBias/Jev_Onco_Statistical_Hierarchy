@@ -1,5 +1,35 @@
 # Source register
 
+## Synthetic CUP workups and Jev v5 — checked 2026-09-26
+
+- [TypeSafe launch article](https://typesafe.ai/blog/introducing-system-one-models-and-jev),
+  [documentation index](https://docs.typesafe.ai/llms.txt),
+  [state](https://docs.typesafe.ai/concepts/state),
+  [Choice](https://docs.typesafe.ai/primitives/choice),
+  [Noul](https://docs.typesafe.ai/primitives/noul),
+  [confidence](https://docs.typesafe.ai/confidence),
+  [models](https://docs.typesafe.ai/models),
+  [API](https://docs.typesafe.ai/api),
+  [fan-out](https://docs.typesafe.ai/patterns/fan-out),
+  [hierarchical classification](https://docs.typesafe.ai/cookbooks/hierarchical_classification)
+  and [limitations](https://docs.typesafe.ai/model-jaggedness/jev-1.13):
+  current request shape, independent judgments, semantic preprocessing and limits.
+- [OncoNPC published article](https://www.nature.com/articles/s41591-023-02482-6),
+  [correction](https://www.nature.com/articles/s41591-023-02693-x) and
+  [authors' code](https://github.com/itmoon7/onconpc): genomic input families and
+  taxonomy. PMC access to the paper returned a browser challenge on this review;
+  publisher content, authors' repository and the prior full-text review below
+  were used. The paper is not an arXiv/Hugging Face paper, so those endpoints do
+  not provide its primary record.
+- Losa et al., [SEOM–GECOD guideline (2021), published 2022](https://pmc.ncbi.nlm.nih.gov/articles/PMC8986666/):
+  diagnostic workup and IHC patterns/overlap, particularly Table 3. Used as a
+  source of diagnostic patterns, not as a current treatment specification.
+
+All new case measurements and combinations are invented. Source-derived design
+choices, limitations and scenario notes are documented in the
+[sample README](../fixtures/cup-realistic-v2/README.md) and
+[Jev workflow](references/JEV_WORKFLOW.md). No real patient dataset was acquired.
+
 ## OncoNPC prediction and cohort figures — checked 2026-09-25
 
 Primary research direction: the corrected published study below. It was already

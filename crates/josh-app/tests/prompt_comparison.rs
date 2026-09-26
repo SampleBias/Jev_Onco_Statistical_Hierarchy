@@ -12,7 +12,7 @@ use josh_explain::Evaluator;
 use serde_json::Value;
 
 fn protocol() -> (Manifest, Vec<FeatureSet>) {
-    let features = vec![samples::load(0).unwrap(), samples::load(2).unwrap()];
+    let features = vec![samples::load(0).unwrap(), samples::load(1).unwrap()];
     let manifest = Manifest {
         schema_version: 1,
         protocol_id: "synthetic-engineering-only".into(),
@@ -76,24 +76,9 @@ async fn comparison_pairs_inputs_isolates_labels_retains_failures_and_enforces_b
         report["records"]["baseline"][1]["failure"],
         "budget_not_run"
     );
-    assert!(
-        fixture.calls[0]
-            .state
-            .get("measurement_semantics")
-            .is_none()
-    );
-    assert!(
-        fixture.calls[1]
-            .state
-            .get("measurement_semantics")
-            .is_some()
-    );
-    assert!(
-        fixture.calls[2]
-            .state
-            .get("measurement_semantics")
-            .is_some()
-    );
+    assert!(fixture.calls[0].state.get("evidence_inventory").is_none());
+    assert!(fixture.calls[1].state.get("evidence_inventory").is_some());
+    assert!(fixture.calls[2].state.get("evidence_inventory").is_some());
     for request in &fixture.calls {
         let text = serde_json::to_string(request).unwrap();
         for forbidden in [

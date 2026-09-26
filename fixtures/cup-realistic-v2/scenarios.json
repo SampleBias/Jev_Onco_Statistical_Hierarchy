@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "collection": "synthetic-cup-v2",
+  "label_status": "Author-constructed scenario intent; not patient ground truth or clinical validation",
+  "provider_input": false,
+  "scenarios": [
+    {
+      "sample_id": "SYNTH-001",
+      "patient_group_id": "SYNTH-P001",
+      "file": "sample-001.tsv",
+      "partition": "development",
+      "candidates": [
+        "NSCLC"
+      ],
+      "exercise": "coherent_panel",
+      "notes": "Nodal adenocarcinoma with pulmonary differentiation; occult primary remains anatomically unconfirmed."
+    },
+    {
+      "sample_id": "SYNTH-002",
+      "patient_group_id": "SYNTH-P002",
+      "file": "sample-002.tsv",
+      "partition": "development",
+      "candidates": [
+        "COADREAD"
+      ],
+      "exercise": "coherent_panel",
+      "notes": "Intestinal differentiation despite an incomplete colonoscopy. Partial MMR stains do not establish complete MMR proficiency."
+    },
+    {
+      "sample_id": "SYNTH-003",
+      "patient_group_id": "SYNTH-P003",
+      "file": "sample-003.tsv",
+      "partition": "development",
+      "candidates": [],
+      "exercise": "insufficient_evidence",
+      "notes": "Scant decalcified tissue and mostly failed/unperformed tests; TP53 alone is not an origin label."
+    },
+    {
+      "sample_id": "SYNTH-004",
+      "patient_group_id": "SYNTH-P004",
+      "file": "sample-004.tsv",
+      "partition": "development",
+      "candidates": [
+        "BRCA"
+      ],
+      "exercise": "coherent_panel",
+      "notes": "Axillary presentation with a coherent panel; GATA3 alone would overlap urothelial origin."
+    },
+    {
+      "sample_id": "SYNTH-005",
+      "patient_group_id": "SYNTH-P005",
+      "file": "sample-005.tsv",
+      "partition": "development",
+      "candidates": [
+        "OVT",
+        "UCEC",
+        "other_origin"
+      ],
+      "exercise": "site_ambiguity",
+      "notes": "Serous gynecologic phenotype; ovarian, tubal, peritoneal and uterine location not established. Review taxonomy boundaries."
+    },
+    {
+      "sample_id": "SYNTH-006",
+      "patient_group_id": "SYNTH-P006",
+      "file": "sample-006.tsv",
+      "partition": "development",
+      "candidates": [
+        "PRAD"
+      ],
+      "exercise": "coherent_panel",
+      "notes": "Strong lineage evidence despite weak focal PSA staining; no treatment response is implied."
+    },
+    {
+      "sample_id": "SYNTH-007",
+      "patient_group_id": "SYNTH-P007",
+      "file": "sample-007.tsv",
+      "partition": "development",
+      "candidates": [
+        "RCC"
+      ],
+      "exercise": "coherent_panel",
+      "notes": "Renal differentiation panel with gene counts and related CNA grouped together; PAX8 alone is shared."
+    },
+    {
+      "sample_id": "SYNTH-008",
+      "patient_group_id": "SYNTH-P008",
+      "file": "sample-008.tsv",
+      "partition": "development",
+      "candidates": [
+        "PAAD",
+        "CHOL",
+        "EGC",
+        "insufficient_evidence"
+      ],
+      "exercise": "overlapping_origins",
+      "notes": "Shared CK7/KRAS/SMAD4 findings do not settle pancreatic versus biliary origin."
+    },
+    {
+      "sample_id": "SYNTH-009",
+      "patient_group_id": "SYNTH-P009",
+      "file": "sample-009.tsv",
+      "partition": "development",
+      "candidates": [
+        "insufficient_evidence"
+      ],
+      "exercise": "conflicting_specimens",
+      "notes": "Competing positive patterns in A and B; possible separate primaries, no proof of common clonality."
+    },
+    {
+      "sample_id": "SYNTH-010",
+      "patient_group_id": "SYNTH-P010",
+      "file": "sample-010.tsv",
+      "partition": "development",
+      "candidates": [
+        "other_origin"
+      ],
+      "exercise": "outside_taxonomy",
+      "notes": "Hepatocellular differentiation has no HCC option in the frozen taxonomy. Do not force a liver sample into CHOL."
+    }
+  ]
+}

@@ -27,7 +27,7 @@ fn main() -> Result<(), AppError> {
     {
         molecular::write_new(
             &root.join(format!("sample-{name}.json")),
-            &samples::load(i)?,
+            &samples::load_legacy(i)?,
         )?;
     }
     for (track, indices) in [("full", [0, 2]), ("genomic", [1, 3])] {
@@ -48,20 +48,25 @@ fn main() -> Result<(), AppError> {
         molecular::write_new(&path, &manifest)?;
         let features = indices
             .into_iter()
-            .map(samples::load)
+            .map(samples::load_legacy)
             .collect::<Result<Vec<_>, _>>()?;
-        Comparison::new(manifest, features)?.prepare(&root.join(format!("{track}-prepared")))?;
+        Comparison::with_versions(
+            manifest,
+            features,
+            [core::LEGACY_PROMPT, core::PREVIOUS_PROMPT],
+        )?
+        .prepare(&root.join(format!("{track}-prepared")))?;
     }
-    let sparse = samples::load(4)?;
+    let sparse = samples::load_legacy(4)?;
     molecular::write_new(
         &root.join("sparse-v2-request.json"),
         &core::prepare_versioned(&sparse, &onconpc_taxonomy(), core::LEGACY_PROMPT)?,
     )?;
     molecular::write_new(
         &root.join("sparse-v3-request.json"),
-        &core::prepare(&sparse, &onconpc_taxonomy())?,
+        &core::prepare_versioned(&sparse, &onconpc_taxonomy(), core::PREVIOUS_PROMPT)?,
     )?;
-    let request = core::prepare(&sparse, &onconpc_taxonomy())?;
+    let request = core::prepare_versioned(&sparse, &onconpc_taxonomy(), core::PREVIOUS_PROMPT)?;
     let mut response = molecular::demo_response(&request);
     if let josh_core::Answer::Choice { probabilities, .. } = response
         .answers

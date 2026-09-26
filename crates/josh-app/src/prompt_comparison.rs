@@ -18,6 +18,7 @@ use std::{
 };
 
 pub struct Comparison {
+    versions: [String; 2],
     manifest: Manifest,
     features: Vec<FeatureSet>,
     requests: Vec<[JevRequest; 2]>,
@@ -37,6 +38,14 @@ impl Comparison {
     }
 
     pub fn new(manifest: Manifest, features: Vec<FeatureSet>) -> Result<Self, AppError> {
+        Self::with_versions(manifest, features, [core::PREVIOUS_PROMPT, core::PROMPT])
+    }
+
+    pub fn with_versions(
+        manifest: Manifest,
+        features: Vec<FeatureSet>,
+        versions: [&str; 2],
+    ) -> Result<Self, AppError> {
         manifest.taxonomy.validate()?;
         if manifest.schema_version != 1
             || manifest.protocol_id.trim().is_empty()
@@ -76,12 +85,13 @@ impl Comparison {
             .iter()
             .map(|f| {
                 Ok([
-                    core::prepare_versioned(f, &manifest.taxonomy, core::LEGACY_PROMPT)?,
-                    core::prepare_versioned(f, &manifest.taxonomy, core::PROMPT)?,
+                    core::prepare_versioned(f, &manifest.taxonomy, versions[0])?,
+                    core::prepare_versioned(f, &manifest.taxonomy, versions[1])?,
                 ])
             })
             .collect::<Result<Vec<_>, AppError>>()?;
         Ok(Self {
+            versions: versions.map(str::to_owned),
             manifest,
             features,
             requests,
@@ -97,7 +107,7 @@ impl Comparison {
         }))).collect::<Result<Vec<_>, AppError>>()?;
         let plan = json!({
             "schema_version":1, "manifest":self.manifest, "cases":cases,
-            "model":josh_core::MODEL, "versions":[core::LEGACY_PROMPT,core::PROMPT],
+            "model":josh_core::MODEL, "versions":self.versions,
             "planned_evaluations":2 * self.features.len(),
             "order":"paired, alternating which version is called first by case index",
             "labels_sent_to_provider":false, "automatic_retry":false,
@@ -210,7 +220,7 @@ impl Comparison {
                             &self.manifest.taxonomy,
                             response,
                             Source::Jev,
-                            [core::LEGACY_PROMPT, core::PROMPT][arm],
+                            &self.versions[arm],
                         )?;
                         records[arm][i].probabilities =
                             Some(core::probabilities(&run.response)?.clone());

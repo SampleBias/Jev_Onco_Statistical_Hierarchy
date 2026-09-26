@@ -23,6 +23,8 @@ const MANUAL: &str = concat!(
     "\n\n",
     include_str!("../../../docs/references/ONCONPC_GUIDE.md"),
     "\n\n",
+    include_str!("../../../docs/references/JEV_WORKFLOW.md"),
+    "\n\n",
     include_str!("../../../docs/assessment/ONCONPC_PARITY.md"),
     "\n\n",
     include_str!("../../../docs/evaluation/PROMPT_COMPARISON.md"),

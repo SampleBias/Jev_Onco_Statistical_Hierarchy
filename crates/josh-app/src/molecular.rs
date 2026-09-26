@@ -33,7 +33,7 @@ pub enum ExportFormat {
 }
 #[derive(Subcommand)]
 pub enum Command {
-    /// Prepare a paired v2/v3 protocol locally; --execute makes bounded live synthetic calls.
+    /// Prepare a paired v3/v5 protocol locally; --execute makes bounded live synthetic calls.
     ComparePrompts {
         manifest: PathBuf,
         #[arg(long)]
