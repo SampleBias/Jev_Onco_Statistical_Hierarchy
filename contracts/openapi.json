@@ -1425,6 +1425,22 @@
             ],
             "type": "object"
           },
+          "NoulCriteria": {
+            "description": "Optional yes/no boundary. Omitted from JSON when absent so older requests stay byte-identical.",
+            "properties": {
+              "false": {
+                "type": "string"
+              },
+              "true": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "true",
+              "false"
+            ],
+            "type": "object"
+          },
           "Question": {
             "oneOf": [
               {
@@ -1452,6 +1468,16 @@
               },
               {
                 "properties": {
+                  "criteria": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/PreparedResponse/$defs/NoulCriteria"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
                   "instructions": {
                     "type": "string"
                   },

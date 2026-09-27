@@ -38,7 +38,7 @@ impl Comparison {
     }
 
     pub fn new(manifest: Manifest, features: Vec<FeatureSet>) -> Result<Self, AppError> {
-        Self::with_versions(manifest, features, [core::PREVIOUS_PROMPT, core::PROMPT])
+        Self::with_versions(manifest, features, [core::PREVIOUS_PROMPT, core::V5_PROMPT])
     }
 
     pub fn with_versions(

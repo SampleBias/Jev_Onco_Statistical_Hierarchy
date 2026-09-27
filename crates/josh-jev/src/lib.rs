@@ -29,8 +29,8 @@ impl Client {
             endpoint: ENDPOINT.into(),
         })
     }
-    /// One network attempt. Callers own budgets and resumption. Ambiguous timeouts
-    /// are never automatically resent; rate-limit responses remain explicit errors.
+    /// One accepted call. Timeouts and other errors are not resent. HTTP 429 and 529
+    /// retry at most twice, because those statuses mean the call was not accepted.
     pub async fn evaluate(
         &self,
         request: &josh_core::JevRequest,
@@ -39,25 +39,32 @@ impl Client {
         if *data_class != DataClass::Synthetic {
             return Err(Error::DataPolicy);
         }
-        if request.model != josh_core::MODEL
-            || serde_json::to_vec(request)
-                .map_err(|_| josh_core::ValidationError("request serialization failed"))?
-                .len()
-                > josh_core::molecular::MAX_REQUEST_BYTES
-        {
-            return Err(josh_core::ValidationError("invalid model or request byte limit").into());
+        if request.model != josh_core::MODEL {
+            return Err(josh_core::ValidationError("invalid model").into());
         }
-        let mut response = self
-            .http
-            .post(&self.endpoint)
-            .bearer_auth(&self.key)
-            .json(request)
-            .send()
-            .await
-            .map_err(|_| Error::Transport)?;
-        if !response.status().is_success() {
-            return Err(Error::Http(response.status().as_u16()));
-        }
+        josh_core::molecular::within_model_context(request)?;
+        let mut attempts = 1u32;
+        let mut response = loop {
+            let response = self
+                .http
+                .post(&self.endpoint)
+                .bearer_auth(&self.key)
+                .json(request)
+                .send()
+                .await
+                .map_err(|_| Error::Transport)?;
+            let status = response.status().as_u16();
+            if matches!(status, 429 | 529) && attempts <= 2 {
+                let wait = retry_after(&response).min(Duration::from_secs(2));
+                attempts += 1;
+                tokio::time::sleep(wait).await;
+                continue;
+            }
+            if !response.status().is_success() {
+                return Err(Error::Http { status, attempts });
+            }
+            break response;
+        };
         let status = response.status().as_u16();
         if response
             .content_length()
@@ -167,6 +174,16 @@ fn invalid_field(
     (None, None)
 }
 
+fn retry_after(response: &reqwest::Response) -> Duration {
+    response
+        .headers()
+        .get(reqwest::header::RETRY_AFTER)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.trim().parse::<u64>().ok())
+        .map(Duration::from_secs)
+        .unwrap_or(Duration::from_millis(200))
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("{0}")]
@@ -179,8 +196,8 @@ pub enum Error {
     Client,
     #[error("Jev transport failed or timed out")]
     Transport,
-    #[error("Jev returned HTTP {0}")]
-    Http(u16),
+    #[error("Jev returned HTTP {status} after {attempts} attempt(s)")]
+    Http { status: u16, attempts: u32 },
     #[error("{0}")]
     Response(Box<ResponseDiagnostic>),
 }
@@ -409,16 +426,96 @@ mod transport_tests {
             .await
             .unwrap();
         task.join().unwrap();
-        for status in [401, 422, 429, 529, 302] {
+        for status in [401, 422, 500, 302] {
             let (client, task) = server(status, "sensitive body never shown".into());
             let error = client
                 .evaluate(&request(), &DataClass::Synthetic)
                 .await
                 .unwrap_err();
-            assert!(matches!(error,Error::Http(s) if s==status));
+            assert!(matches!(error, Error::Http { status: s, attempts: 1 } if s == status));
             assert!(!error.to_string().contains("sensitive"));
             task.join().unwrap();
         }
+    }
+    fn scripted(steps: Vec<(u16, String, String)>) -> (Client, std::thread::JoinHandle<()>) {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let task = std::thread::spawn(move || {
+            for (status, headers, body) in steps {
+                let (mut socket, _) = listener.accept().unwrap();
+                socket
+                    .set_read_timeout(Some(Duration::from_secs(3)))
+                    .unwrap();
+                let mut request = Vec::new();
+                let mut buf = [0; 8192];
+                loop {
+                    let n = socket.read(&mut buf).unwrap();
+                    if n == 0 {
+                        break;
+                    }
+                    request.extend_from_slice(&buf[..n]);
+                    if let Some(end) = request.windows(4).position(|w| w == b"\r\n\r\n") {
+                        let head = String::from_utf8_lossy(&request[..end]).to_ascii_lowercase();
+                        let len = head
+                            .lines()
+                            .find_map(|line| {
+                                line.strip_prefix("content-length:")
+                                    .and_then(|v| v.trim().parse::<usize>().ok())
+                            })
+                            .unwrap_or(0);
+                        if request.len() >= end + 4 + len {
+                            break;
+                        }
+                    }
+                }
+                let output = format!(
+                    "HTTP/1.1 {status} Test\r\nContent-Type: application/json\r\n{headers}Content-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+                let _ = socket.write_all(output.as_bytes());
+            }
+        });
+        let client = Client {
+            http: reqwest::Client::builder()
+                .timeout(Duration::from_secs(3))
+                .redirect(reqwest::redirect::Policy::none())
+                .build()
+                .unwrap(),
+            key: "mock-credential".into(),
+            endpoint: format!("http://{address}"),
+        };
+        (client, task)
+    }
+    #[tokio::test]
+    async fn retries_rate_limit_and_overload_then_stops() {
+        let body = serde_json::to_string(&josh_core::mock_response()).unwrap();
+        let (client, task) = scripted(vec![
+            (429, "Retry-After: 0\r\n".into(), "no".into()),
+            (200, String::new(), body),
+        ]);
+        client
+            .evaluate(&request(), &DataClass::Synthetic)
+            .await
+            .unwrap();
+        task.join().unwrap();
+        let (client, task) = scripted(vec![
+            (529, String::new(), "no".into()),
+            (529, String::new(), "no".into()),
+            (529, String::new(), "no".into()),
+        ]);
+        let error = client
+            .evaluate(&request(), &DataClass::Synthetic)
+            .await
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            Error::Http {
+                status: 529,
+                attempts: 3
+            }
+        ));
+        assert!(error.to_string().contains("3 attempt"));
+        task.join().unwrap();
     }
     #[tokio::test]
     async fn rejects_oversized_malformed_and_changed_model_responses() {

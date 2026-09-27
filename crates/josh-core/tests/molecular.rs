@@ -24,6 +24,10 @@ fn request_versions_preserve_legacy_bytes_and_describe_only_visible_measurements
         hash(&prepare_versioned(&f, &t, V4_PROMPT).unwrap()).unwrap(),
         "0bce7420a9ee88a215c20b3cf212cc94d4d9c7707ade70637996c3a88ad1e034"
     );
+    assert_eq!(
+        hash(&prepare_versioned(&f, &t, V5_PROMPT).unwrap()).unwrap(),
+        "1ce69ff08059b226953878136763e0cf34a690cf6ac7e278baeec85a636f2663"
+    );
     for call in -2..=2 {
         let cna = f
             .features
@@ -49,11 +53,36 @@ fn request_versions_preserve_legacy_bytes_and_describe_only_visible_measurements
             masked.state["features"][i]["status"],
             "withheld_for_attribution"
         );
+        let masked_core = explanation_questions(&masked.questions);
+        let full_core = explanation_questions(&candidate.questions);
+        assert_eq!(hash(&masked_core).unwrap(), hash(&full_core).unwrap());
+        assert!(
+            masked
+                .questions
+                .keys()
+                .all(|id| !BOUNDARY_QUESTIONS.contains(&id.as_str()))
+        );
         assert_eq!(
-            hash(&masked.questions).unwrap(),
-            hash(&candidate.questions).unwrap()
+            candidate.questions.len(),
+            masked.questions.len() + BOUNDARY_QUESTIONS.len()
         );
     }
+    let complete_mask = prepare_masked(&f, &t, &f.groups().into_iter().collect()).unwrap();
+    assert!(
+        complete_mask
+            .questions
+            .keys()
+            .all(|id| !BOUNDARY_QUESTIONS.contains(&id.as_str()))
+    );
+    let full = prepare(&f, &t).unwrap();
+    assert_eq!(
+        full.questions.len(),
+        complete_mask.questions.len() + BOUNDARY_QUESTIONS.len()
+    );
+    assert_eq!(
+        hash(&explanation_questions(&complete_mask.questions)).unwrap(),
+        hash(&explanation_questions(&full.questions)).unwrap()
+    );
     let candidate = prepare(&f, &t).unwrap();
     assert!(candidate.state.get("measurement_semantics").is_some());
     assert_ne!(hash(&legacy).unwrap(), hash(&candidate).unwrap());
@@ -109,11 +138,20 @@ fn response_validation_uses_actual_request_options() {
             confidence: 0.0,
         };
     }
+    let legacy = response.clone();
+    for (id, question) in &request.questions {
+        if matches!(question, josh_core::Question::Noul { .. }) {
+            response
+                .answers
+                .entry(id.clone())
+                .or_insert(Answer::Noul { noul: 0.0 });
+        }
+    }
     validate_response(&request, &response).unwrap();
     let run = interpret(&f, &t, response.clone(), Source::Replay).unwrap();
     run.verify(&f).unwrap();
-    for version in [LEGACY_PROMPT, PREVIOUS_PROMPT, V4_PROMPT] {
-        interpret_versioned(&f, &t, response.clone(), Source::Replay, version)
+    for version in [LEGACY_PROMPT, PREVIOUS_PROMPT, V4_PROMPT, V5_PROMPT] {
+        interpret_versioned(&f, &t, legacy.clone(), Source::Replay, version)
             .unwrap()
             .verify(&f)
             .unwrap();
@@ -155,4 +193,14 @@ fn v4_annotates_somatic_uncertainty_and_respects_custom_class_meaning() {
             assert!(!criteria["NSCLC"].contains("TTF-1"));
         }
     }
+}
+
+#[test]
+fn model_window_accepts_the_documented_context_and_rejects_beyond_it() {
+    let request = prepare(&sample(), &onconpc_taxonomy()).unwrap();
+    within_model_context(&request).unwrap();
+    assert!(estimate_tokens(serde_json::to_vec(&request).unwrap().len()) < REQUEST_TOKEN_BUDGET);
+    let mut oversized = request.clone();
+    oversized.state["padding"] = "x".repeat(STATE_QUESTION_TOKEN_BUDGET * 4).into();
+    assert!(within_model_context(&oversized).is_err());
 }

@@ -163,7 +163,7 @@ async fn run(args: Args) -> Result<bool, AppError> {
             result.value
         }
         Command::Reference { command } => {
-            let result = josh_app::reference::execute(command)?;
+            let result = josh_app::reference::execute(command).await?;
             human = Some(result.human);
             rejected_records = result.blocked;
             result.value

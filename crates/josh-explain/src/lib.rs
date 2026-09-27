@@ -275,8 +275,10 @@ impl Archive {
         }
         for (key, e) in &self.evaluations {
             if key != &molecular::hash(&e.request)?
-                || molecular::hash(&e.request.questions)?
-                    != molecular::hash(&self.inference.request.questions)?
+                || !molecular::explanation_questions_match(
+                    &e.request.questions,
+                    &self.inference.request.questions,
+                )?
             {
                 return Err(ValidationError("cached request mismatch").into());
             }
@@ -290,9 +292,10 @@ impl Archive {
             return Err(ValidationError("cached full output differs from inference").into());
         }
         if let Some(pending) = &self.in_flight
-            && (molecular::hash(&pending.questions)?
-                != molecular::hash(&self.inference.request.questions)?
-                || self.evaluations.contains_key(&molecular::hash(pending)?)
+            && (!molecular::explanation_questions_match(
+                &pending.questions,
+                &self.inference.request.questions,
+            )? || self.evaluations.contains_key(&molecular::hash(pending)?)
                 || self.result.is_some())
         {
             return Err(ValidationError("invalid pending provider evaluation").into());

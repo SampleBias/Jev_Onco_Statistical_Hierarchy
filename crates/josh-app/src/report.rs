@@ -49,6 +49,23 @@ pub fn class_label<'a>(run: &'a InferenceRun, id: &'a str) -> &'a str {
         })
 }
 
+/// Parent of the leading class. Unresolved outcomes have none. This is a local lookup.
+pub fn leading_parent<'a>(run: &'a InferenceRun) -> Result<Option<&'a str>, AppError> {
+    let rows = rankings(run)?;
+    let Some((id, _)) = rows.first() else {
+        return Ok(None);
+    };
+    if *id == run.taxonomy.unknown_id || *id == run.taxonomy.other_id {
+        return Ok(None);
+    }
+    Ok(run
+        .taxonomy
+        .classes
+        .iter()
+        .find(|class| class.id == *id)
+        .map(|class| class.parent.as_str()))
+}
+
 pub fn rankings(run: &InferenceRun) -> Result<Vec<(&str, f64)>, AppError> {
     let mut rows: Vec<_> = probabilities(&run.response)?
         .iter()
@@ -133,6 +150,13 @@ pub fn markdown(
             p * 100.0
         )?;
     }
+    if let Some(parent) = leading_parent(run)? {
+        writeln!(
+            s,
+            "\nBroad group of the leading class: **{}**. This is the parent stored on that class, a local lookup, not a separate Jev judgment.",
+            cell(parent)
+        )?;
+    }
     s.push_str("\n## Evidence checks\n\n| Check | Raw Jev output |\n| --- | ---: |\n");
     for (id, title) in [
         ("evidence_sufficient", "Evidence sufficient"),
@@ -148,6 +172,24 @@ pub fn markdown(
             "| Provider distribution concentration | {:.2}% |",
             confidence * 100.0
         )?;
+    }
+    let mut boundary = run
+        .response
+        .answers
+        .iter()
+        .filter(|(id, answer)| {
+            !matches!(id.as_str(), "evidence_sufficient" | "conflicting_evidence")
+                && matches!(answer, Answer::Noul { .. })
+        })
+        .collect::<Vec<_>>();
+    boundary.sort_by(|a, b| a.0.cmp(b.0));
+    if !boundary.is_empty() {
+        s.push_str("\n## Boundary checks\n\nThese are informational. They do not change abstention or review.\n\n| Check | Raw Jev output |\n| --- | ---: |\n");
+        for (id, answer) in boundary {
+            if let Answer::Noul { noul } = answer {
+                writeln!(s, "| {} | {:.2}% |", cell(id), noul * 100.0)?;
+            }
+        }
     }
     s.push_str("\nThese checks are separate judgments; they are not multiplied into an overall probability. Distribution concentration is not diagnostic confidence.\n");
     s.push_str("\n## Input evidence\n\nMissing and not-tested values remain unavailable; they are never treated as measured negatives or zero.\n\n| Feature | Modality | Status | Measurement | Assay | Coverage |\n| --- | --- | --- | --- | --- | --- |\n");

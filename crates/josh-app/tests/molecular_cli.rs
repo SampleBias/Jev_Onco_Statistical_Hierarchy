@@ -16,7 +16,7 @@ fn full_offline_demo_exports_reconciled_figures_and_protects_existing_files() {
     let a: Value = serde_json::from_slice(&o.stdout).unwrap();
     assert_eq!(a["inference"]["source"], "mock");
     assert_eq!(a["inference"]["status"], "abstained");
-    assert_eq!(a["result"]["evaluations"], 128);
+    assert_eq!(a["result"]["evaluations"], 129);
     assert!(a["result"]["additivity_residual"].as_f64().unwrap().abs() < 1e-10);
     let report = std::fs::read_to_string(root.join("explanation-report.md")).unwrap();
     assert!(report.contains("ANALYTICAL DEMO"));

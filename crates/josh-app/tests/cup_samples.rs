@@ -19,8 +19,7 @@ fn ten_cases_keep_labels_local_and_round_trip_through_provider_validation_and_ar
         assert!(patients.insert(features.patient_group_id.clone()));
         for version in [core::PREVIOUS_PROMPT, core::PROMPT] {
             let request = core::prepare_versioned(&features, &taxonomy, version).unwrap();
-            let bytes = serde_json::to_vec(&request).unwrap();
-            assert!(bytes.len() <= core::MAX_REQUEST_BYTES);
+            core::within_model_context(&request).unwrap();
             let state = serde_json::to_string(&request.state).unwrap();
             for forbidden in [
                 "scenario",
@@ -145,8 +144,18 @@ fn masked_inventory_does_not_reveal_hidden_names_assays_or_modality() {
         let changed = core::prepare_masked(&altered, &taxonomy, &visible).unwrap();
         assert_eq!(core::hash(&masked).unwrap(), core::hash(&changed).unwrap());
         assert_eq!(
-            core::hash(&masked.questions).unwrap(),
-            core::hash(&full.questions).unwrap()
+            core::hash(&core::explanation_questions(&masked.questions)).unwrap(),
+            core::hash(&core::explanation_questions(&full.questions)).unwrap()
+        );
+        assert!(
+            masked
+                .questions
+                .keys()
+                .all(|id| !core::BOUNDARY_QUESTIONS.contains(&id.as_str()))
+        );
+        assert_eq!(
+            full.questions.len(),
+            masked.questions.len() + core::BOUNDARY_QUESTIONS.len()
         );
     }
 }

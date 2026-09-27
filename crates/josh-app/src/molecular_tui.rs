@@ -854,6 +854,11 @@ impl App {
                     ));
                 }
             }
+            if let Some(parent) = crate::report::leading_parent(r).ok().flatten() {
+                lines.push(format!(
+                    "Broad group of the leading class: {parent} (local lookup, not a separate Jev judgment)"
+                ));
+            }
             lines.push("\nEVIDENCE CHECKS (separate judgments)".into());
             for (id, label) in [
                 ("evidence_sufficient", "Evidence sufficient"),
@@ -861,6 +866,26 @@ impl App {
             ] {
                 if let josh_core::Answer::Noul { noul } = r.response.answers[id] {
                     lines.push(format!("{label}: {:.2}%", noul * 100.0));
+                }
+            }
+            let mut boundary: Vec<_> = r
+                .response
+                .answers
+                .iter()
+                .filter(|(id, answer)| {
+                    !matches!(id.as_str(), "evidence_sufficient" | "conflicting_evidence")
+                        && matches!(answer, josh_core::Answer::Noul { .. })
+                })
+                .collect();
+            boundary.sort_by(|a, b| a.0.cmp(b.0));
+            if !boundary.is_empty() {
+                lines.push(
+                    "\nBOUNDARY CHECKS (informational; they do not change the decision)".into(),
+                );
+                for (id, answer) in boundary {
+                    if let josh_core::Answer::Noul { noul } = answer {
+                        lines.push(format!("{id}: {:.2}%", noul * 100.0));
+                    }
                 }
             }
             lines.push(match self.archive.as_ref() {

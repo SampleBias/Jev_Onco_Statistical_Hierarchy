@@ -74,7 +74,7 @@ pub fn envelope(error: &AppError) -> ErrorEnvelope {
             josh_jev::Error::DataPolicy => ErrorCode::DataPolicy,
             josh_jev::Error::MissingKey => ErrorCode::MissingApiKey,
             josh_jev::Error::Client | josh_jev::Error::Transport => ErrorCode::ProviderTransport,
-            josh_jev::Error::Http(_) => ErrorCode::ProviderHttp,
+            josh_jev::Error::Http { .. } => ErrorCode::ProviderHttp,
             josh_jev::Error::Response(_) => ErrorCode::ProviderResponse,
         }
     } else if let Some(e) = error.downcast_ref::<josh_ingest::dataset::DatasetError>() {

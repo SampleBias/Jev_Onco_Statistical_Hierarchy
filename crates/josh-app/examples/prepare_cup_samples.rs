@@ -45,7 +45,7 @@ fn main() -> Result<(), AppError> {
             let stem = format!("sample-{:03}-{track}", i + 1);
             molecular::write_new(&root.join(format!("{stem}.json")), &features)?;
             let mut hashes = Vec::new();
-            for (suffix, version) in [("v3", core::PREVIOUS_PROMPT), ("v5", core::PROMPT)] {
+            for (suffix, version) in [("v3", core::PREVIOUS_PROMPT), ("v5", core::V5_PROMPT)] {
                 let request = core::prepare_versioned(&features, &taxonomy, version)?;
                 molecular::write_new(
                     &root.join(format!("{stem}-{suffix}-request.json")),

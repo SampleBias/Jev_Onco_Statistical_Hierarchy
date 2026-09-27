@@ -3,6 +3,15 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
+/// Optional yes/no boundary. Omitted from JSON when absent so older requests stay byte-identical.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct NoulCriteria {
+    #[serde(rename = "true")]
+    pub when_true: String,
+    #[serde(rename = "false")]
+    pub when_false: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Question {
@@ -12,6 +21,8 @@ pub enum Question {
     },
     Noul {
         instructions: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        criteria: Option<NoulCriteria>,
     },
 }
 

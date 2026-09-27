@@ -346,7 +346,7 @@ impl Evaluator for LiveEvaluator {
             .evaluate(request, &self.data_class)
             .await
             .map_err(|e| match e {
-                josh_jev::Error::Http(status) => josh_explain::Error::ProviderHttp(status),
+                josh_jev::Error::Http { status, .. } => josh_explain::Error::ProviderHttp(status),
                 josh_jev::Error::Response(d) => josh_explain::Error::ProviderResponse(d),
                 josh_jev::Error::Validation(e) => josh_explain::Error::Invalid(e),
                 _ => josh_explain::Error::Provider,
@@ -409,20 +409,22 @@ pub fn demo_response(request: &JevRequest) -> JevResponse {
         .expect("nonempty")
         .0
         .clone();
+    let mut answers = BTreeMap::from([(
+        "primary_site".into(),
+        Answer::Choice {
+            choice,
+            probabilities,
+            confidence: 0.0,
+        },
+    )]);
+    for (id, question) in &request.questions {
+        if matches!(question, Question::Noul { .. }) {
+            answers.insert(id.clone(), Answer::Noul { noul: 0.0 });
+        }
+    }
     JevResponse {
         model: request.model.clone(),
-        answers: BTreeMap::from([
-            (
-                "primary_site".into(),
-                Answer::Choice {
-                    choice,
-                    probabilities,
-                    confidence: 0.0,
-                },
-            ),
-            ("evidence_sufficient".into(), Answer::Noul { noul: 0.0 }),
-            ("conflicting_evidence".into(), Answer::Noul { noul: 0.0 }),
-        ]),
+        answers,
         usage: Usage {
             input_tokens: 0,
             output_tokens: 0,
@@ -538,7 +540,7 @@ pub async fn infer_with_evaluator(
     run_status(
         root,
         "in_flight",
-        "One request started. If interrupted, completion and billing may be uncertain; no automatic retry.",
+        "One request started. Timeouts are not retried. Rate-limit and overload responses retry at most twice.",
     )?;
     // A failed or interrupted request leaves its exact input on disk. Rerunning
     // requires a new directory, so an ambiguous timeout cannot silently resubmit.

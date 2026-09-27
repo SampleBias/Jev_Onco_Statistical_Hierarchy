@@ -280,3 +280,33 @@ fn source_labels_must_cover_samples_exactly_and_have_unique_groups() {
         assert!(!output.status.success());
     }
 }
+#[test]
+fn reference_run_requires_a_key_and_does_not_create_a_directory() {
+    let (t, _, query, r) = prepared();
+    let out_dir = t.path().join("live-run");
+    let output = run(&[
+        "reference",
+        "run",
+        r.to_str().unwrap(),
+        "--dataset",
+        query.to_str().unwrap(),
+        "--sample",
+        "QUERY-01",
+        "--out-dir",
+        out_dir.to_str().unwrap(),
+    ]);
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("TYPESAFE_API_KEY"));
+    assert!(!out_dir.exists());
+    let prepared = ok(&[
+        "reference",
+        "prepare",
+        r.to_str().unwrap(),
+        "--dataset",
+        query.to_str().unwrap(),
+        "--sample",
+        "QUERY-01",
+    ]);
+    assert_eq!(prepared["sends_to_provider"], false);
+}
