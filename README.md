@@ -42,9 +42,9 @@ Requires Cargo, pinned Rust **1.98.1**, and a C compiler. In the TUI: open a bun
 
 [Quickstart](docs/QUICKSTART.md) · [User guide](docs/USER_GUIDE.md) · [Jev workflow](docs/references/JEV_WORKFLOW.md)
 
-## Inspiration
+## License
 
-The study question follows OncoNPC:
+The study question takes its inspiration from OncoNPC:
 
 Moon et al., *Machine learning for genetics-based classification and treatment response prediction in cancer of unknown primary*, Nature Medicine 29, 2057–2067 (2023). [doi:10.1038/s41591-023-02482-6](https://doi.org/10.1038/s41591-023-02482-6)
 
