@@ -7,21 +7,23 @@ Rust workbench (Ratatui TUI and CLI) for cancer-of-unknown-primary research, ver
 ```mermaid
 flowchart TD
   A[Sample, expression profile, or case] --> B[Import and validate in Rust]
-  B --> C[One request, identifiers and labels withheld]
+  B --> C["One molecular-origin-v6 request"]
   C --> Q1[primary_site — Choice over 22 classes plus unresolved outcomes]
-  C --> Q2[evidence_sufficient — Noul]
-  C --> Q3[conflicting_evidence — Noul]
-  Q1 --> J["Jev · api.typesafe.ai/v1/systemone"]
+  C --> Q2[evidence_sufficient and conflicting_evidence]
+  C --> Q3[Five boundary Nouls on this call only]
+  Q1 --> J["Jev · jev-1.13.0 · api.typesafe.ai/v1/systemone"]
   Q2 --> J
   Q3 --> J
-  J --> V[Reject a mismatched model, keys, or probability mass]
+  J --> V[Check the model, answer keys, and probability mass]
   V --> G[Local gates: abstained or review_required]
-  G --> R[Rankings, charts, Markdown]
-  R -.->|optional Shapley| M[Same questions, feature groups masked]
+  G --> R[Rankings, parent group, charts, Markdown]
+  R -.->|optional Shapley| M[Original three questions, feature groups masked]
   M -.-> J
 ```
 
-The three questions share the evidence and cannot read each other's answers. Rust owns counts, thresholds, reference comparison, cohort statistics, and rendering. A live call accepts declared **synthetic** data, uses `TYPESAFE_API_KEY`, and is sent once after confirmation. Prompt `molecular-origin-v5` is the current molecular request.
+New prepares use `molecular-origin-v6`. The Choice, the two gated checks, and five boundary checks share the evidence and cannot read each other's answers. Boundary answers are reported with the result. Gates still use the leading score, its margin, sufficiency, and conflict. The parent of the leading class is a local lookup on the taxonomy. A request may use Jev's window: 64k tokens for the call, and 32k for the evidence plus the longest question.
+
+A live call accepts declared **synthetic** data and `TYPESAFE_API_KEY`. Rate-limit and overload responses retry at most twice. A saved run keeps the prompt it was prepared with, so older archives stay on v2–v5. `josh molecular prepare`, `josh reference compare`, and `josh reference prepare` stay offline. `josh reference run` sends one synthetic expression-similarity request, separate from the panel classifier.
 
 | Crate | Role |
 | --- | --- |
