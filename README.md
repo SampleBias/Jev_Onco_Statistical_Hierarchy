@@ -41,3 +41,15 @@ The three questions share the evidence and cannot read each other's answers. Rus
 Requires Cargo, pinned Rust **1.98.1**, and a C compiler. In the TUI: open a bundled sample, then **Data → Run analysis**. `josh molecular prepare` prints the request without sending it. `josh --help` lists commands.
 
 [Quickstart](docs/QUICKSTART.md) · [User guide](docs/USER_GUIDE.md) · [Jev workflow](docs/references/JEV_WORKFLOW.md)
+
+## Inspiration
+
+The study question follows OncoNPC:
+
+Moon et al., *Machine learning for genetics-based classification and treatment response prediction in cancer of unknown primary*, Nature Medicine 29, 2057–2067 (2023). [doi:10.1038/s41591-023-02482-6](https://doi.org/10.1038/s41591-023-02482-6)
+
+Authors' repository: [itmoon7/onconpc](https://github.com/itmoon7/onconpc)
+
+JOSH is a separate Rust program. It contains no OncoNPC source, weights, or data. Origin inference is Jev. OncoNPC's classifier is XGBoost, and that model is not in this repository.
+
+Licensed under the [MIT License](LICENSE).
