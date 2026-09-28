@@ -10,6 +10,7 @@ pub struct Client {
     http: reqwest::Client,
     key: String,
     endpoint: String,
+    domain_header: Option<String>,
 }
 impl Client {
     pub fn new(key: &str) -> Result<Self, Error> {
@@ -27,6 +28,29 @@ impl Client {
             http,
             key: key.into(),
             endpoint: ENDPOINT.into(),
+            domain_header: None,
+        })
+    }
+
+    /// Route evaluation to a LOCAL System One endpoint (e.g. a fine-tuned
+    /// Laya "GUT" decision model on 127.0.0.1:8798) instead of the hosted API.
+    /// No API key required. The optional domain header selects the specialist
+    /// checkpoint (e.g. "cup-origin"). Non-loopback http is refused: the
+    /// local-decider path is for the operator's own machine.
+    pub fn with_local_decider(address: &str, domain: Option<&str>) -> Result<Self, Error> {
+        if !address.contains("127.0.0.1") && !address.contains("localhost") {
+            return Err(Error::LocalPolicy);
+        }
+        Ok(Self {
+            http: reqwest::Client::builder()
+                .timeout(Duration::from_secs(120))
+                .connect_timeout(Duration::from_secs(5))
+                .redirect(reqwest::redirect::Policy::none())
+                .build()
+                .map_err(|_| Error::Client)?,
+            key: "local".into(),
+            endpoint: format!("http://{address}"),
+            domain_header: domain.map(|d| d.to_string()),
         })
     }
     /// One network attempt. Callers own budgets and resumption. Ambiguous timeouts
@@ -47,10 +71,12 @@ impl Client {
         {
             return Err(josh_core::ValidationError("invalid model or request byte limit").into());
         }
-        let mut response = self
-            .http
-            .post(&self.endpoint)
-            .bearer_auth(&self.key)
+        let mut request_builder = self.http.post(&self.endpoint);
+        request_builder = request_builder.bearer_auth(&self.key);
+        if let Some(d) = &self.domain_header {
+            request_builder = request_builder.header("X-Laya-Domain", d);
+        }
+        let mut response = request_builder
             .json(request)
             .send()
             .await
@@ -169,6 +195,9 @@ fn invalid_field(
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    /// Local-decider routing refused a non-loopback address.
+    #[error("local decider address refused (loopback only)")]
+    LocalPolicy,
     #[error("{0}")]
     Validation(#[from] josh_core::ValidationError),
     #[error("this initial live adapter accepts synthetic cases only")]

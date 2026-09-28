@@ -330,14 +330,27 @@ pub struct LiveEvaluator {
 }
 impl LiveEvaluator {
     pub fn new(data_class: DataClass) -> Result<Self, AppError> {
+        Self::with_options(data_class, None)
+    }
+
+    /// `decider` = "host"[:port] of a LOCAL System One endpoint (e.g. a fine-tuned
+    /// Laya "GUT" model via 127.0.0.1:8798); `domain_header` selects the specialist
+    /// checkpoint. When set, no cloud API key is required.
+    pub fn with_options(
+        data_class: DataClass,
+        local_decider: Option<(&str, &str)>,
+    ) -> Result<Self, AppError> {
         if data_class != DataClass::Synthetic {
             return Err(josh_jev::Error::DataPolicy.into());
         }
-        let key = workflows::api_key().ok_or(josh_jev::Error::MissingKey)?;
-        Ok(Self {
-            client: josh_jev::Client::new(&key)?,
-            data_class,
-        })
+        let client = match local_decider {
+            Some((host, domain)) => josh_jev::Client::with_local_decider(host, Some(domain))?,
+            None => {
+                let key = workflows::api_key().ok_or(josh_jev::Error::MissingKey)?;
+                josh_jev::Client::new(&key)?
+            }
+        };
+        Ok(Self { client, data_class })
     }
 }
 impl Evaluator for LiveEvaluator {

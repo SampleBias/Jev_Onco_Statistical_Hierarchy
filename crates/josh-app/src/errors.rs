@@ -72,7 +72,7 @@ pub fn envelope(error: &AppError) -> ErrorEnvelope {
         match e {
             josh_jev::Error::Validation(_) => ErrorCode::InvalidCase,
             josh_jev::Error::DataPolicy => ErrorCode::DataPolicy,
-            josh_jev::Error::MissingKey => ErrorCode::MissingApiKey,
+            josh_jev::Error::MissingKey | josh_jev::Error::LocalPolicy => ErrorCode::MissingApiKey,
             josh_jev::Error::Client | josh_jev::Error::Transport => ErrorCode::ProviderTransport,
             josh_jev::Error::Http(_) => ErrorCode::ProviderHttp,
             josh_jev::Error::Response(_) => ErrorCode::ProviderResponse,
