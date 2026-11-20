@@ -50,7 +50,7 @@ pub fn class_label<'a>(run: &'a InferenceRun, id: &'a str) -> &'a str {
 }
 
 /// Parent of the leading class. Unresolved outcomes have none. This is a local lookup.
-pub fn leading_parent<'a>(run: &'a InferenceRun) -> Result<Option<&'a str>, AppError> {
+pub fn leading_parent(run: &InferenceRun) -> Result<Option<&str>, AppError> {
     let rows = rankings(run)?;
     let Some((id, _)) = rows.first() else {
         return Ok(None);
@@ -211,6 +211,9 @@ pub fn markdown(
         )?;
     }
     s.push_str("\n## Explanation\n\n");
+    if archive.is_some_and(Archive::legacy_full_score) {
+        s.push_str("Legacy v6 explanation. The full score comes from a separate three-question evaluation.\n\n");
+    }
     match archive {
         Some(a) if a.result.is_some() => {
             let r = a.result.as_ref().expect("checked result");

@@ -281,6 +281,25 @@ pub fn markdown(data: &Study, report: &Report) -> String {
     );
     if let Some(m) = &report.evaluation {
         text.push_str(&format!("## Classification\n\nEligible: {} · Returned: {} · Failed: {}\n\nTop-1: {:.4} · Top-3: {:.4} · Weighted F1: {:.4} · Macro F1: {:.4}\n\n",m.eligible,m.predicted,m.failed,m.top1_all_eligible,m.top3_all_eligible,m.weighted_f1,m.macro_f1));
+        if m.unresolved_references.values().any(|r| r.eligible > 0) {
+            text.push_str("| Reference outcome | Eligible | Top-1 correct | Top-3 correct | Abstained | Failed |\n| --- | ---: | ---: | ---: | ---: | ---: |\n");
+            for (label, counts) in std::iter::once(("Named origins", &m.named_reference)).chain(
+                m.unresolved_references
+                    .iter()
+                    .map(|(id, counts)| (id.as_str(), counts)),
+            ) {
+                text.push_str(&format!(
+                    "| {} | {} | {} | {} | {} | {} |\n",
+                    md(label),
+                    counts.eligible,
+                    counts.top1_correct,
+                    counts.top3_correct,
+                    counts.abstained,
+                    counts.failed
+                ));
+            }
+            text.push('\n');
+        }
         if let Some(b) = &report.bootstrap {
             text.push_str(&format!("95% patient-bootstrap intervals ({} replicates, seed {}): top-1 [{:.4}, {:.4}], weighted F1 [{:.4}, {:.4}].\n\n",b.replicates,b.seed,b.top1.lower,b.top1.upper,b.weighted_f1.lower,b.weighted_f1.upper));
         } else if let Some(reason) = &report.bootstrap_unavailable {

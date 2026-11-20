@@ -33,9 +33,13 @@ pub enum ExportFormat {
 }
 #[derive(Subcommand)]
 pub enum Command {
-    /// Prepare a paired v3/v5 protocol locally; --execute makes bounded live synthetic calls.
+    /// Compare two prompt versions on paired inputs. Use --execute for live synthetic calls.
     ComparePrompts {
         manifest: PathBuf,
+        #[arg(long, default_value = V5_PROMPT)]
+        baseline: String,
+        #[arg(long, default_value = PROMPT)]
+        candidate: String,
         #[arg(long)]
         out_dir: PathBuf,
         #[arg(long)]
@@ -340,17 +344,29 @@ impl LiveEvaluator {
         })
     }
 }
+fn evaluation_error(error: josh_jev::Error) -> josh_explain::Error {
+    match error {
+        josh_jev::Error::Http { status, .. } => josh_explain::Error::ProviderHttp(status),
+        josh_jev::Error::Response(d) => josh_explain::Error::ProviderResponse(d),
+        josh_jev::Error::Validation(e) => josh_explain::Error::Invalid(e),
+        _ => josh_explain::Error::Provider,
+    }
+}
 impl Evaluator for LiveEvaluator {
     async fn evaluate(&mut self, request: &JevRequest) -> Result<JevResponse, josh_explain::Error> {
         self.client
             .evaluate(request, &self.data_class)
             .await
-            .map_err(|e| match e {
-                josh_jev::Error::Http { status, .. } => josh_explain::Error::ProviderHttp(status),
-                josh_jev::Error::Response(d) => josh_explain::Error::ProviderResponse(d),
-                josh_jev::Error::Validation(e) => josh_explain::Error::Invalid(e),
-                _ => josh_explain::Error::Provider,
-            })
+            .map_err(evaluation_error)
+    }
+    async fn evaluate_once(
+        &mut self,
+        request: &JevRequest,
+    ) -> Result<JevResponse, josh_explain::Error> {
+        self.client
+            .evaluate_once(request, &self.data_class)
+            .await
+            .map_err(evaluation_error)
     }
 }
 
@@ -664,7 +680,7 @@ pub async fn explain(
     Ok(archive)
 }
 pub fn summary(a: &Archive) -> String {
-    match &a.result {
+    let mut text = match &a.result {
         Some(r) => format!(
             "{} | {} | {}\n{}\nRaw score: {:.4}; baseline: {:.4}; sum contributions: {:+.4}\nAdditivity residual: {:.3e}; evaluations: {}; input tokens: {}\nNo cancer calibration. {}",
             a.features.sample_id,
@@ -687,7 +703,11 @@ pub fn summary(a: &Archive) -> String {
             "Incomplete explanation; {} completed evaluations. Resume with the same options.",
             a.evaluations.len()
         ),
+    };
+    if a.legacy_full_score() {
+        text.push_str("\nLegacy v6 explanation. The full score comes from a separate three-question evaluation.");
     }
+    text
 }
 pub async fn execute(command: Command) -> Result<Output, AppError> {
     let mut raw = None;
@@ -695,13 +715,18 @@ pub async fn execute(command: Command) -> Result<Output, AppError> {
     let value = match command {
         Command::ComparePrompts {
             manifest,
+            baseline,
+            candidate,
             out_dir,
             execute,
             max_evaluations,
             max_input_tokens,
             max_seconds,
         } => {
-            let comparison = crate::prompt_comparison::Comparison::load(&manifest)?;
+            let comparison = crate::prompt_comparison::Comparison::load_with_versions(
+                &manifest,
+                [&baseline, &candidate],
+            )?;
             if execute {
                 let mut evaluator = LiveEvaluator::new(DataClass::Synthetic)?;
                 comparison
@@ -862,6 +887,7 @@ pub async fn execute(command: Command) -> Result<Output, AppError> {
                 f.features.extend(s.features);
             }
             f.validate()?;
+            f.validate_variant_sources()?;
             serde_json::to_value(f)?
         }
         Command::AttachExpression { features, evidence } => {

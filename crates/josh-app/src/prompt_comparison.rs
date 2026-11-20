@@ -27,6 +27,10 @@ pub struct Comparison {
 
 impl Comparison {
     pub fn load(path: &Path) -> Result<Self, AppError> {
+        Self::load_with_versions(path, [core::V5_PROMPT, core::PROMPT])
+    }
+
+    pub fn load_with_versions(path: &Path, versions: [&str; 2]) -> Result<Self, AppError> {
         let manifest: Manifest = workflows::read_json(path, 2 * 1024 * 1024)?;
         let root = path.parent().unwrap_or(Path::new("."));
         let features = manifest
@@ -34,11 +38,11 @@ impl Comparison {
             .iter()
             .map(|entry| molecular::load_features(&root.join(&entry.features)))
             .collect::<Result<Vec<_>, _>>()?;
-        Self::new(manifest, features)
+        Self::with_versions(manifest, features, versions)
     }
 
     pub fn new(manifest: Manifest, features: Vec<FeatureSet>) -> Result<Self, AppError> {
-        Self::with_versions(manifest, features, [core::PREVIOUS_PROMPT, core::V5_PROMPT])
+        Self::with_versions(manifest, features, [core::V5_PROMPT, core::PROMPT])
     }
 
     pub fn with_versions(
@@ -196,7 +200,8 @@ impl Comparison {
                 attempts += 1;
                 tokens = tokens.saturating_add(reservation);
                 let result =
-                    tokio::time::timeout(remaining.unwrap(), evaluator.evaluate(request)).await;
+                    tokio::time::timeout(remaining.unwrap(), evaluator.evaluate_once(request))
+                        .await;
                 let response = match result {
                     Ok(Ok(response)) => match josh_core::response::validate(request, &response) {
                         Ok(()) => {

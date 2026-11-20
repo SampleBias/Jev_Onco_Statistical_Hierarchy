@@ -76,9 +76,13 @@ async fn comparison_pairs_inputs_isolates_labels_retains_failures_and_enforces_b
         report["records"]["baseline"][1]["failure"],
         "budget_not_run"
     );
-    assert!(fixture.calls[0].state.get("evidence_inventory").is_none());
-    assert!(fixture.calls[1].state.get("evidence_inventory").is_some());
-    assert!(fixture.calls[2].state.get("evidence_inventory").is_some());
+    assert_eq!(
+        read(root.join("protocol.json"))["protocol"]["versions"],
+        serde_json::json!([core::V5_PROMPT, core::PROMPT])
+    );
+    assert_eq!(fixture.calls[0].questions.len(), 3);
+    assert_eq!(fixture.calls[1].questions.len(), 8);
+    assert_eq!(fixture.calls[2].questions.len(), 8);
     for request in &fixture.calls {
         let text = serde_json::to_string(request).unwrap();
         for forbidden in [
@@ -174,4 +178,44 @@ async fn inference_archives_specific_failure_and_preserves_the_original_request(
         .unwrap();
     assert_eq!(read(diagnostic)["code"], "model_mismatch");
     assert!(!root.join("inference.json").exists());
+}
+
+#[test]
+fn cli_prepares_historical_versions_and_checks_unknown_versions_before_writing() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (mut manifest, features) = protocol();
+    manifest.cases[0].truth = manifest.taxonomy.unknown_id.clone();
+    manifest.cases[1].truth = manifest.taxonomy.other_id.clone();
+    for (entry, f) in manifest.cases.iter().zip(features) {
+        molecular::write_new(&tmp.path().join(&entry.features), &f).unwrap();
+    }
+    let manifest_path = tmp.path().join("manifest.json");
+    molecular::write_new(&manifest_path, &manifest).unwrap();
+    for candidate in [core::PREVIOUS_PROMPT, "unsupported"] {
+        let output = tmp.path().join(candidate);
+        let result = std::process::Command::new(env!("CARGO_BIN_EXE_josh"))
+            .args(["molecular", "compare-prompts"])
+            .arg(&manifest_path)
+            .args([
+                "--baseline",
+                core::LEGACY_PROMPT,
+                "--candidate",
+                candidate,
+                "--out-dir",
+            ])
+            .arg(&output)
+            .env_remove("TYPESAFE_API_KEY")
+            .output()
+            .unwrap();
+        assert_eq!(result.status.success(), candidate == core::PREVIOUS_PROMPT);
+        if result.status.success() {
+            let plan = read(output.join("protocol.json"));
+            assert_eq!(
+                plan["protocol"]["versions"],
+                serde_json::json!([core::LEGACY_PROMPT, candidate])
+            );
+        } else {
+            assert!(!output.exists());
+        }
+    }
 }

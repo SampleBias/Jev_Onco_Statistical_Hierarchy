@@ -45,6 +45,14 @@ pub trait Evaluator: Send {
         &mut self,
         request: &JevRequest,
     ) -> impl Future<Output = Result<JevResponse, Error>> + Send;
+
+    /// Submit at most once. Transports with an internal retry policy must override this.
+    fn evaluate_once(
+        &mut self,
+        request: &JevRequest,
+    ) -> impl Future<Output = Result<JevResponse, Error>> + Send {
+        self.evaluate(request)
+    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
@@ -207,7 +215,7 @@ impl Archive {
         background: Option<Background>,
     ) -> Result<Self, Error> {
         let mut archive = Self {
-            schema_version: 1,
+            schema_version: 2,
             features,
             inference,
             config,
@@ -230,8 +238,11 @@ impl Archive {
     }
     pub fn validate(&self) -> Result<(), Error> {
         self.inference.verify(&self.features)?;
+        if self.schema_version == 2 {
+            self.features.validate_variant_sources()?;
+        }
         let groups = self.features.groups();
-        if self.schema_version != 1
+        if !matches!(self.schema_version, 1 | 2)
             || groups.is_empty()
             || groups.len() > 512
             || self.config.max_evaluations == 0
@@ -274,12 +285,7 @@ impl Archive {
             return Err(ValidationError("invalid evaluation attempt accounting").into());
         }
         for (key, e) in &self.evaluations {
-            if key != &molecular::hash(&e.request)?
-                || !molecular::explanation_questions_match(
-                    &e.request.questions,
-                    &self.inference.request.questions,
-                )?
-            {
+            if key != &molecular::hash(&e.request)? || !self.questions_match(&e.request)? {
                 return Err(ValidationError("cached request mismatch").into());
             }
             molecular::validate_response(&e.request, &e.response)?;
@@ -292,10 +298,8 @@ impl Archive {
             return Err(ValidationError("cached full output differs from inference").into());
         }
         if let Some(pending) = &self.in_flight
-            && (!molecular::explanation_questions_match(
-                &pending.questions,
-                &self.inference.request.questions,
-            )? || self.evaluations.contains_key(&molecular::hash(pending)?)
+            && (!self.questions_match(pending)?
+                || self.evaluations.contains_key(&molecular::hash(pending)?)
                 || self.result.is_some())
         {
             return Err(ValidationError("invalid pending provider evaluation").into());
@@ -338,8 +342,9 @@ impl Archive {
                 .saturating_mul(2)
                 .saturating_mul(n + 1)
         };
-        let evaluations =
-            coalitions.saturating_mul(self.background.as_ref().map_or(1, |b| b.samples.len()));
+        let evaluations = coalitions
+            .saturating_mul(self.background.as_ref().map_or(1, |b| b.samples.len()))
+            .saturating_add(usize::from(self.legacy_full_score()));
         Plan {
             groups,
             coalition_upper_bound: coalitions,
@@ -355,7 +360,34 @@ impl Archive {
             .map(|e| e.response.usage.input_tokens)
             .fold(0, u64::saturating_add)
     }
+    pub fn legacy_full_score(&self) -> bool {
+        self.schema_version == 1 && self.inference.prompt_version == molecular::PROMPT
+    }
+    fn questions_match(&self, request: &JevRequest) -> Result<bool, Error> {
+        let original = &self.inference.request.questions;
+        if self.schema_version == 1 {
+            return Ok(molecular::explanation_questions_match(
+                &request.questions,
+                original,
+            )?);
+        }
+        Ok(molecular::hash(&request.questions)? == molecular::hash(original)?)
+    }
     fn requests(&self, visible: &BTreeSet<String>) -> Result<Vec<JevRequest>, Error> {
+        if self.schema_version == 2
+            && self
+                .features
+                .features
+                .iter()
+                .all(|f| f.status != MeasurementStatus::Observed || visible.contains(&f.group))
+        {
+            return Ok(vec![self.inference.request.clone()]);
+        }
+        let prepare_mask = if self.schema_version == 1 {
+            molecular::legacy_explanation_mask
+        } else {
+            molecular::prepare_masked_versioned
+        };
         if let Some(background) = &self.background {
             background
                 .samples
@@ -373,7 +405,7 @@ impl Archive {
                                 .clone();
                         }
                     }
-                    Ok(molecular::prepare_masked_versioned(
+                    Ok(prepare_mask(
                         &hybrid,
                         &self.inference.taxonomy,
                         &hybrid.groups().into_iter().collect(),
@@ -382,7 +414,7 @@ impl Archive {
                 })
                 .collect()
         } else {
-            Ok(vec![molecular::prepare_masked_versioned(
+            Ok(vec![prepare_mask(
                 &self.features,
                 &self.inference.taxonomy,
                 visible,

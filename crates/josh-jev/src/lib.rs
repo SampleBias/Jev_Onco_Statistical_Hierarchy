@@ -20,6 +20,7 @@ impl Client {
             .timeout(Duration::from_secs(20))
             .connect_timeout(Duration::from_secs(5))
             .redirect(reqwest::redirect::Policy::none())
+            .retry(reqwest::retry::never())
             .https_only(true)
             .build()
             .map_err(|_| Error::Client)?;
@@ -29,12 +30,28 @@ impl Client {
             endpoint: ENDPOINT.into(),
         })
     }
-    /// One accepted call. Timeouts and other errors are not resent. HTTP 429 and 529
-    /// retry at most twice, because those statuses mean the call was not accepted.
+    /// Retry only rate-limit and overload responses, at most twice.
     pub async fn evaluate(
         &self,
         request: &josh_core::JevRequest,
         data_class: &DataClass,
+    ) -> Result<JevResponse, Error> {
+        self.evaluate_with_retries(request, data_class, 2).await
+    }
+
+    pub async fn evaluate_once(
+        &self,
+        request: &josh_core::JevRequest,
+        data_class: &DataClass,
+    ) -> Result<JevResponse, Error> {
+        self.evaluate_with_retries(request, data_class, 0).await
+    }
+
+    async fn evaluate_with_retries(
+        &self,
+        request: &josh_core::JevRequest,
+        data_class: &DataClass,
+        max_status_retries: u32,
     ) -> Result<JevResponse, Error> {
         if *data_class != DataClass::Synthetic {
             return Err(Error::DataPolicy);
@@ -54,7 +71,7 @@ impl Client {
                 .await
                 .map_err(|_| Error::Transport)?;
             let status = response.status().as_u16();
-            if matches!(status, 429 | 529) && attempts <= 2 {
+            if matches!(status, 429 | 529) && attempts <= max_status_retries {
                 let wait = retry_after(&response).min(Duration::from_secs(2));
                 attempts += 1;
                 tokio::time::sleep(wait).await;
@@ -485,6 +502,20 @@ mod transport_tests {
             endpoint: format!("http://{address}"),
         };
         (client, task)
+    }
+    #[tokio::test]
+    async fn comparison_transport_submits_only_once_on_retryable_statuses() {
+        for status in [429, 529] {
+            let (client, task) = scripted(vec![(status, String::new(), String::new())]);
+            let error = client
+                .evaluate_once(&request(), &DataClass::Synthetic)
+                .await
+                .unwrap_err();
+            assert!(
+                matches!(error, Error::Http { status: received, attempts: 1 } if received == status)
+            );
+            task.join().unwrap();
+        }
     }
     #[tokio::test]
     async fn retries_rate_limit_and_overload_then_stops() {

@@ -144,18 +144,8 @@ fn masked_inventory_does_not_reveal_hidden_names_assays_or_modality() {
         let changed = core::prepare_masked(&altered, &taxonomy, &visible).unwrap();
         assert_eq!(core::hash(&masked).unwrap(), core::hash(&changed).unwrap());
         assert_eq!(
-            core::hash(&core::explanation_questions(&masked.questions)).unwrap(),
-            core::hash(&core::explanation_questions(&full.questions)).unwrap()
-        );
-        assert!(
-            masked
-                .questions
-                .keys()
-                .all(|id| !core::BOUNDARY_QUESTIONS.contains(&id.as_str()))
-        );
-        assert_eq!(
-            full.questions.len(),
-            masked.questions.len() + core::BOUNDARY_QUESTIONS.len()
+            core::hash(&masked.questions).unwrap(),
+            core::hash(&full.questions).unwrap()
         );
     }
 }

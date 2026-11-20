@@ -78,6 +78,8 @@ prediction records. Success requires a complete probability vector including
 unknown/other; failure requires an explicit failure and no probabilities.
 Failures remain in accuracy/coverage denominators; scores are not renormalized.
 
+The reference truth may be a named class or one of the taxonomy's two unresolved outcomes. The report separates named origins, supported unlisted origins and insufficient evidence. Overall top-k agreement includes every eligible reference assignment. A returned prediction that fails the gate counts as an abstention, even when its leading assignment differs from the reference. Failures have their own count.
+
 `broad_groups` defaults to empty. A paper grouping needs a complete leaf-to-group
 map and `broad_group_version`; sum group probabilities **before** choosing a winner.
 Experimental parents are not automatically the preprint's ten-group or corrected

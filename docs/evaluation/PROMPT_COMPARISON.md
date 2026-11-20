@@ -1,16 +1,13 @@
 # Comparing Jev request versions
 
-The current CLI compares **v3 versus v5**. The current request adds specimen/assay
-interpretation, locally computed visible-evidence counts, class boundaries and
-shorter lineage-specific yes/no questions. The
-[Jev workflow guide](../references/JEV_WORKFLOW.md) and
-[ten-case sample pack](../../fixtures/cup-realistic-v2/README.md) describe the
-current preparation and bounded comparison. v2 and v3 remain reproducible.
+The CLI defaults to **v5 versus v6**. Use `--baseline` and `--candidate` with full prompt IDs from `molecular-origin-v2` through `molecular-origin-v6` to select a historical pair. Both arms use the same sample and taxonomy. The protocol records the versions and request hashes. Each live evaluation submits its request at most once, including when the provider returns 429 or 529.
+
+Reference labels can identify a named class, a supported unlisted origin, or insufficient evidence. Use an unresolved reference only when the evaluation protocol specifies that outcome. A missing truth label does not establish insufficiency. The report includes eligible cases, failures, abstentions and top-k matches for each reference group. A wrong unresolved prediction can still contribute an abstention.
 
 The following describes the original v3 change and historical preparation example.
 `prepare_prompt_comparison` explicitly freezes v2/v3 and uses the original five
 fixtures. Invoking `molecular compare-prompts` on its manifests now compares the
-current v3/v5 pair; always inspect `protocol.json` for the executed versions.
+default v5/v6 pair. Inspect `protocol.json` for the executed versions.
 
 `molecular-origin-v3` adds explicit measurement meanings and outcome rubrics to
 the existing three-question request. `molecular-origin-v2` remains available for

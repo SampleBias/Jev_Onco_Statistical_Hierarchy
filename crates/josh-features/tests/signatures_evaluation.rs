@@ -75,3 +75,44 @@ fn evaluation_keeps_failures_in_denominator_and_scores_calibration() {
     leaked[1].partition = "development".into();
     assert!(evaluation::evaluate(&leaked, &classes, &classes, "test").is_err());
 }
+
+#[test]
+fn mixed_reference_outcomes_keep_failures_and_distinguish_gate_abstention_from_correct_rank() {
+    let classes = BTreeSet::from(["a".into(), "b".into()]);
+    let outcomes = BTreeSet::from(["a".into(), "b".into(), "unknown".into(), "other".into()]);
+    let distribution = |winner: &str| {
+        outcomes
+            .iter()
+            .map(|id: &String| (id.clone(), if id == winner { 1.0 } else { 0.0 }))
+            .collect()
+    };
+    let mut rows = vec![
+        record("1", "a", None, false),
+        record("2", "unknown", None, false),
+        record("3", "other", None, false),
+        record("4", "other", None, false),
+    ];
+    for (r, winner) in rows.iter_mut().zip(["a", "unknown", "unknown"]) {
+        r.probabilities = Some(distribution(winner));
+        r.failure = None;
+    }
+    rows[0].accepted = true;
+    let r = evaluation::evaluate(&rows, &classes, &outcomes, "test").unwrap();
+    assert_eq!(r.top1_all_eligible, 0.5);
+    assert_eq!(r.named_reference.top1_correct, 1);
+    assert_eq!(r.unresolved_references["unknown"].top1_correct, 1);
+    let other = &r.unresolved_references["other"];
+    assert_eq!(
+        (
+            other.eligible,
+            other.failed,
+            other.abstained,
+            other.top1_correct
+        ),
+        (2, 1, 1, 0)
+    );
+    assert_eq!(r.confusion["other"]["unknown"], 1);
+    assert_eq!(r.confusion["other"]["__failed__"], 1);
+    assert!((r.weighted_f1 - 5.0 / 12.0).abs() < 1e-12);
+    assert_eq!(r.selective[0].retained, 1);
+}

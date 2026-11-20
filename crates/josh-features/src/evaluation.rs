@@ -35,6 +35,15 @@ pub struct SelectivePoint {
     pub coverage: f64,
     pub error: Option<f64>,
 }
+#[derive(Debug, Clone, Default, Serialize, Deserialize, JsonSchema)]
+pub struct ReferenceMetrics {
+    pub eligible: usize,
+    pub failed: usize,
+    pub abstained: usize,
+    pub top1_correct: usize,
+    pub top3_correct: usize,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Report {
     pub eligible: usize,
@@ -51,6 +60,10 @@ pub struct Report {
     pub log_loss: Option<f64>,
     pub ece: Option<f64>,
     pub per_class: BTreeMap<String, ClassMetrics>,
+    #[serde(default)]
+    pub named_reference: ReferenceMetrics,
+    #[serde(default)]
+    pub unresolved_references: BTreeMap<String, ReferenceMetrics>,
     pub confusion: BTreeMap<String, BTreeMap<String, usize>>,
     pub reliability: Vec<ReliabilityBin>,
     pub selective: Vec<SelectivePoint>,
@@ -78,7 +91,7 @@ pub fn evaluate(
         if r.sample_id.is_empty()
             || r.patient_group_id.is_empty()
             || !samples.insert(&r.sample_id)
-            || !classes.contains(&r.truth)
+            || !outcomes.contains(&r.truth)
             || !matches!(r.partition.as_str(), "development" | "calibration" | "test")
         {
             return Err(ValidationError(
@@ -101,7 +114,7 @@ pub fn evaluate(
             ));
         }
         if let Some(p) = &r.probabilities
-            && (p.keys().cloned().collect::<BTreeSet<_>>() != *outcomes
+            && (!p.keys().eq(outcomes.iter())
                 || p.values()
                     .any(|v| !v.is_finite() || !(0.0..=1.0).contains(v))
                 || (p.values().sum::<f64>() - 1.0).abs() > 1e-6)
@@ -127,7 +140,16 @@ pub fn evaluate(
     let mut confusion: BTreeMap<String, BTreeMap<String, usize>> = BTreeMap::new();
     let mut bins = vec![(0usize, 0.0, 0usize); 10];
     let mut scores = Vec::new();
+    let mut named_reference = ReferenceMetrics::default();
+    let mut unresolved_references: BTreeMap<_, _> = outcomes
+        .difference(classes)
+        .map(|id| (id.clone(), ReferenceMetrics::default()))
+        .collect();
     for r in selected {
+        let stratum = unresolved_references
+            .get_mut(&r.truth)
+            .unwrap_or(&mut named_reference);
+        stratum.eligible += 1;
         let row = confusion.entry(r.truth.clone()).or_default();
         if let Some(p) = &r.probabilities {
             predicted += 1;
@@ -135,7 +157,11 @@ pub fn evaluate(
             order.sort_by(|a, b| b.1.total_cmp(a.1).then(a.0.cmp(b.0)));
             let correct = order[0].0 == &r.truth;
             top1 += usize::from(correct);
-            top3 += usize::from(order.iter().take(3).any(|(c, _)| *c == &r.truth));
+            let in_top3 = usize::from(order.iter().take(3).any(|(c, _)| *c == &r.truth));
+            top3 += in_top3;
+            stratum.top1_correct += usize::from(correct);
+            stratum.top3_correct += in_top3;
+            stratum.abstained += usize::from(!r.accepted);
             *row.entry(order[0].0.clone()).or_default() += 1;
             brier += p
                 .iter()
@@ -152,11 +178,16 @@ pub fn evaluate(
                 accepted_correct += usize::from(correct);
             }
         } else {
+            stratum.failed += 1;
             *row.entry("__failed__".into()).or_default() += 1;
         }
     }
     let mut per_class = BTreeMap::new();
-    for c in classes {
+    for c in classes.iter().chain(
+        unresolved_references
+            .keys()
+            .filter(|id| confusion.contains_key(*id)),
+    ) {
         let count = confusion.get(c).map_or(0, |r| r.values().sum());
         let tp = confusion
             .get(c)
@@ -228,5 +259,23 @@ pub fn evaluate(
             }
         })
         .collect();
-    Ok(Report {eligible:n,predicted,failed:n-predicted,accepted,coverage:accepted as f64/n as f64,top1_all_eligible:top1 as f64/n as f64,top3_all_eligible:top3 as f64/n as f64,accepted_accuracy:(accepted>0).then(||accepted_correct as f64/accepted as f64),macro_f1:per_class.values().map(|r|r.f1).sum::<f64>()/classes.len() as f64,weighted_f1:per_class.values().map(|r|r.f1*r.count as f64).sum::<f64>()/n as f64,brier:(predicted>0).then(||brier/predicted as f64),log_loss:(predicted>0).then(||loss/predicted as f64),ece,per_class,confusion,reliability,selective,limitations:vec!["Brier, log loss and reliability are conditional on returned predictions; failures remain in eligible accuracy and coverage denominators.".into(),"Macro F1 includes declared classes with zero support; inspect class counts.".into(),"Log loss clips at 1e-15 for scoring only; stored probabilities are unchanged.".into(),"This report does not fit or authorize clinical calibration; no confidence intervals are estimated.".into()]})
+    Ok(Report {
+        eligible: n, predicted, failed: n - predicted, accepted,
+        coverage: accepted as f64 / n as f64,
+        top1_all_eligible: top1 as f64 / n as f64,
+        top3_all_eligible: top3 as f64 / n as f64,
+        accepted_accuracy: (accepted > 0).then(|| accepted_correct as f64 / accepted as f64),
+        macro_f1: per_class.values().map(|r| r.f1).sum::<f64>() / per_class.len() as f64,
+        weighted_f1: per_class.values().map(|r| r.f1 * r.count as f64).sum::<f64>() / n as f64,
+        brier: (predicted > 0).then(|| brier / predicted as f64),
+        log_loss: (predicted > 0).then(|| loss / predicted as f64),
+        ece, named_reference, unresolved_references, per_class, confusion, reliability, selective,
+        limitations: vec![
+            "Top-k scores measure agreement with the supplied reference assignment. Named origins and each unresolved reference have separate counts. Abstentions count returned predictions that did not pass the recorded gate.".into(),
+            "Brier, log loss and reliability are conditional on returned predictions. Failures remain in eligible accuracy and coverage denominators.".into(),
+            "Macro F1 includes every declared named class and each unresolved outcome present as reference truth in this partition.".into(),
+            "Log loss clips at 1e-15 for scoring only. Stored probabilities are unchanged.".into(),
+            "This report does not fit or authorize clinical calibration. No confidence intervals are estimated.".into(),
+        ],
+    })
 }

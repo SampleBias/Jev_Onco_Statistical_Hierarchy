@@ -62,7 +62,9 @@ fn load_completed(
         let result_path = out_dir.join(format!("{i:06}.json"));
         let attempt_path = out_dir.join(format!("attempt-{i:06}.json"));
         if attempt_path.exists() {
-            let saved: josh_core::JevRequest = workflows::read_json(&attempt_path, 64 * 1024)?;
+            // write_new saves this exact pretty request followed by a newline.
+            let disk_bytes = workflows::pretty(request)?.len() + 1;
+            let saved: josh_core::JevRequest = workflows::read_json(&attempt_path, disk_bytes)?;
             if core::hash(&saved)? != core::hash(request)? {
                 return Err(ValidationError("cohort attempted request changed").into());
             }
@@ -262,6 +264,44 @@ pub async fn run(
 mod tests {
     use super::*;
 
+    #[test]
+    fn resumes_a_large_pretty_printed_attempt_without_resubmitting() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut f = molecular::example();
+        let template = f
+            .features
+            .iter()
+            .find(|f| f.modality == core::Modality::CopyNumber)
+            .unwrap()
+            .clone();
+        f.features = (0..240)
+            .map(|i| {
+                let mut row = template.clone();
+                row.id = format!("feature-{i}");
+                row.group = row.id.clone();
+                row.source.record = i + 1;
+                row
+            })
+            .collect();
+        let taxonomy = core::onconpc_taxonomy();
+        let request = core::prepare(&f, &taxonomy).unwrap();
+        let path = dir.path().join("attempt-000000.json");
+        molecular::write_new(&path, &request).unwrap();
+        assert!(path.metadata().unwrap().len() > 65_536);
+        molecular::write_new(
+            &dir.path().join("000000.json"),
+            &CaseResult {
+                feature_sha256: core::hash(&f).unwrap(),
+                run: None,
+                failure: Some("test".into()),
+                elapsed_ms: 0,
+            },
+        )
+        .unwrap();
+        let (saved, attempts, _) = load_completed(dir.path(), &[f], &[request], &taxonomy).unwrap();
+        assert!(saved[0].is_some());
+        assert_eq!(attempts, 1);
+    }
     #[test]
     fn resume_counts_later_failed_attempts_and_rejects_uncertain_calls() {
         let dir = tempfile::tempdir().unwrap();

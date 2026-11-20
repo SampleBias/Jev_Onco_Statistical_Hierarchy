@@ -11,7 +11,7 @@ pub const PREVIOUS_PROMPT: &str = "molecular-origin-v3";
 pub const V4_PROMPT: &str = "molecular-origin-v4";
 pub const V5_PROMPT: &str = "molecular-origin-v5";
 pub const PROMPT: &str = "molecular-origin-v6";
-/// Informational questions on a full v6 request. Explanation masks omit them.
+/// Informational questions shared by v6 inference and new explanations.
 pub const BOUNDARY_QUESTIONS: [&str; 5] = [
     "pancreatobiliary_overlap",
     "breast_urothelial_overlap",
@@ -452,6 +452,35 @@ impl FeatureSet {
         }
         Ok(())
     }
+    /// A renamed feature can still refer to the same variant in the same source row.
+    /// This admission check is separate from reproducing previously archived inputs.
+    pub fn validate_variant_sources(&self) -> Result<(), ValidationError> {
+        let mut seen = BTreeSet::new();
+        for f in &self.features {
+            if let Some(FeatureValue::Mutation {
+                chromosome,
+                position,
+                reference,
+                alternate,
+                ..
+            }) = &f.value
+                && !seen.insert((
+                    &f.source.sha256,
+                    f.source.record,
+                    &f.reference_build,
+                    chromosome,
+                    position,
+                    reference,
+                    alternate,
+                ))
+            {
+                return Err(ValidationError(
+                    "duplicate variant observation from the same source record",
+                ));
+            }
+        }
+        Ok(())
+    }
     pub fn groups(&self) -> Vec<String> {
         self.features
             .iter()
@@ -593,20 +622,27 @@ pub fn prepare_versioned(
     taxonomy: &TaxonomyDefinition,
     version: &str,
 ) -> Result<JevRequest, ValidationError> {
-    set.validate()?;
+    set.validate_variant_sources()?;
+    rebuild_full_request(set, taxonomy, version)
+}
+
+fn rebuild_full_request(
+    set: &FeatureSet,
+    taxonomy: &TaxonomyDefinition,
+    version: &str,
+) -> Result<JevRequest, ValidationError> {
     if !set.has_molecular_evidence() {
         return Err(ValidationError(
             "observed molecular or pathology evidence is required",
         ));
     }
-    let mut request =
-        prepare_masked_versioned(set, taxonomy, &set.groups().into_iter().collect(), version)?;
-    if version == PROMPT {
-        // Boundary Nouls belong on the one full inference request. Explanation masks stay on the original three questions.
-        crate::molecular_prompt::add_boundary_questions(&mut request);
-        within_model_context(&request)?;
-    }
-    Ok(request)
+    build_masked_request(
+        set,
+        taxonomy,
+        &set.groups().into_iter().collect(),
+        version,
+        true,
+    )
 }
 
 /// Internal explanation evaluation: fixed questions/options; hidden evidence has no value or name.
@@ -624,12 +660,34 @@ pub fn prepare_masked_versioned(
     visible: &BTreeSet<String>,
     version: &str,
 ) -> Result<JevRequest, ValidationError> {
+    set.validate_variant_sources()?;
+    build_masked_request(set, taxonomy, visible, version, true)
+}
+
+/// Reproduce coalition requests stored by version 1 explanation archives.
+pub fn legacy_explanation_mask(
+    set: &FeatureSet,
+    taxonomy: &TaxonomyDefinition,
+    visible: &BTreeSet<String>,
+    version: &str,
+) -> Result<JevRequest, ValidationError> {
+    build_masked_request(set, taxonomy, visible, version, false)
+}
+
+fn build_masked_request(
+    set: &FeatureSet,
+    taxonomy: &TaxonomyDefinition,
+    visible: &BTreeSet<String>,
+    version: &str,
+    include_boundary_questions: bool,
+) -> Result<JevRequest, ValidationError> {
     if ![LEGACY_PROMPT, PREVIOUS_PROMPT, V4_PROMPT, V5_PROMPT, PROMPT].contains(&version) {
         return Err(ValidationError("unsupported molecular prompt version"));
     }
     set.validate()?;
     taxonomy.validate()?;
-    if visible.iter().any(|g| !set.groups().contains(g)) {
+    let groups = set.groups();
+    if visible.iter().any(|g| groups.binary_search(g).is_err()) {
         return Err(ValidationError("unknown attribution group"));
     }
     let mut ordered: Vec<_> = set.features.iter().collect();
@@ -655,6 +713,9 @@ pub fn prepare_masked_versioned(
     }
     if version == PROMPT {
         crate::molecular_prompt::apply_v6(&mut req);
+        if include_boundary_questions {
+            crate::molecular_prompt::add_boundary_questions(&mut req);
+        }
     }
     within_model_context(&req)?;
     Ok(req)
@@ -706,6 +767,17 @@ pub fn interpret_versioned(
     version: &str,
 ) -> Result<InferenceRun, ValidationError> {
     let request = prepare_versioned(set, taxonomy, version)?;
+    interpret_prepared(set, taxonomy, response, source, version, request)
+}
+
+fn interpret_prepared(
+    set: &FeatureSet,
+    taxonomy: &TaxonomyDefinition,
+    response: JevResponse,
+    source: Source,
+    version: &str,
+    request: JevRequest,
+) -> Result<InferenceRun, ValidationError> {
     validate_response(&request, &response)?;
     let mut p: Vec<_> = probabilities(&response)?.iter().collect();
     p.sort_by(|a, b| b.1.total_cmp(a.1).then(a.0.cmp(b.0)));
@@ -746,12 +818,13 @@ pub fn interpret_versioned(
 }
 impl InferenceRun {
     pub fn verify(&self, set: &FeatureSet) -> Result<(), ValidationError> {
-        let expected = interpret_versioned(
+        let expected = interpret_prepared(
             set,
             &self.taxonomy,
             self.response.clone(),
             self.source,
             &self.prompt_version,
+            rebuild_full_request(set, &self.taxonomy, &self.prompt_version)?,
         )?;
         if hash(self)? != hash(&expected)? {
             return Err(ValidationError("inference archive mismatch"));

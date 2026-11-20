@@ -74,11 +74,12 @@ impl Matrix {
         };
         let rows: Vec<_> = m.per_class.keys().cloned().collect();
         let mut columns = rows.clone();
-        columns.extend([
-            data.taxonomy.unknown_id.clone(),
-            data.taxonomy.other_id.clone(),
-            "__failed__".into(),
-        ]);
+        for id in [&data.taxonomy.unknown_id, &data.taxonomy.other_id] {
+            if !m.per_class.contains_key(id) {
+                columns.push(id.clone());
+            }
+        }
+        columns.push("__failed__".into());
         let counts = rows
             .iter()
             .map(|r| {

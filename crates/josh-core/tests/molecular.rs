@@ -53,35 +53,15 @@ fn request_versions_preserve_legacy_bytes_and_describe_only_visible_measurements
             masked.state["features"][i]["status"],
             "withheld_for_attribution"
         );
-        let masked_core = explanation_questions(&masked.questions);
-        let full_core = explanation_questions(&candidate.questions);
-        assert_eq!(hash(&masked_core).unwrap(), hash(&full_core).unwrap());
-        assert!(
-            masked
-                .questions
-                .keys()
-                .all(|id| !BOUNDARY_QUESTIONS.contains(&id.as_str()))
-        );
         assert_eq!(
-            candidate.questions.len(),
-            masked.questions.len() + BOUNDARY_QUESTIONS.len()
+            hash(&masked.questions).unwrap(),
+            hash(&candidate.questions).unwrap()
         );
     }
-    let complete_mask = prepare_masked(&f, &t, &f.groups().into_iter().collect()).unwrap();
-    assert!(
-        complete_mask
-            .questions
-            .keys()
-            .all(|id| !BOUNDARY_QUESTIONS.contains(&id.as_str()))
-    );
-    let full = prepare(&f, &t).unwrap();
+    let all = f.groups().into_iter().collect();
     assert_eq!(
-        full.questions.len(),
-        complete_mask.questions.len() + BOUNDARY_QUESTIONS.len()
-    );
-    assert_eq!(
-        hash(&explanation_questions(&complete_mask.questions)).unwrap(),
-        hash(&explanation_questions(&full.questions)).unwrap()
+        hash(&prepare_masked(&f, &t, &all).unwrap()).unwrap(),
+        hash(&prepare(&f, &t).unwrap()).unwrap()
     );
     let candidate = prepare(&f, &t).unwrap();
     assert!(candidate.state.get("measurement_semantics").is_some());
@@ -203,4 +183,21 @@ fn model_window_accepts_the_documented_context_and_rejects_beyond_it() {
     let mut oversized = request.clone();
     oversized.state["padding"] = "x".repeat(STATE_QUESTION_TOKEN_BUDGET * 4).into();
     assert!(within_model_context(&oversized).is_err());
+}
+
+#[test]
+fn duplicate_variant_sources_are_rejected_even_when_feature_ids_differ() {
+    let mut f = sample();
+    let mut repeated = f
+        .features
+        .iter()
+        .find(|f| matches!(f.value, Some(FeatureValue::Mutation { .. })))
+        .unwrap()
+        .clone();
+    repeated.id = "renamed-variant".into();
+    repeated.group = "renamed-group".into();
+    f.features.push(repeated);
+    assert!(prepare(&f, &onconpc_taxonomy()).is_err());
+    f.features.last_mut().unwrap().source.sha256 = "b".repeat(64);
+    assert!(prepare(&f, &onconpc_taxonomy()).is_ok());
 }

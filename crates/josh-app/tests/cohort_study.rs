@@ -322,3 +322,52 @@ async fn shared_loader_routes_study_preserves_sections_and_rejects_archive_tampe
     std::fs::write(&archive, serde_json::to_vec(&saved).unwrap()).unwrap();
     assert!(study::load(&archive).is_err());
 }
+
+#[test]
+fn mixed_reference_studies_preserve_unresolved_rows_in_groups_bootstrap_and_exports() {
+    let mut data = study::demo();
+    data.records.truncate(4);
+    data.outcomes = None;
+    data.broad_groups = data
+        .taxonomy
+        .classes
+        .iter()
+        .map(|c| (c.id.clone(), c.parent.clone()))
+        .collect();
+    data.broad_group_version = Some("test-parents".into());
+    for (r, truth) in
+        data.records
+            .iter_mut()
+            .zip(["NSCLC", "BRCA", "other_origin", "insufficient_evidence"])
+    {
+        r.partition = data.partition.clone();
+        r.truth = truth.into();
+        r.failure = None;
+        r.accepted = truth == "NSCLC" || truth == "BRCA";
+        r.probabilities = Some(
+            data.taxonomy
+                .criteria()
+                .keys()
+                .map(|id| (id.clone(), f64::from(id == truth)))
+                .collect(),
+        );
+    }
+    let report = stats::analyze(&data, 100, 42).unwrap();
+    let detailed = report.evaluation.as_ref().unwrap();
+    let broad = report.broad_evaluation.as_ref().unwrap();
+    assert_eq!(detailed.top1_all_eligible, 1.);
+    assert_eq!(broad.top1_all_eligible, 1.);
+    assert_eq!(detailed.unresolved_references["other_origin"].abstained, 1);
+    assert_eq!(report.bootstrap.as_ref().unwrap().top1.estimate, 1.);
+    let matrix = Matrix::new(&data, &report, false).unwrap();
+    assert_eq!(
+        matrix
+            .columns
+            .iter()
+            .filter(|s| *s == "other_origin")
+            .count(),
+        1
+    );
+    assert_eq!(matrix.counts.iter().flatten().sum::<usize>(), 4);
+    assert!(study::markdown(&data, &report).contains("| other_origin | 1 | 1 | 1 | 1 | 0 |"));
+}

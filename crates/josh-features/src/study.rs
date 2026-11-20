@@ -158,7 +158,9 @@ pub fn mapped_records(study: &Study) -> Vec<Record> {
         .iter()
         .map(|r| {
             let mut mapped = r.clone();
-            mapped.truth = study.broad_groups[&r.truth].clone();
+            if let Some(group) = study.broad_groups.get(&r.truth) {
+                mapped.truth = group.clone();
+            }
             mapped.probabilities = r.probabilities.as_ref().map(|p| {
                 let mut groups = BTreeMap::new();
                 for (class, value) in p {
@@ -250,7 +252,11 @@ pub fn analyze(
             weighted_f1: metrics.map(|m| m.weighted_f1),
         });
     }
-    let boot = bootstrap(&selected, &classes, bootstrap_replicates, seed);
+    let scoring_classes = evaluation
+        .as_ref()
+        .map(|r| r.per_class.keys().cloned().collect())
+        .unwrap_or(classes);
+    let boot = bootstrap(&selected, &scoring_classes, bootstrap_replicates, seed);
     let mut limitations=vec![
         "Imported frozen predictions are not authenticated provider responses. The study records their declared source, model and protocol; a study hash identifies these exact inputs.".into(),
         "Failures remain in all-eligible accuracy and coverage. Unknown/other scores are retained without renormalization; thresholds select only biological winners.".into(),

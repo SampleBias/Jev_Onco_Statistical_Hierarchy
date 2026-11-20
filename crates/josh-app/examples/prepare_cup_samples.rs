@@ -76,7 +76,8 @@ fn main() -> Result<(), AppError> {
             cases: entries,
         };
         molecular::write_new(&root.join(format!("{track}-manifest.json")), &manifest)?;
-        Comparison::new(manifest, labeled)?.prepare(&root.join(format!("{track}-comparison")))?;
+        Comparison::with_versions(manifest, labeled, [core::PREVIOUS_PROMPT, core::V5_PROMPT])?
+            .prepare(&root.join(format!("{track}-comparison")))?;
     }
     molecular::write_new(
         &root.join("inventory.json"),

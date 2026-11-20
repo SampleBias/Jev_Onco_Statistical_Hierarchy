@@ -157,8 +157,8 @@ async fn exact_shapley_splits_interaction_and_assigns_dummy_zero() {
     close(values["x"], 0.3);
     close(values["y"], 0.4);
     close(values["dummy"], 0.0);
-    assert_eq!(evaluator.calls, 8);
-    assert_eq!(r.evaluations, 9);
+    assert_eq!(evaluator.calls, 7);
+    assert_eq!(r.evaluations, 8);
     a.validate().unwrap();
     let replay: Archive = serde_json::from_str(&serde_json::to_string(&a).unwrap()).unwrap();
     replay.validate().unwrap();
@@ -172,7 +172,7 @@ async fn exact_shapley_splits_interaction_and_assigns_dummy_zero() {
     close(a.result.as_ref().unwrap().additivity_residual, 0.0);
     a.validate().unwrap();
     assert_eq!(
-        evaluator.calls, 8,
+        evaluator.calls, 7,
         "retarget must use archived distributions"
     );
 }
@@ -217,9 +217,9 @@ async fn interrupted_call_is_checkpointed_and_never_implicitly_resent() {
     run(&mut saved, &mut oracle, &Progress::default(), |_| Ok(()))
         .await
         .unwrap();
-    assert_eq!(saved.attempts, 10);
+    assert_eq!(saved.attempts, 9);
     assert_eq!(saved.uncertain_input_tokens, reserved);
-    assert_eq!(oracle.calls, 8);
+    assert_eq!(oracle.calls, 7);
     saved.validate().unwrap();
 }
 
@@ -256,7 +256,7 @@ async fn usage_over_reservation_stops_calls_but_archive_can_be_inspected() {
     run(&mut a, &mut evaluator, &Progress::default(), |_| Ok(()))
         .await
         .unwrap();
-    assert_eq!(evaluator.calls, 8);
+    assert_eq!(evaluator.calls, 7);
     a.validate().unwrap();
 }
 #[tokio::test]
@@ -369,7 +369,7 @@ async fn budgets_cancel_and_resume_preserve_successful_calls() {
     run(&mut a, &mut evaluator, &Progress::default(), |_| Ok(()))
         .await
         .unwrap();
-    assert_eq!(evaluator.calls, 8);
+    assert_eq!(evaluator.calls, 7);
     a.result.as_mut().unwrap().attributions[0].contribution += 0.1;
     assert!(a.validate().is_err());
 }
@@ -387,4 +387,63 @@ fn masking_removes_names_values_and_sources_and_groups_dependencies() {
     assert!(f.validate().is_err());
     f.features[0].group = "y".into();
     f.validate().unwrap();
+}
+
+#[tokio::test]
+async fn new_archives_anchor_the_saved_score_and_legacy_v6_replays_its_separate_score() {
+    let features = features();
+    let taxonomy = onconpc_taxonomy();
+    for version in [LEGACY_PROMPT, PREVIOUS_PROMPT, V4_PROMPT, V5_PROMPT, PROMPT] {
+        let request = prepare_versioned(&features, &taxonomy, version).unwrap();
+        let mut saved = response(&request);
+        if let Answer::Choice { probabilities, .. } = saved.answers.get_mut("primary_site").unwrap()
+        {
+            let others = probabilities.len() - 1;
+            for (id, p) in probabilities {
+                *p = if id == "NSCLC" {
+                    0.55
+                } else {
+                    0.45 / others as f64
+                };
+            }
+        }
+        let inference =
+            interpret_versioned(&features, &taxonomy, saved, Source::Replay, version).unwrap();
+        for schema_version in [1, 2] {
+            let config = Config {
+                algorithm: Algorithm::Exact,
+                ..Config::default()
+            };
+            let mut archive =
+                Archive::new(features.clone(), inference.clone(), config, None).unwrap();
+            archive.schema_version = schema_version;
+            let legacy_v6 = schema_version == 1 && version == PROMPT;
+            assert_eq!(
+                archive.plan().evaluation_upper_bound,
+                if legacy_v6 { 9 } else { 8 }
+            );
+            let mut evaluator = Oracle { calls: 0 };
+            run(&mut archive, &mut evaluator, &Progress::default(), |_| {
+                Ok(())
+            })
+            .await
+            .unwrap();
+            close(
+                archive.result.as_ref().unwrap().full_probability,
+                if legacy_v6 { 0.8 } else { 0.55 },
+            );
+            assert_eq!(evaluator.calls, if legacy_v6 { 8 } else { 7 });
+            if !legacy_v6 {
+                for e in archive.evaluations.values() {
+                    assert_eq!(
+                        hash(&e.request.questions).unwrap(),
+                        hash(&request.questions).unwrap()
+                    );
+                }
+            }
+            let reopened: Archive =
+                serde_json::from_slice(&serde_json::to_vec(&archive).unwrap()).unwrap();
+            reopened.validate().unwrap();
+        }
+    }
 }

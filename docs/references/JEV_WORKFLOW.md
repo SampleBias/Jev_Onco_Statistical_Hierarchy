@@ -1,7 +1,6 @@
 # How JOSH uses Jev for CUP research
 
-Checked against official TypeSafe documentation on 2026-09-26. The current
-molecular request is `molecular-origin-v5`, using pinned `jev-1.13.0`.
+The molecular workflow uses `molecular-origin-v6` with pinned `jev-1.13.0`.
 This document is included in the TUI's existing searchable F1 guide.
 
 ## 1. Give the model interpretable evidence
@@ -25,7 +24,7 @@ Unavailable tests remain explicit. The model sees neither scenario candidates
 nor patient IDs, source paths, local provenance hashes or evaluation partitions.
 This follows TypeSafe's [state guidance](https://docs.typesafe.ai/concepts/state).
 
-## 2. Ask three independent, bounded questions in one call
+## 2. Ask the origin and evidence questions in one call
 
 | Question | Primitive | Meaning in this application |
 | --- | --- | --- |
@@ -33,8 +32,7 @@ This follows TypeSafe's [state guidance](https://docs.typesafe.ai/concepts/state
 | evidence_sufficient | Noul | Whether interpretable evidence distinguishes a specific cancer class from alternatives |
 | conflicting_evidence | Noul | Whether competing reliable observations support incompatible assignments |
 
-Each question evaluates the evidence independently; it cannot read another
-question's answer. A missing result is not a contradiction. A coherent supported
+V6 adds five informational boundary questions covering overlapping origins. Each question reads the shared evidence independently. A missing result is not a contradiction. A coherent supported
 unlisted cancer can have sufficient evidence while still requiring other_origin.
 Overlapping markers can justify insufficiency without implying an actual conflict.
 These distinctions follow [independent questions](https://docs.typesafe.ai/introduction),
@@ -50,8 +48,7 @@ The rules are the same for all cases; scenario expectations are not embedded.
 V5 asks shorter yes/no questions and explicitly separates evidence favoring an
 origin from imaging actually locating a primary mass. This change followed a
 development check in which the initial v4 rubric gave low sufficiency and excess
-conflict to coherent panels. v4 is frozen for archive verification; the comparison
-baseline remains the pre-change v3. See the [verification report](../reports/cup-samples-jev-v5.md).
+conflict to coherent panels. v4 is frozen for archive verification; the historical v5 study used v3 as its baseline. See the [verification report](../reports/cup-samples-jev-v5.md).
 
 The main Choice remains flat. Twenty-four options fit comfortably within the
 [documented Choice limit](https://docs.typesafe.ai/primitives/choice).
@@ -103,7 +100,7 @@ not validation for this CUP dataset. See the vendor's
 ## 5. Compare before claiming improvement
 
 Prepare the sample suite using the command in its README. The current
-`molecular compare-prompts` command compares v3 against v5 on identical inputs.
+`molecular compare-prompts` command defaults to v5 against v6 on identical inputs. Use `--baseline` and `--candidate` to select a historical pair.
 For an explicitly executed, bounded synthetic comparison:
 
 ```bash
@@ -114,9 +111,7 @@ For an explicitly executed, bounded synthetic comparison:
 
 This makes at most ten billable calls: five scenarios, two versions. Omit
 `--execute` for preparation only. Use new output directories. Genomic/pathology
-manifests are paired views of the same patients; preserve their grouping. The
-five ambiguous or unlisted scenarios are reviewed separately, not forced into
-the comparison runner's known-class truth field.
+manifests are paired views of the same patients; preserve their grouping. The historical fixture manifest scores five coherent scenarios. A new manifest may explicitly label an indeterminate or unlisted outcome.
 
 Inspect score changes, insufficiency, conflict, rank, failures and request sizes.
 In 003, inspect confident origin assignment from weak evidence; in 005 and 008,
@@ -134,9 +129,7 @@ on the same patients and retain failures/abstentions in denominators.
 
 ## 6. Explain the specific saved model output
 
-The existing optional explanation workflow uses grouped, model-agnostic Shapley
-evaluations. Every masked request uses its saved prompt version and unchanged
-questions. Inventory fields are rebuilt from visible evidence so hidden names,
+New explanations use the saved inference as the full-evidence endpoint for grouped Shapley values. Each masked request uses its original prompt version and questions. Historical version 1 archives retain their original evaluation rules, including the separate three-question full-evidence call for v6. Inventory fields are rebuilt from visible evidence so hidden names,
 values, assays and modality counts are not leaked through derived metadata.
 The full and masked requests/answers are archived for inspection and reuse.
 
